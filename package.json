@@ -1,0 +1,17 @@
+{
+  "name": "caja-registradora-servidor",
+  "version": "1.0.0",
+  "description": "Servidor para sistema de caja registradora",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1",
+    "cors": "^2.8.5"
+  }
+}
