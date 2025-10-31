@@ -1,0 +1,59 @@
+[
+  {
+    "id": "prod1",
+    "name": "Impresión 10x15",
+    "price": 1500,
+    "description": "Impresión fotográfica 10x15 cm en papel premium",
+    "icon": "📷",
+    "createdAt": "2025-10-01T13:54:58.806Z"
+  },
+  {
+    "id": "prod2",
+    "name": "Impresión 15x20",
+    "price": 2500,
+    "description": "Impresión fotográfica 15x20 cm en papel premium",
+    "icon": "🖼️",
+    "createdAt": "2025-10-01T13:54:58.806Z"
+  },
+  {
+    "id": "prod3",
+    "name": "Impresión 20x30",
+    "price": 3500,
+    "description": "Impresión fotográfica 20x30 cm en papel premium",
+    "icon": "📄",
+    "createdAt": "2025-10-01T13:54:58.806Z"
+  },
+  {
+    "id": "prod5",
+    "name": "Pack 10 Fotos",
+    "price": 12000,
+    "description": "Pack de 10 impresiones 10x15 con descuento",
+    "icon": "📦",
+    "createdAt": "2025-10-01T13:54:58.806Z"
+  },
+  {
+    "id": "prod6",
+    "name": "Álbum Premium",
+    "price": 8000,
+    "description": "Álbum fotográfico con 20 páginas",
+    "icon": "📚",
+    "createdAt": "2025-10-01T13:54:58.806Z"
+  },
+  {
+    "id": "mg9kbeypim9d1sd4g7",
+    "name": "no se",
+    "price": 0.01,
+    "description": "hola",
+    "icon": "📦",
+    "createdAt": "2025-10-02T15:20:48.001Z"
+  },
+  {
+    "id": "1760374547132-ik5gu4y8j",
+    "name": "hola",
+    "price": 1,
+    "description": "",
+    "categoryId": "",
+    "icon": "📷",
+    "createdAt": "2025-10-13T16:55:47.132Z"
+  }
+]

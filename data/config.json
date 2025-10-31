@@ -1,0 +1,9 @@
+{
+  "storeName": "Mi Negocio",
+  "currency": "ARS",
+  "taxRate": 0,
+  "createdAt": "2025-10-27T14:39:56.628Z",
+  "lastOrderNumber": 2,
+  "gerenciaPassword": "000000",
+  "administracionPassword": "111111"
+}
