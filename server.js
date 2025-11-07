@@ -8,15 +8,13 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    origin: '*',
     methods: ['GET', 'POST']
   }
 });
 
 // Middleware
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*'
-}));
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -84,7 +82,7 @@ async function getData(filename) {
   }
 }
 
-// Guardar datos de un archivo
+// Guardar datos de un archivo - CORREGIDO: JSONB directo sin stringify
 async function setData(filename, data) {
   try {
     // Lista de archivos que DEBEN ser arrays
@@ -108,12 +106,12 @@ async function setData(filename, data) {
       }
     }
     
-    // CORREGIDO: Pasar el objeto directamente, PostgreSQL maneja JSONB
+    // CORRECCIÓN CRÍTICA: Pasar el objeto directamente, PostgreSQL maneja JSONB automáticamente
     await pool.query(
       `INSERT INTO app_data (filename, data, updated_at) 
-       VALUES ($1, $2, NOW()) 
+       VALUES ($1, $2::jsonb, NOW()) 
        ON CONFLICT (filename) 
-       DO UPDATE SET data = $2, updated_at = NOW()`,
+       DO UPDATE SET data = $2::jsonb, updated_at = NOW()`,
       [filename, normalizedData]
     );
     
@@ -123,31 +121,6 @@ async function setData(filename, data) {
     console.error(`Error guardando ${filename}:`, error);
     return false;
   }
-}
-
-// Validar datos antes de guardar
-function validateData(filename, data) {
-  const arrayFiles = ['products.json', 'orders.json', 'categories.json', 'authorizations.json', 'change_history.json'];
-  
-  if (arrayFiles.includes(filename)) {
-    if (!Array.isArray(data) && !(typeof data === 'object' && Object.keys(data).length === 0)) {
-      return { valid: false, error: `${filename} debe ser un array` };
-    }
-  }
-  
-  if (filename === 'profiles.json') {
-    if (!data || !data.locales || !Array.isArray(data.locales)) {
-      return { valid: false, error: 'profiles.json debe tener estructura con locales array' };
-    }
-  }
-  
-  if (filename === 'config.json') {
-    if (!data || typeof data.lastOrderNumber !== 'number') {
-      return { valid: false, error: 'config.json debe tener lastOrderNumber numérico' };
-    }
-  }
-  
-  return { valid: true };
 }
 
 // ============================================
@@ -211,18 +184,12 @@ app.post('/api/data/:filename', async (req, res) => {
     const { filename } = req.params;
     const { data } = req.body;
     
-    // NUEVO: Validar datos antes de guardar
-    const validation = validateData(filename, data);
-    if (!validation.valid) {
-      return res.status(400).json({ success: false, error: validation.error });
-    }
-    
     const success = await setData(filename, data);
     
     if (success) {
       // Notificar a todos los clientes conectados
       io.emit('data-updated', { filename, data });
-      console.log(`✅ Archivo actualizado: ${filename}`);
+      console.log(`✅ Archivo actualizado y emitido: ${filename}`);
       res.json({ success: true });
     } else {
       res.status(500).json({ success: false, error: 'Error guardando datos' });
@@ -316,15 +283,11 @@ app.get('/api/reports/:filename', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Reporte no encontrado' });
     }
     
-    const report = result.rows[0];
+    const { file_data } = result.rows[0];
     
-    // Determinar tipo de contenido
-    const ext = filename.split('.').pop().toLowerCase();
-    const contentType = ext === 'pdf' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    
-    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Type', 'application/octet-stream');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(report.file_data);
+    res.send(file_data);
   } catch (error) {
     console.error('Error descargando reporte:', error.message);
     res.status(500).json({ success: false, error: error.message });
@@ -360,7 +323,7 @@ app.post('/api/init-db', async (req, res) => {
       CREATE INDEX IF NOT EXISTS idx_reports_filename ON reports(filename, created_at DESC)
     `);
 
-    // Datos iniciales - CORREGIDO: gerencia como objeto
+    // Datos iniciales CORREGIDOS
     const defaultData = {
       'profiles.json': { 
         locales: [
@@ -400,7 +363,8 @@ app.post('/api/init-db', async (req, res) => {
           pin: '',
           photo: null,
           createdAt: null
-        }
+        },
+        administrativos: []
       },
       'products.json': [],
       'orders.json': [],
@@ -423,7 +387,7 @@ app.post('/api/init-db', async (req, res) => {
     for (const [filename, data] of Object.entries(defaultData)) {
       await pool.query(
         `INSERT INTO app_data (filename, data) 
-         VALUES ($1, $2) 
+         VALUES ($1, $2::jsonb) 
          ON CONFLICT (filename) DO NOTHING`,
         [filename, data]
       );
@@ -437,7 +401,7 @@ app.post('/api/init-db', async (req, res) => {
   }
 });
 
-// NUEVO: Resetear base de datos completamente
+// Resetear base de datos completamente
 app.post('/api/reset-db', async (req, res) => {
   try {
     console.log('⚠️ Reseteando base de datos...');
@@ -514,7 +478,8 @@ app.post('/api/reset-db', async (req, res) => {
           pin: '',
           photo: null,
           createdAt: null
-        }
+        },
+        administrativos: []
       },
       'products.json': [],
       'orders.json': [],
@@ -535,7 +500,7 @@ app.post('/api/reset-db', async (req, res) => {
 
     for (const [filename, data] of Object.entries(defaultData)) {
       await pool.query(
-        'INSERT INTO app_data (filename, data) VALUES ($1, $2)',
+        'INSERT INTO app_data (filename, data) VALUES ($1, $2::jsonb)',
         [filename, data]
       );
       console.log(`✅ Insertado: ${filename}`);
