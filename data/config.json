@@ -2,7 +2,7 @@
   "storeName": "Mi Negocio",
   "currency": "ARS",
   "taxRate": 0,
-  "serverURL": "https://caja-production-5ef5.up.railway.app",
-  "createdAt": "2025-11-03T00:00:00.000Z",
+  "serverURL": "https://caja-production-77fa.up.railway.app/",
+  "createdAt": "2025-11-03...",
   "lastOrderNumber": 0
 }
