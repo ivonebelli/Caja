@@ -1,18 +1,84 @@
 {
-  "name": "caja-server",
+  "name": "caja-registradora",
   "version": "1.0.0",
-  "description": "Servidor backend",
-  "main": "server.js",
+  "description": "Sistema de Caja Registradora - Sincronización Multi-Sucursal",
+  "main": "main.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "electron .",
+    "dev": "electron .",
+    "server": "node server.js",
+    "build": "electron-builder --win portable",
+    "build-installer": "electron-builder --win nsis",
+    "build-all": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.caja.registradora",
+    "productName": "CajaRegistradora",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Caja Registradora",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "node_modules/electron/**/*",
+      "node_modules/express/**/*",
+      "node_modules/socket.io/**/*",
+      "node_modules/socket.io-client/**/*",
+      "node_modules/cors/**/*",
+      "node_modules/pg/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "reportes",
+        "to": "reportes",
+        "filter": ["**/*"]
+      }
+    ],
+    "asar": false
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
   },
   "dependencies": {
     "express": "^4.18.2",
     "socket.io": "^4.6.1",
+    "socket.io-client": "^4.6.1",
     "cors": "^2.8.5",
-    "pg": "^8.11.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "pg": "^8.11.3"
   }
 }
