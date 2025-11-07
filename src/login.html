@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión</title>
+  <link rel="stylesheet" href="./shared/styles.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .login-container {
+      background: rgba(0,0,0,0.7);
+      border-radius: 24px;
+      padding: 60px;
+      max-width: 500px;
+      width: 100%;
+      animation: fadeInUp 0.6s ease-out;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+    }
+
+    .avatar-large {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+      margin: 0 auto 30px;
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+      overflow: hidden;
+    }
+
+    .avatar-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-name {
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .profile-role {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 40px;
+    }
+
+    .role-cajero { background: #6366f1; color: white; }
+    .role-admin { background: #ec4899; color: white; }
+    .role-gerencia { background: #f59e0b; color: white; }
+    .role-subgerente { background: #8b5cf6; color: white; }
+    .role-administrativo { background: #ec4899; color: white; }
+
+    .local-info {
+      color: rgba(255,255,255,0.7);
+      font-size: 16px;
+      margin-bottom: 30px;
+    }
+
+    .pin-label {
+      color: white;
+      font-size: 18px;
+      margin-bottom: 20px;
+      font-weight: 600;
+    }
+
+    .pin-inputs {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .pin-input {
+      width: 60px;
+      height: 70px;
+      font-size: 32px;
+      text-align: center;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      color: white;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+
+    .pin-input:focus {
+      background: rgba(255,255,255,0.2);
+      border-color: #667eea;
+      outline: none;
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-container {
+      display: flex;
+      gap: 15px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.5);
+    }
+
+    .error-message {
+      background: rgba(239, 68, 68, 0.2);
+      border: 2px solid #ef4444;
+      color: #fca5a5;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .shake {
+      animation: shake 0.4s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="avatar-large" id="avatar">
+      <span id="avatarIcon">👤</span>
+    </div>
+
+    <h1 class="profile-name" id="profileName">Cargando...</h1>
+    <div class="profile-role" id="profileRole"></div>
+    <div class="local-info" id="localInfo"></div>
+
+    <div class="pin-label" id="pinLabel">Ingresa tu PIN</div>
+    
+    <form onsubmit="handleLogin(event)">
+      <div class="pin-inputs" id="pinInputsContainer">
+        <!-- Los inputs se generarán dinámicamente -->
+      </div>
+
+      <div class="error-message" id="errorMessage">
+        PIN incorrecto. Intenta nuevamente.
+      </div>
+
+      <div class="btn-container">
+        <button type="button" class="btn btn-secondary" onclick="goBack()">
+          ← Volver
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Ingresar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="./shared/utils.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const profileId = urlParams.get('profileId');
+    const role = urlParams.get('role');
+    const localId = urlParams.get('localId');
+    const mode = urlParams.get('mode');
+
+    let currentProfile = null;
+    let currentLocal = null;
+    let pinLength = 4; // Por defecto 4 dígitos
+
+    const roleIcons = {
+      cajero: '🧑‍💼',
+      administrativo: '📊',
+      gerencia: '👔',
+      subgerente: '👤'
+    };
+
+    const roleNames = {
+      cajero: 'Cajero',
+      administrativo: 'Administrativo',
+      gerencia: 'Gerente General',
+      subgerente: 'Subgerente'
+    };
+
+    const roleDashboards = {
+      cajero: './cajero/index.html',
+      administrativo: './admin/index.html',
+      gerencia: './gerencia/index.html',
+      subgerente: './gerencia/index.html'
+    };
+
+    async function loadProfile() {
+      if (!role) {
+        showNotification('Datos de sesión inválidos', 'error');
+        setTimeout(() => goBack(), 1500);
+        return;
+      }
+
+      const data = await readData('profiles.json');
+      
+      // Determinar el tipo de perfil y longitud del PIN
+      if (role === 'gerencia') {
+        currentProfile = data.gerencia;
+        pinLength = 4;
+        
+        if (!currentProfile || !currentProfile.name) {
+          showNotification('Gerente no configurado', 'error');
+          setTimeout(() => goBack(), 1500);
+          return;
+        }
+      } else if (role === 'subgerente' && localId) {
+        currentLocal = data.locales.find(l => l.id === localId);
+        if (currentLocal && currentLocal.subgerente) {
+          currentProfile = currentLocal.subgerente;
+          pinLength = 4;
+          
+          if (!currentProfile.name) {
+            showNotification('Subgerente no configurado', 'error');
+            setTimeout(() => goBack(), 1500);
+            return;
+          }
+        }
+      } else if (role === 'administrativo' && profileId && localId) {
+        currentLocal = data.locales.find(l => l.id === localId);
+        if (currentLocal) {
+          currentProfile = currentLocal.perfiles.administrativo.find(p => p.id === profileId);
+          pinLength = 4;
+        }
+      } else if (role === 'cajero' && profileId && localId) {
+        currentLocal = data.locales.find(l => l.id === localId);
+        if (currentLocal) {
+          currentProfile = currentLocal.perfiles.cajero.find(p => p.id === profileId);
+          pinLength = 4;
+        }
+      }
+
+      if (!currentProfile) {
+        showNotification('Perfil no encontrado', 'error');
+        setTimeout(() => goBack(), 1500);
+        return;
+      }
+
+      // Mostrar información del perfil
+      document.getElementById('profileName').textContent = currentProfile.name;
+      
+      const roleElement = document.getElementById('profileRole');
+      roleElement.textContent = roleNames[role];
+      roleElement.className = `profile-role role-${role}`;
+
+      // Mostrar información del local si aplica
+      if (currentLocal) {
+        document.getElementById('localInfo').textContent = `📍 ${currentLocal.nombre}`;
+      }
+
+      // Mostrar foto o ícono
+      const avatar = document.getElementById('avatar');
+      if (currentProfile.photo) {
+        avatar.innerHTML = `<img src="${currentProfile.photo}" alt="Foto">`;
+      } else {
+        document.getElementById('avatarIcon').textContent = roleIcons[role];
+      }
+
+      // Crear los inputs del PIN según la longitud
+      createPinInputs(pinLength);
+    }
+
+    function createPinInputs(length) {
+      const container = document.getElementById('pinInputsContainer');
+      container.innerHTML = '';
+      
+      for (let i = 1; i <= length; i++) {
+        const input = document.createElement('input');
+        input.type = 'password';
+        input.maxLength = 1;
+        input.className = 'pin-input';
+        input.id = `pin${i}`;
+        if (i === 1) input.autofocus = true;
+        container.appendChild(input);
+      }
+
+      // Auto-avanzar entre inputs del PIN
+      document.querySelectorAll('.pin-input').forEach((input, index) => {
+        input.addEventListener('input', function(e) {
+          if (e.target.value && index < length - 1) {
+            document.getElementById(`pin${index + 2}`).focus();
+          }
+        });
+        
+        input.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            document.getElementById(`pin${index}`).focus();
+          }
+          if (e.key === 'Enter') {
+            handleLogin(e);
+          }
+        });
+      });
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const pinArray = [];
+      for (let i = 1; i <= pinLength; i++) {
+        const input = document.getElementById(`pin${i}`);
+        if (!input || !input.value) {
+          showError(`Completa el PIN de ${pinLength} dígitos`);
+          return;
+        }
+        pinArray.push(input.value);
+      }
+      
+      const pin = pinArray.join('');
+
+      // Verificar PIN
+      if (pin === currentProfile.pin) {
+        // PIN correcto: guardar sesión y redirigir
+        const userData = {
+          profile: currentProfile,
+          role: role,
+          localId: localId || null,
+          loginTime: new Date().toISOString()
+        };
+
+        localStorage.setItem('currentUser', JSON.stringify(userData));
+
+        // Verificar sesión de cajero si aplica
+        if (role === 'cajero' && localId) {
+          const canLogin = await checkAndSetCashierSession(currentProfile.name, localId);
+          if (!canLogin) {
+            showError('Ya hay un cajero activo en este local');
+            return;
+          }
+        }
+
+        showNotification('¡Bienvenido!', 'success');
+
+        // Redirigir al dashboard correspondiente
+        setTimeout(() => {
+          const dashboard = roleDashboards[role] || './index.html';
+          window.location.href = dashboard;
+        }, 500);
+
+      } else {
+        // PIN incorrecto
+        showError('PIN incorrecto');
+        clearPinInputs();
+        document.querySelector('.login-container').classList.add('shake');
+        setTimeout(() => {
+          document.querySelector('.login-container').classList.remove('shake');
+        }, 400);
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.getElementById('errorMessage');
+      errorDiv.textContent = message;
+      errorDiv.style.display = 'block';
+      
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    function clearPinInputs() {
+      for (let i = 1; i <= pinLength; i++) {
+        const input = document.getElementById(`pin${i}`);
+        if (input) input.value = '';
+      }
+      document.getElementById('pin1').focus();
+    }
+
+    function goBack() {
+      if (mode === 'gerencia') {
+        window.location.href = './profiles.html?mode=gerencia';
+      } else if (localId) {
+        window.location.href = `./profiles.html?localId=${localId}`;
+      } else {
+        window.location.href = './profiles.html';
+      }
+    }
+
+    // Cargar perfil al iniciar
+    loadProfile();
+  </script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="../shared/socket-client.js"></script>
+</body>
+</html>

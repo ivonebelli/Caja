@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reportes y Análisis</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .filters-section {
+      background: white;
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 15px;
+    }
+
+    .chart-section {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .chart-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card:nth-child(2) {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    .stat-card:nth-child(3) {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    .stat-card:nth-child(4) {
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+
+    .stat-card-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .stat-card-value {
+      font-size: 36px;
+      font-weight: 700;
+      margin: 10px 0;
+    }
+
+    .stat-card-label {
+      font-size: 14px;
+      opacity: 0.9;
+      font-weight: 500;
+    }
+
+    .ranking-table {
+      margin-top: 20px;
+    }
+
+    .ranking-item {
+      display: flex;
+      align-items: center;
+      padding: 15px;
+      background: #f9fafb;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+
+    .ranking-item:hover {
+      background: #f3f4f6;
+      transform: translateX(5px);
+    }
+
+    .ranking-position {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      margin-right: 15px;
+    }
+
+    .ranking-position.gold {
+      background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+      color: #000;
+    }
+
+    .ranking-position.silver {
+      background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+      color: #000;
+    }
+
+    .ranking-position.bronze {
+      background: linear-gradient(135deg, #cd7f32 0%, #e09858 100%);
+      color: #fff;
+    }
+
+    .ranking-icon {
+      font-size: 32px;
+      margin-right: 15px;
+    }
+
+    .ranking-info {
+      flex: 1;
+    }
+
+    .ranking-name {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .ranking-detail {
+      color: var(--text-light);
+      font-size: 14px;
+    }
+
+    .ranking-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .bar-chart {
+      margin-top: 20px;
+    }
+
+    .bar-item {
+      margin-bottom: 15px;
+    }
+
+    .bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .bar-container {
+      width: 100%;
+      height: 30px;
+      background: #e5e7eb;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      border-radius: 15px;
+      transition: width 1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 15px;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+    }
+
+    .no-data-icon {
+      font-size: 72px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📈 Reportes y Análisis</h1>
+      <button class="back-button" onclick="goBack()">Volver</button>
+    </div>
+
+    <div class="filters-section">
+      <h3 style="font-size: 18px; font-weight: 700; color: var(--text);">
+        🔍 Filtros de Búsqueda
+      </h3>
+      <div class="filters-grid">
+        <div class="form-group">
+          <label class="form-label">Periodo</label>
+          <select class="form-select" id="periodoFilter" onchange="applyFilters()">
+            <option value="hoy">Hoy</option>
+            <option value="semana">Última Semana</option>
+            <option value="mes" selected>Último Mes</option>
+            <option value="trimestre">Último Trimestre</option>
+            <option value="anio">Último Año</option>
+            <option value="todo">Todo el Tiempo</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Cajero</label>
+          <select class="form-select" id="cajeroFilter" onchange="applyFilters()">
+            <option value="todos">Todos los Cajeros</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Producto</label>
+          <select class="form-select" id="productoFilter" onchange="applyFilters()">
+            <option value="todos">Todos los Productos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="estadoFilter" onchange="applyFilters()">
+            <option value="todos">Todos</option>
+            <option value="paid">Pagado</option>
+            <option value="completed">Completado</option>
+            <option value="cancelled">Cancelado</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-card-icon">💰</div>
+        <div class="stat-card-value" id="totalVentas">$0</div>
+        <div class="stat-card-label">Total en Ventas</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-icon">🛒</div>
+        <div class="stat-card-value" id="totalOrdenes">0</div>
+        <div class="stat-card-label">Órdenes Totales</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-icon">📊</div>
+        <div class="stat-card-value" id="promedioVenta">$0</div>
+        <div class="stat-card-label">Promedio por Venta</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-card-icon">👥</div>
+        <div class="stat-card-value" id="totalClientes">0</div>
+        <div class="stat-card-label">Clientes Atendidos</div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <h3 class="chart-title">🏆 Ranking de Productos Más Vendidos</h3>
+      <div id="productosRanking"></div>
+    </div>
+
+    <div class="chart-section">
+      <h3 class="chart-title">💳 Ventas por Medio de Pago</h3>
+      <div class="bar-chart" id="paymentChart"></div>
+    </div>
+
+    <div class="chart-section">
+      <h3 class="chart-title">👥 Ranking de Cajeros</h3>
+      <div id="cajerosRanking"></div>
+    </div>
+
+    <div class="chart-section">
+      <h3 class="chart-title">⏰ Ventas por Hora del Día</h3>
+      <div class="bar-chart" id="hoursChart"></div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script>
+    let allOrders = [];
+    let filteredOrders = [];
+    let productos = [];
+
+    async function init() {
+      await loadData();
+      populateFilters();
+      applyFilters();
+    }
+
+    async function loadData() {
+      allOrders = await readData('orders.json') || [];
+      productos = await readData('products.json') || [];
+    }
+
+    function populateFilters() {
+      const cajeros = [...new Set(allOrders.map(o => o.cashier))];
+      const cajeroSelect = document.getElementById('cajeroFilter');
+      cajeros.forEach(cajero => {
+        const option = document.createElement('option');
+        option.value = cajero;
+        option.textContent = cajero;
+        cajeroSelect.appendChild(option);
+      });
+
+      const productoSelect = document.getElementById('productoFilter');
+      productos.forEach(producto => {
+        const option = document.createElement('option');
+        option.value = producto.id;
+        option.textContent = producto.name;
+        productoSelect.appendChild(option);
+      });
+    }
+
+    function applyFilters() {
+      const periodo = document.getElementById('periodoFilter').value;
+      const cajero = document.getElementById('cajeroFilter').value;
+      const producto = document.getElementById('productoFilter').value;
+      const estado = document.getElementById('estadoFilter').value;
+
+      const now = new Date();
+      filteredOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        
+        switch(periodo) {
+          case 'hoy':
+            if (orderDate.toDateString() !== now.toDateString()) return false;
+            break;
+          case 'semana':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            if (orderDate < weekAgo) return false;
+            break;
+          case 'mes':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            if (orderDate < monthAgo) return false;
+            break;
+          case 'trimestre':
+            const quarterAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            if (orderDate < quarterAgo) return false;
+            break;
+          case 'anio':
+            const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+            if (orderDate < yearAgo) return false;
+            break;
+        }
+
+        if (cajero !== 'todos' && order.cashier !== cajero) return false;
+        if (producto !== 'todos' && !order.items.some(item => item.id === producto)) return false;
+        if (estado !== 'todos' && order.status !== estado) return false;
+
+        return true;
+      });
+
+      renderStats();
+      renderProductRanking();
+      renderPaymentChart();
+      renderCashierRanking();
+      renderHoursChart();
+    }
+
+    function renderStats() {
+      const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+      
+      const totalVentas = validOrders.reduce((sum, o) => sum + o.total, 0);
+      const totalOrdenes = validOrders.length;
+      const promedioVenta = totalOrdenes > 0 ? totalVentas / totalOrdenes : 0;
+      const totalClientes = validOrders.length;
+
+      document.getElementById('totalVentas').textContent = formatCurrency(totalVentas);
+      document.getElementById('totalOrdenes').textContent = totalOrdenes;
+      document.getElementById('promedioVenta').textContent = formatCurrency(promedioVenta);
+      document.getElementById('totalClientes').textContent = totalClientes;
+    }
+
+    function renderProductRanking() {
+      const container = document.getElementById('productosRanking');
+      const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+      
+      const productSales = {};
+      validOrders.forEach(order => {
+        order.items.forEach(item => {
+          if (!productSales[item.id]) {
+            productSales[item.id] = {
+              name: item.name,
+              icon: item.icon || '📦',
+              quantity: 0,
+              revenue: 0
+            };
+          }
+          productSales[item.id].quantity += item.quantity;
+          productSales[item.id].revenue += item.price * item.quantity;
+        });
+      });
+
+      const ranking = Object.entries(productSales)
+        .sort((a, b) => b[1].quantity - a[1].quantity)
+        .slice(0, 10);
+
+      if (ranking.length === 0) {
+        container.innerHTML = `
+          <div class="no-data">
+            <div class="no-data-icon">📊</div>
+            <p>No hay datos para mostrar</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = ranking.map(([id, data], index) => {
+        let posClass = '';
+        if (index === 0) posClass = 'gold';
+        else if (index === 1) posClass = 'silver';
+        else if (index === 2) posClass = 'bronze';
+
+        return `
+          <div class="ranking-item">
+            <div class="ranking-position ${posClass}">${index + 1}</div>
+            <div class="ranking-icon">${data.icon}</div>
+            <div class="ranking-info">
+              <div class="ranking-name">${data.name}</div>
+              <div class="ranking-detail">${data.quantity} unidades vendidas</div>
+            </div>
+            <div class="ranking-value">${formatCurrency(data.revenue)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPaymentChart() {
+      const container = document.getElementById('paymentChart');
+      const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+      
+      const paymentMethods = {
+        efectivo: { name: 'Efectivo', total: 0, icon: '💵' },
+        mercadopago: { name: 'Mercado Pago', total: 0, icon: '💳' },
+        debito: { name: 'Débito', total: 0, icon: '💳' },
+        credito: { name: 'Crédito', total: 0, icon: '💳' },
+        transferencia: { name: 'Transferencia', total: 0, icon: '🏦' }
+      };
+
+      validOrders.forEach(order => {
+        if (paymentMethods[order.paymentMethod]) {
+          paymentMethods[order.paymentMethod].total += order.total;
+        }
+      });
+
+      const maxValue = Math.max(...Object.values(paymentMethods).map(pm => pm.total));
+
+      if (maxValue === 0) {
+        container.innerHTML = `
+          <div class="no-data">
+            <div class="no-data-icon">💳</div>
+            <p>No hay datos para mostrar</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = Object.entries(paymentMethods)
+        .filter(([_, data]) => data.total > 0)
+        .map(([key, data]) => {
+          const percentage = (data.total / maxValue) * 100;
+          return `
+            <div class="bar-item">
+              <div class="bar-label">
+                <span>${data.icon} ${data.name}</span>
+                <span>${formatCurrency(data.total)}</span>
+              </div>
+              <div class="bar-container">
+                <div class="bar-fill" style="width: ${percentage}%">
+                  ${percentage.toFixed(0)}%
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+    }
+
+    function renderCashierRanking() {
+      const container = document.getElementById('cajerosRanking');
+      const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+      
+      const cashierSales = {};
+      validOrders.forEach(order => {
+        if (!cashierSales[order.cashier]) {
+          cashierSales[order.cashier] = {
+            orders: 0,
+            revenue: 0
+          };
+        }
+        cashierSales[order.cashier].orders++;
+        cashierSales[order.cashier].revenue += order.total;
+      });
+
+      const ranking = Object.entries(cashierSales)
+        .sort((a, b) => b[1].revenue - a[1].revenue);
+
+      if (ranking.length === 0) {
+        container.innerHTML = `
+          <div class="no-data">
+            <div class="no-data-icon">👥</div>
+            <p>No hay datos para mostrar</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = ranking.map(([cashier, data], index) => {
+        let posClass = '';
+        if (index === 0) posClass = 'gold';
+        else if (index === 1) posClass = 'silver';
+        else if (index === 2) posClass = 'bronze';
+
+        return `
+          <div class="ranking-item">
+            <div class="ranking-position ${posClass}">${index + 1}</div>
+            <div class="ranking-icon">🧑‍💼</div>
+            <div class="ranking-info">
+              <div class="ranking-name">${cashier}</div>
+              <div class="ranking-detail">${data.orders} órdenes procesadas</div>
+            </div>
+            <div class="ranking-value">${formatCurrency(data.revenue)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderHoursChart() {
+      const container = document.getElementById('hoursChart');
+      const validOrders = filteredOrders.filter(o => o.status !== 'cancelled');
+      
+      const hoursSales = {};
+      for (let i = 0; i < 24; i++) {
+        hoursSales[i] = 0;
+      }
+
+      validOrders.forEach(order => {
+        const hour = new Date(order.createdAt).getHours();
+        hoursSales[hour] += order.total;
+      });
+
+      const maxValue = Math.max(...Object.values(hoursSales));
+
+      if (maxValue === 0) {
+        container.innerHTML = `
+          <div class="no-data">
+            <div class="no-data-icon">⏰</div>
+            <p>No hay datos para mostrar</p>
+          </div>
+        `;
+        return;
+      }
+
+      const relevantHours = Object.entries(hoursSales)
+        .filter(([_, value]) => value > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      container.innerHTML = relevantHours.map(([hour, total]) => {
+        const percentage = (total / maxValue) * 100;
+        const hourLabel = `${hour.toString().padStart(2, '0')}:00`;
+        
+        return `
+          <div class="bar-item">
+            <div class="bar-label">
+              <span>⏰ ${hourLabel}</span>
+              <span>${formatCurrency(total)}</span>
+            </div>
+            <div class="bar-container">
+              <div class="bar-fill" style="width: ${percentage}%">
+                ${percentage.toFixed(0)}%
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+
+    init();
+  </script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="../shared/socket-client.js"></script>
+</body>
+</html> 

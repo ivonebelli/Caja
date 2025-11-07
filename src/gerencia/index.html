@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content-width, initial-scale=1.0">
+  <title>Dashboard - Gerencia</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .executive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .kpi-card {
+      background: #1e293b;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+
+    .kpi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .kpi-icon {
+      font-size: 36px;
+      opacity: 0.9;
+    }
+
+    .kpi-trend {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .kpi-trend.up {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .kpi-trend.down {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .kpi-value {
+      font-size: 42px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin: 10px 0;
+    }
+
+    .kpi-label {
+      color: var(--text-light);
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .kpi-comparison {
+      margin-top: 12px;
+      font-size: 13px;
+      color: var(--text-light);
+    }
+
+    .insights-section {
+      background: #1e293b;
+      border-radius: 20px;
+      padding: 35px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .insight-card {
+      background: linear-gradient(135deg, #334155 0%, #475569 100%);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .insight-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .insight-text {
+      font-size: 14px;
+      color: var(--text-light);
+      line-height: 1.6;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
+    .comparison-card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-label {
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .action-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 25px;
+    }
+
+    .action-card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    .action-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+    }
+
+    .action-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+    }
+
+    .action-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .action-desc {
+      font-size: 14px;
+      color: var(--text-light);
+    }
+
+    .authorization-card {
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      border-left: 4px solid #f59e0b;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    .auth-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .auth-type {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fde68a;
+    }
+
+    .auth-date {
+      font-size: 12px;
+      color: #fef3c7;
+    }
+
+    .auth-details {
+      margin: 10px 0;
+      font-size: 14px;
+      color: #fef3c7;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .auth-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .auth-btn-approve {
+      background: #10b981;
+      color: white;
+    }
+
+    .auth-btn-approve:hover {
+      background: #059669;
+    }
+
+    .auth-btn-reject {
+      background: #ef4444;
+      color: white;
+    }
+
+    .auth-btn-reject:hover {
+      background: #dc2626;
+    }
+
+    .pending-badge {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: #ef4444;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    @media (max-width: 768px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>ðŸ‘” Dashboard Ejecutivo</h1>
+        <div style="margin-top: 10px;">
+          <span class="user-info">
+            <div class="user-avatar">ðŸ‘”</div>
+            <div class="user-details">
+              <h3 id="userName">Cargando...</h3>
+              <p id="currentDate">Cargando...</p>
+            </div>
+          </span>
+        </div>
+      </div>
+      <button class="back-button" onclick="logout()">Cerrar SesiÃ³n</button>
+    </div>
+
+    <div id="authorizationsSection" class="insights-section" style="display: none;">
+      <h2 class="section-title">
+        âš ï¸ Autorizaciones Pendientes
+        <span class="pending-badge" id="pendingCount">0</span>
+      </h2>
+      <div id="authorizationsContainer"></div>
+    </div>
+
+    <div class="executive-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon">ðŸ’°</div>
+          <div class="kpi-trend up" id="ventasTrend">+0%</div>
+        </div>
+        <div class="kpi-value" id="ventasMes">$0</div>
+        <div class="kpi-label">Ventas del Mes</div>
+        <div class="kpi-comparison" id="ventasComparison">vs. mes anterior</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon">ðŸ“ˆ</div>
+          <div class="kpi-trend up" id="crecimientoTrend">+0%</div>
+        </div>
+        <div class="kpi-value" id="crecimiento">0%</div>
+        <div class="kpi-label">Crecimiento Mensual</div>
+        <div class="kpi-comparison">Comparado con mes anterior</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon">ðŸ›’</div>
+          <div class="kpi-trend up" id="ordenesTrend">+0%</div>
+        </div>
+        <div class="kpi-value" id="ordenesMes">0</div>
+        <div class="kpi-label">Ã“rdenes Procesadas</div>
+        <div class="kpi-comparison" id="ordenesComparison">Este mes</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <div class="kpi-icon">ðŸ’µ</div>
+          <div class="kpi-trend up" id="ticketTrend">+0%</div>
+        </div>
+        <div class="kpi-value" id="ticketPromedio">$0</div>
+        <div class="kpi-label">Ticket Promedio</div>
+        <div class="kpi-comparison">Por orden completada</div>
+      </div>
+    </div>
+
+    <div class="insights-section">
+      <h2 class="section-title">ðŸ’¡ Insights y Recomendaciones</h2>
+      <div id="insightsContainer"></div>
+    </div>
+
+    <div class="comparison-grid">
+      <div class="comparison-card">
+        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #e2e8f0;">
+          ðŸ“Š MÃ©tricas Operativas
+        </h3>
+        <div class="metric-row">
+          <span class="metric-label">Productos Activos</span>
+          <span class="metric-value" id="productosActivos">0</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Cajeros Operando</span>
+          <span class="metric-value" id="cajerosActivos">0</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Tasa de ConversiÃ³n</span>
+          <span class="metric-value" id="tasaConversion">0%</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-label">Ã“rdenes Canceladas</span>
+          <span class="metric-value" id="ordenesCanceladas">0</span>
+        </div>
+      </div>
+
+      <div class="comparison-card">
+        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 20px; color: #e2e8f0;">
+          ðŸ’³ Medios de Pago
+        </h3>
+        <div id="paymentMethodsMetrics"></div>
+      </div>
+    </div>
+
+    <div class="insights-section">
+      <h2 class="section-title">âš¡ Acciones RÃ¡pidas</h2>
+      <div class="action-cards">
+        <div class="action-card" onclick="goToAuthorizations()">
+          <div class="action-icon">âœ…</div>
+          <div class="action-title">Autorizaciones</div>
+          <div class="action-desc">Aprobar solicitudes</div>
+        </div>
+
+        <div class="action-card" onclick="goToPerfiles()">
+          <div class="action-icon">ðŸ‘¥</div>
+          <div class="action-title">GestiÃ³n de Perfiles</div>
+          <div class="action-desc">Administrar usuarios</div>
+        </div>
+
+        <div class="action-card" onclick="goToReportes()">
+          <div class="action-icon">ðŸ“ˆ</div>
+          <div class="action-title">Reportes Avanzados</div>
+          <div class="action-desc">AnÃ¡lisis detallado</div>
+        </div>
+
+        <div class="action-card" onclick="goToProductos()">
+          <div class="action-icon">ðŸ“¦</div>
+          <div class="action-title">Productos</div>
+          <div class="action-desc">Administrar catÃ¡logo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script>
+    let currentUser = null;
+    let allOrders = [];
+    let productos = [];
+
+    async function init() {
+      clearAppState();
+      
+      const userStr = localStorage.getItem('currentUser');
+      if (!userStr) {
+        window.location.href = '../index.html';
+        return;
+      }
+      
+      currentUser = JSON.parse(userStr);
+      document.getElementById('userName').textContent = currentUser.profile.name;
+      
+      const now = new Date();
+      document.getElementById('currentDate').textContent = now.toLocaleDateString('es-AR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      await loadData();
+      await loadPendingAuthorizations();
+      calculateKPIs();
+      generateInsights();
+      calculateMetrics();
+    }
+
+    async function loadData() {
+      allOrders = await readData('orders.json') || [];
+      productos = await readData('products.json') || [];
+    }
+
+    async function loadPendingAuthorizations() {
+      const pending = await getPendingAuthorizations();
+      
+      if (pending.length > 0) {
+        document.getElementById('authorizationsSection').style.display = 'block';
+        document.getElementById('pendingCount').textContent = pending.length;
+        
+        const typeNames = {
+          'delete_profile': 'EliminaciÃ³n de Perfil',
+          'change_pin': 'Cambio de PIN',
+          'edit_profile': 'EdiciÃ³n de Perfil'
+        };
+
+        const container = document.getElementById('authorizationsContainer');
+        container.innerHTML = pending.map(auth => {
+          const authTypeText = typeNames[auth.type] || 'Solicitud';
+          let details = '';
+          
+          if (auth.type === 'delete_profile') {
+            details = `Eliminar perfil de <strong>${auth.data.profileName}</strong> (${auth.data.role})`;
+          } else if (auth.type === 'change_pin') {
+            details = `Cambiar PIN de <strong>${auth.data.profileName}</strong>`;
+          } else if (auth.type === 'edit_profile') {
+            details = `Editar perfil de <strong>${auth.data.profileName}</strong> (${auth.data.role})`;
+          }
+          
+          return `
+            <div class="authorization-card">
+              <div class="auth-header">
+                <div>
+                  <div class="auth-type">${authTypeText}</div>
+                  <div class="auth-date">Solicitado: ${formatDateTime(auth.requestedAt)}</div>
+                </div>
+              </div>
+              <div class="auth-details">
+                <strong>Detalles:</strong> ${details}<br>
+                <strong>Solicitado por:</strong> ${auth.requestedBy}
+              </div>
+              <div class="auth-buttons">
+                <button class="auth-btn auth-btn-approve" onclick="approveAuth('${auth.id}')">
+                  âœ… Aprobar
+                </button>
+                <button class="auth-btn auth-btn-reject" onclick="rejectAuth('${auth.id}')">
+                  âŒ Rechazar
+                </button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        document.getElementById('authorizationsSection').style.display = 'none';
+      }
+    }
+
+    async function approveAuth(authId) {
+      const authorizations = await readData('authorizations.json') || [];
+      const auth = authorizations.find(a => a.id === authId);
+      
+      if (!auth) return;
+      
+      if (auth.type === 'delete_profile') {
+        const profiles = await readData('profiles.json');
+        const role = auth.data.role;
+        profiles[role] = profiles[role].filter(p => p.id !== auth.data.profileId);
+        await writeData('profiles.json', profiles);
+      } else if (auth.type === 'change_pin') {
+        const profiles = await readData('profiles.json');
+        const role = auth.data.role;
+        const profileIndex = profiles[role].findIndex(p => p.id === auth.data.profileId);
+        if (profileIndex !== -1) {
+          profiles[role][profileIndex].pin = auth.data.newPin;
+          profiles[role][profileIndex].updatedAt = new Date().toISOString();
+          await writeData('profiles.json', profiles);
+        }
+      }
+      
+      await approveAuthorization(authId, currentUser.profile.name);
+      showNotification('AutorizaciÃ³n aprobada correctamente', 'success');
+      await loadPendingAuthorizations();
+    }
+
+    async function rejectAuth(authId) {
+      await rejectAuthorization(authId, currentUser.profile.name);
+      showNotification('AutorizaciÃ³n rechazada', 'success');
+      await loadPendingAuthorizations();
+    }
+
+    function calculateKPIs() {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const currentMonthOrders = allOrders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.getMonth() === currentMonth && 
+               orderDate.getFullYear() === currentYear &&
+               o.status !== 'cancelled';
+      });
+
+      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+      const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+      const lastMonthOrders = allOrders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.getMonth() === lastMonth && 
+               orderDate.getFullYear() === lastMonthYear &&
+               o.status !== 'cancelled';
+      });
+
+      const currentMonthSales = currentMonthOrders.reduce((sum, o) => sum + o.total, 0);
+      const lastMonthSales = lastMonthOrders.reduce((sum, o) => sum + o.total, 0);
+
+      const growth = lastMonthSales > 0 
+        ? ((currentMonthSales - lastMonthSales) / lastMonthSales) * 100 
+        : 0;
+
+      const ticketPromedio = currentMonthOrders.length > 0 
+        ? currentMonthSales / currentMonthOrders.length 
+        : 0;
+
+      const lastTicketPromedio = lastMonthOrders.length > 0 
+        ? lastMonthSales / lastMonthOrders.length 
+        : 0;
+
+      const ticketGrowth = lastTicketPromedio > 0 
+        ? ((ticketPromedio - lastTicketPromedio) / lastTicketPromedio) * 100 
+        : 0;
+
+      document.getElementById('ventasMes').textContent = formatCurrency(currentMonthSales);
+      document.getElementById('ventasTrend').textContent = `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
+      document.getElementById('ventasTrend').className = `kpi-trend ${growth >= 0 ? 'up' : 'down'}`;
+
+      document.getElementById('crecimiento').textContent = `${growth.toFixed(1)}%`;
+      document.getElementById('crecimientoTrend').textContent = growth >= 0 ? 'â†‘' : 'â†“';
+      document.getElementById('crecimientoTrend').className = `kpi-trend ${growth >= 0 ? 'up' : 'down'}`;
+
+      document.getElementById('ordenesMes').textContent = currentMonthOrders.length;
+      const ordenesGrowth = lastMonthOrders.length > 0 
+        ? ((currentMonthOrders.length - lastMonthOrders.length) / lastMonthOrders.length) * 100 
+        : 0;
+      document.getElementById('ordenesTrend').textContent = `${ordenesGrowth >= 0 ? '+' : ''}${ordenesGrowth.toFixed(1)}%`;
+      document.getElementById('ordenesTrend').className = `kpi-trend ${ordenesGrowth >= 0 ? 'up' : 'down'}`;
+
+      document.getElementById('ticketPromedio').textContent = formatCurrency(ticketPromedio);
+      document.getElementById('ticketTrend').textContent = `${ticketGrowth >= 0 ? '+' : ''}${ticketGrowth.toFixed(1)}%`;
+      document.getElementById('ticketTrend').className = `kpi-trend ${ticketGrowth >= 0 ? 'up' : 'down'}`;
+    }
+
+    function generateInsights() {
+      const insights = [];
+      
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      
+      const currentMonthOrders = allOrders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.getMonth() === currentMonth && 
+               orderDate.getFullYear() === currentYear &&
+               o.status !== 'cancelled';
+      });
+
+      const productSales = {};
+      currentMonthOrders.forEach(order => {
+        order.items.forEach(item => {
+          productSales[item.name] = (productSales[item.name] || 0) + item.quantity;
+        });
+      });
+
+      const topProduct = Object.entries(productSales).sort((a, b) => b[1] - a[1])[0];
+      if (topProduct) {
+        insights.push({
+          title: 'ðŸ† Producto Estrella del Mes',
+          text: `"${topProduct[0]}" es tu producto mÃ¡s vendido con ${topProduct[1]} unidades. Considera aumentar el stock o crear promociones relacionadas.`
+        });
+      }
+
+      const hourSales = {};
+      currentMonthOrders.forEach(order => {
+        const hour = new Date(order.createdAt).getHours();
+        hourSales[hour] = (hourSales[hour] || 0) + 1;
+      });
+
+      const peakHour = Object.entries(hourSales).sort((a, b) => b[1] - a[1])[0];
+      if (peakHour) {
+        insights.push({
+          title: 'â° Horario de Mayor Actividad',
+          text: `Las ${peakHour[0]}:00 es tu hora pico con ${peakHour[1]} ventas. AsegÃºrate de tener suficiente personal en ese horario.`
+        });
+      }
+
+      const cashierSales = {};
+      currentMonthOrders.forEach(order => {
+        cashierSales[order.cashier] = (cashierSales[order.cashier] || 0) + order.total;
+      });
+
+      const topCashier = Object.entries(cashierSales).sort((a, b) => b[1] - a[1])[0];
+      if (topCashier) {
+        insights.push({
+          title: 'â­ Cajero Destacado',
+          text: `${topCashier[0]} lidera en ventas este mes con ${formatCurrency(topCashier[1])}. Considera recompensas o reconocimientos para mantener la motivaciÃ³n.`
+        });
+      }
+
+      const cancelledOrders = allOrders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.getMonth() === currentMonth && 
+               orderDate.getFullYear() === currentYear &&
+               o.status === 'cancelled';
+      });
+
+      const totalOrders = allOrders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.getMonth() === currentMonth && 
+               orderDate.getFullYear() === currentYear;
+      });
+
+      const cancellationRate = totalOrders.length > 0 
+        ? (cancelledOrders.length / totalOrders.length) * 100 
+        : 0;
+
+      if (cancellationRate > 5) {
+        insights.push({
+          title: 'âš ï¸ AtenciÃ³n: Tasa de CancelaciÃ³n',
+          text: `Hay un ${cancellationRate.toFixed(1)}% de Ã³rdenes canceladas. Investiga las causas principales y trabaja en reducir este nÃºmero.`
+        });
+      } else {
+        insights.push({
+          title: 'âœ… Excelente Tasa de ConversiÃ³n',
+          text: `Solo el ${cancellationRate.toFixed(1)}% de las Ã³rdenes se cancelan. Â¡El equipo estÃ¡ haciendo un gran trabajo!`
+        });
+      }
+
+      const container = document.getElementById('insightsContainer');
+      container.innerHTML = insights.map(insight => `
+        <div class="insight-card">
+          <div class="insight-title">${insight.title}</div>
+          <div class="insight-text">${insight.text}</div>
+        </div>
+      `).join('');
+    }
+
+    function calculateMetrics() {
+      document.getElementById('productosActivos').textContent = productos.length;
+
+      const activeCashiers = new Set(allOrders.map(o => o.cashier));
+      document.getElementById('cajerosActivos').textContent = activeCashiers.size;
+
+      const completedOrders = allOrders.filter(o => o.status === 'completed').length;
+      const conversionRate = allOrders.length > 0 
+        ? (completedOrders / allOrders.length) * 100 
+        : 0;
+      document.getElementById('tasaConversion').textContent = `${conversionRate.toFixed(1)}%`;
+
+      const cancelledOrders = allOrders.filter(o => o.status === 'cancelled').length;
+      document.getElementById('ordenesCanceladas').textContent = cancelledOrders;
+
+      const paymentMethods = {
+        efectivo: 0,
+        mercadopago: 0,
+        debito: 0,
+        credito: 0,
+        transferencia: 0
+      };
+
+      allOrders.filter(o => o.status !== 'cancelled').forEach(order => {
+        if (order.paymentMethod === 'mixto' && order.paymentDetails) {
+          Object.entries(order.paymentDetails).forEach(([method, amount]) => {
+            if (paymentMethods.hasOwnProperty(method)) {
+              paymentMethods[method] += amount;
+            }
+          });
+        } else if (paymentMethods.hasOwnProperty(order.paymentMethod)) {
+          paymentMethods[order.paymentMethod] += order.total;
+        }
+      });
+
+      const paymentHTML = Object.entries(paymentMethods)
+        .sort((a, b) => b[1] - a[1])
+        .map(([method, total]) => {
+          const icons = {
+            efectivo: 'ðŸ’µ',
+            mercadopago: 'ðŸ’³',
+            debito: 'ðŸ’³',
+            credito: 'ðŸ’³',
+            transferencia: 'ðŸ¦'
+          };
+          const names = {
+            efectivo: 'Efectivo',
+            mercadopago: 'Mercado Pago',
+            debito: 'DÃ©bito',
+            credito: 'CrÃ©dito',
+            transferencia: 'Transferencia'
+          };
+
+          return `
+            <div class="metric-row">
+              <span class="metric-label">${icons[method]} ${names[method]}</span>
+              <span class="metric-value">${formatCurrency(total)}</span>
+            </div>
+          `;
+        }).join('');
+
+      document.getElementById('paymentMethodsMetrics').innerHTML = paymentHTML;
+    }
+
+    function goToAuthorizations() {
+      // Scroll to authorizations section
+      document.getElementById('authorizationsSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function goToPerfiles() {
+      clearAppState();
+      window.location.href = 'perfiles.html';
+    }
+
+    function goToReportes() {
+      clearAppState();
+      window.location.href = '../admin/reportes.html';
+    }
+
+    function goToProductos() {
+      clearAppState();
+      window.location.href = '../admin/productos.html';
+    }
+
+    function logout() {
+      if (confirm('Â¿EstÃ¡s seguro de cerrar sesiÃ³n?')) {
+        localStorage.removeItem('currentUser');
+        clearAppState();
+        window.location.href = '../index.html';
+      }
+    }
+
+    init();
+  </script>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script src="../shared/socket-client.js"></script>
+</body>
+</html>

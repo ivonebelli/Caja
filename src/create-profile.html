@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crear Perfil</title>
+  <link rel="stylesheet" href="./shared/styles.css">
+  <style>
+    body {
+      background: #141414 !important;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .create-container {
+      background: rgba(0,0,0,0.7);
+      border-radius: 16px;
+      padding: 60px;
+      max-width: 600px;
+      width: 100%;
+      animation: fadeInUp 0.5s ease-out;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    .create-title {
+      font-size: 48px;
+      font-weight: 300;
+      color: white;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .avatar-preview {
+      width: 150px;
+      height: 150px;
+      margin: 0 auto 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 72px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .avatar-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .camera-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .btn-camera {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .btn-camera:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: white;
+    }
+
+    .video-container {
+      display: none;
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .video-container.active {
+      display: block;
+    }
+
+    #cameraVideo {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      transform: scaleX(-1);
+    }
+
+    .capture-btn {
+      margin-top: 15px;
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .capture-btn:hover {
+      background: #059669;
+    }
+
+    .form-group {
+      margin-bottom: 30px;
+    }
+
+    .form-label {
+      color: white;
+      font-size: 16px;
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      color: white;
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      background: rgba(255,255,255,0.15);
+      border-color: white;
+      outline: none;
+    }
+
+    .form-input::placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+
+    .pin-inputs {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .pin-input {
+      width: 60px;
+      height: 70px;
+      font-size: 32px;
+      text-align: center;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 8px;
+      color: white;
+      font-weight: 700;
+    }
+
+    .pin-input:focus {
+      background: rgba(255,255,255,0.15);
+      border-color: white;
+      outline: none;
+    }
+
+    .btn-container {
+      display: flex;
+      gap: 15px;
+      margin-top: 40px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px;
+      font-size: 18px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    .btn-primary {
+      background: white;
+      color: #141414;
+    }
+
+    .btn-primary:hover {
+      background: #e0e0e0;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: white;
+    }
+
+    .helper-text {
+      color: rgba(255,255,255,0.6);
+      font-size: 14px;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    canvas {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="create-container">
+    <div class="avatar-preview" id="avatarPreview">
+      <span id="avatarIcon">👤</span>
+    </div>
+
+    <div class="camera-buttons">
+      <button type="button" class="btn-camera" onclick="openCamera()">📷 Tomar Foto</button>
+      <button type="button" class="btn-camera" onclick="removePhoto()">🗑️ Quitar Foto</button>
+    </div>
+
+    <div class="video-container" id="videoContainer">
+      <video id="cameraVideo" autoplay playsinline></video>
+      <br>
+      <button class="capture-btn" onclick="capturePhoto()">📸 Capturar</button>
+      <button class="btn-camera" onclick="closeCamera()" style="margin-top: 10px;">❌ Cerrar Cámara</button>
+    </div>
+
+    <canvas id="photoCanvas"></canvas>
+    
+    <h1 class="create-title" id="pageTitle">Crear Perfil</h1>
+
+    <form id="createProfileForm" onsubmit="saveProfile(event)">
+      <div class="form-group">
+        <label class="form-label">Nombre del perfil</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          id="profileName" 
+          placeholder="Ej: Jorge, María, etc."
+          required
+          autofocus
+        >
+      </div>
+
+      <div class="form-group" id="roleGroup">
+        <label class="form-label">Rol</label>
+        <select class="form-input" id="profileRole" required>
+          <option value="">Selecciona un rol</option>
+          <option value="cajero">Cajero</option>
+          <option value="administrativo">Administrativo</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">PIN de Seguridad (4 dígitos)</label>
+        <div class="pin-inputs">
+          <input type="password" maxlength="1" class="pin-input" id="pinDigit1">
+          <input type="password" maxlength="1" class="pin-input" id="pinDigit2">
+          <input type="password" maxlength="1" class="pin-input" id="pinDigit3">
+          <input type="password" maxlength="1" class="pin-input" id="pinDigit4">
+        </div>
+        <p class="helper-text">Este PIN será usado para acceder al perfil</p>
+      </div>
+
+      <div class="btn-container">
+        <button type="button" class="btn btn-secondary" onclick="goBack()">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Crear Perfil
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="./shared/utils.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const localId = urlParams.get('localId');
+    const role = urlParams.get('role');
+    const mode = urlParams.get('mode');
+
+    let stream = null;
+    let capturedPhoto = null;
+    let photoChanged = false;
+
+    async function init() {
+      console.log('Iniciando create-profile con:', { localId, role, mode });
+      
+      const roleGroup = document.getElementById('roleGroup');
+      const pageTitle = document.getElementById('pageTitle');
+      
+      if (role === 'gerencia') {
+        // Crear Gerente General
+        pageTitle.textContent = 'Crear Gerente General';
+        roleGroup.style.display = 'none';
+        document.getElementById('profileRole').value = 'gerencia';
+      } else if (role === 'subgerente' && localId) {
+        // Crear Subgerente
+        const data = await readData('profiles.json');
+        const local = data.locales.find(l => l.id === localId);
+        if (local) {
+          pageTitle.textContent = `Crear Subgerente - ${local.nombre}`;
+          roleGroup.style.display = 'none';
+          document.getElementById('profileRole').value = 'subgerente';
+        }
+      } else if (!localId && !role) {
+        showNotification('Error: parámetros inválidos', 'error');
+        setTimeout(() => goBack(), 1500);
+      }
+    }
+
+    async function openCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            facingMode: 'user'
+          } 
+        });
+        
+        const video = document.getElementById('cameraVideo');
+        video.srcObject = stream;
+        document.getElementById('videoContainer').classList.add('active');
+        showNotification('Cámara activada', 'success');
+      } catch (error) {
+        console.error('Error accediendo a la cámara:', error);
+        showNotification('No se pudo acceder a la cámara. Verifica los permisos.', 'error');
+      }
+    }
+
+    function closeCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      document.getElementById('videoContainer').classList.remove('active');
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const canvas = document.getElementById('photoCanvas');
+      const context = canvas.getContext('2d');
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      context.save();
+      context.scale(-1, 1);
+      context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+      context.restore();
+
+      capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+      photoChanged = true;
+
+      const avatarPreview = document.getElementById('avatarPreview');
+      avatarPreview.innerHTML = `<img src="${capturedPhoto}" alt="Foto de perfil">`;
+
+      closeCamera();
+      showNotification('Foto capturada correctamente', 'success');
+    }
+
+    function removePhoto() {
+      capturedPhoto = null;
+      photoChanged = true;
+      const avatarPreview = document.getElementById('avatarPreview');
+      avatarPreview.innerHTML = `<span id="avatarIcon">👤</span>`;
+      showNotification('Foto eliminada', 'success');
+    }
+
+    async function saveProfile(event) {
+      event.preventDefault();
+      
+      const name = document.getElementById('profileName').value.trim();
+      const profileRole = document.getElementById('profileRole').value;
+      
+      const newPin = ['pinDigit1', 'pinDigit2', 'pinDigit3', 'pinDigit4']
+        .map(id => document.getElementById(id).value)
+        .join('');
+
+      console.log('Guardando perfil:', { name, profileRole, localId, role, mode });
+
+      if (!name || !profileRole) {
+        showNotification('Completa todos los campos', 'error');
+        return;
+      }
+
+      if (!newPin || newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+        showNotification('El PIN debe ser de 4 dígitos numéricos', 'error');
+        return;
+      }
+
+      try {
+        const data = await readData('profiles.json');
+        
+        if (!data) {
+          showNotification('Error al leer datos', 'error');
+          return;
+        }
+
+        const newProfile = {
+          name,
+          pin: newPin,
+          photo: photoChanged ? capturedPhoto : null,
+          createdAt: new Date().toISOString()
+        };
+
+        if (profileRole === 'gerencia') {
+          // Guardar como gerente general (objeto único)
+          data.gerencia = newProfile;
+          console.log('Guardando gerente general');
+          await writeData('profiles.json', data);
+          showNotification('Gerente General creado correctamente', 'success');
+          
+          setTimeout(() => {
+            window.location.href = './profiles.html?mode=gerencia';
+          }, 1500);
+        } else if (profileRole === 'subgerente' && localId) {
+          // Guardar como subgerente del local
+          const local = data.locales.find(l => l.id === localId);
+          if (local) {
+            local.subgerente = newProfile;
+            console.log('Guardando subgerente para local:', localId);
+            await writeData('profiles.json', data);
+            showNotification('Subgerente creado correctamente', 'success');
+            
+            setTimeout(() => {
+              window.location.href = './profiles.html?mode=gerencia';
+            }, 1500);
+          } else {
+            showNotification('Local no encontrado', 'error');
+          }
+        } else if (localId && (profileRole === 'cajero' || profileRole === 'administrativo')) {
+          // Perfil normal (cajero o administrativo) - NECESITA ID
+          newProfile.id = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
+          
+          const local = data.locales.find(l => l.id === localId);
+          if (local) {
+            if (!local.perfiles[profileRole]) {
+              local.perfiles[profileRole] = [];
+            }
+            local.perfiles[profileRole].push(newProfile);
+            
+            console.log('Guardando perfil normal:', profileRole, 'en local:', localId);
+            await writeData('profiles.json', data);
+            showNotification('Perfil creado correctamente', 'success');
+            
+            setTimeout(() => {
+              if (mode === 'admin') {
+                window.location.href = `./profiles.html?localId=${localId}&mode=admin`;
+              } else if (mode === 'gerencia' || mode === 'gerencia-manage') {
+                window.location.href = `./profiles.html?localId=${localId}&mode=gerencia-manage`;
+              } else {
+                window.location.href = `./profiles.html?localId=${localId}`;
+              }
+            }, 1500);
+          } else {
+            showNotification('Local no encontrado', 'error');
+          }
+        } else {
+          showNotification('Error: configuración inválida', 'error');
+          console.error('Configuración inválida:', { profileRole, localId, role, mode });
+        }
+      } catch (error) {
+        console.error('Error al guardar perfil:', error);
+        showNotification('Error al guardar el perfil: ' + error.message, 'error');
+      }
+    }
+
+    function goBack() {
+      closeCamera();
+      
+      if (mode === 'gerencia') {
+        window.location.href = './profiles.html?mode=gerencia';
+      } else if (mode === 'admin') {
+        window.location.href = `./profiles.html?localId=${localId}&mode=admin`;
+      } else if (mode === 'gerencia-manage') {
+        window.location.href = `./profiles.html?localId=${localId}&mode=gerencia-manage`;
+      } else if (localId) {
+        window.location.href = `./profiles.html?localId=${localId}`;
+      } else {
+        window.location.href = './profiles.html';
+      }
+    }
+
+    // DELEGACIÓN DE EVENTOS para PIN inputs
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('pin-input')) {
+        const current = parseInt(e.target.id.replace('pinDigit', ''));
+        if (e.target.value && current < 4) {
+          document.getElementById(`pinDigit${current + 1}`).focus();
+        }
+      }
+    });
+
+    // Backspace para retroceder
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && e.target.classList.contains('pin-input')) {
+        const current = parseInt(e.target.id.replace('pinDigit', ''));
+        if (!e.target.value && current > 1) {
+          document.getElementById(`pinDigit${current - 1}`).focus();
+        }
+      }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      closeCamera();
+    });
+
+    init();
+  </script>
+</body>
+</html>
