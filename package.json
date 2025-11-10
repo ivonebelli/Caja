@@ -2,7 +2,7 @@
   "name": "caja-registradora",
   "version": "1.0.0",
   "description": "Una caja registradora simple",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win portable"
@@ -18,7 +18,7 @@
     "appId": "com.ivonebelli.cajaregistradora",
     "productName": "Caja Registradora",
     "files": [
-      "src//*",
+      "src",
       "node_modules//*",
       "package.json"
     ],
