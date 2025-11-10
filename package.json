@@ -1,29 +1,123 @@
 {
   "name": "caja-registradora",
   "version": "1.0.0",
-  "description": "Una caja registradora simple",
-  "main": "src/index.js",
+  "description": "Sistema de Caja Registradora con integración de Fotocabinas",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win portable"
+    "server": "node server.js",
+    "build": "electron-builder --win portable",
+    "build-installer": "electron-builder --win nsis",
+    "init-data": "node init-data.js"
   },
-  "keywords": [],
-  "author": "Ivone Belli",
-  "license": "ISC",
+  "keywords": [
+    "electron",
+    "caja",
+    "pos",
+    "fotocabina"
+  ],
+  "author": "Tu Nombre",
+  "license": "MIT",
   "devDependencies": {
-    "electron": "^28.3.3",
-    "electron-builder": "^24.13.3"
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "electron-pos-printer": "^1.3.8",
+    "express": "^4.21.2",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "build": {
-    "appId": "com.ivonebelli.cajaregistradora",
-    "productName": "Caja Registradora",
+    "appId": "com.cajaregistradora.app",
+    "productName": "CajaRegistradora",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
     "files": [
-      "src",
-      "node_modules//*",
-      "package.json"
+      "main.js",
+      "server.js",
+      "init-data.js",
+      "build-instructions.md",
+      "instructions.txt",
+      "package.json",
+      "src/create-local.html",
+      "src/create-profile.html",
+      "src/edit-profile.html",
+      "src/index.html",
+      "src/locales.html",
+      "src/login.html",
+      "src/main.js",
+      "src/network-config.html",
+      "src/profiles.html",
+      "src/profiles.json",
+      "src/server.js",
+      "src/admin/index.html",
+      "src/admin/productos.html",
+      "src/admin/reportes.html",
+      "src/cajero/caja.html",
+      "src/cajero/index.html",
+      "src/cajero/ordenes.html",
+      "src/cajero/venta.html",
+      "src/gerencia/index.html",
+      "src/gerencia/perfiles.html",
+      "src/shared/network-config.js",
+      "src/shared/styles.css",
+      "src/shared/utils.js",
+      "src/shared/xlsx.full.min.js",
+      "node_modules/**/*"
+    ],
+    "extraFiles": [
+      {
+        "from": "data",
+        "to": "data",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "reportes",
+        "to": "reportes",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "win": {
-      "target": "portable"
-    }
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Caja Registradora",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "asar": false
   }
 }

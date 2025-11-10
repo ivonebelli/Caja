@@ -883,33 +883,31 @@ async function init() {
 }
 
 async function loadProductos() {
-  console.log('🔄 Cargando productos...');
   const data = await readData('products.json');
-  console.log('📦 Datos recibidos:', data, 'Tipo:', typeof data, 'Es array:', Array.isArray(data));
-  
-  // VALIDACIÓN CRÍTICA: Convertir {} a []
-  if (!data) {
-    console.warn('⚠️ products.json es null/undefined, usando array vacío');
-    productos = [];
-  } else if (typeof data === 'object' && !Array.isArray(data)) {
-    // Es un objeto {} en lugar de un array []
-    if (Object.keys(data).length === 0) {
-      console.warn('⚠️ products.json es un objeto vacío {}, convirtiéndolo a array []');
-      productos = [];
-    } else {
-      console.error('❌ products.json tiene datos pero no es un array:', data);
-      // Intentar convertir objeto a array si tiene productos
-      productos = Object.values(data);
-    }
-  } else if (Array.isArray(data)) {
-    productos = data;
-    console.log(`✅ ${productos.length} productos cargados correctamente`);
-  } else {
-    console.error('❌ Formato incorrecto de products.json:', data);
-    productos = [];
-  }
-  
+  productos = data || [];
   renderProductos();
+}
+
+function renderProductos(filter = '') {
+  const grid = document.getElementById('productosGrid');
+  
+  const filtered = productos.filter(p => 
+    p.name.toLowerCase().includes(filter.toLowerCase()) ||
+    (p.description && p.description.toLowerCase().includes(filter.toLowerCase()))
+  );
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<p style="text-align: center; color: #95a5a6; padding: 40px; grid-column: 1 / -1;">No se encontraron productos</p>';
+    return;
+  }
+
+  grid.innerHTML = filtered.map(producto => `
+    <div class="producto-card" onclick="agregarAlCarrito('${producto.id}')">
+      <div class="producto-icon">${producto.icon || '📦'}</div>
+      <div class="producto-name">${producto.name}</div>
+      <div class="producto-price">${formatCurrency(producto.price)}</div>
+    </div>
+  `).join('');
 }
 
 function agregarAlCarrito(productoId) {
@@ -934,32 +932,44 @@ function agregarAlCarrito(productoId) {
   showNotification(`${producto.name} agregado al carrito`, 'success');
 }
 
-function renderProductos(filter = '') {
-  const grid = document.getElementById('productosGrid');
-  
-  // VALIDACIÓN: Asegurarse de que productos es un array
-  if (!Array.isArray(productos)) {
-    console.error('❌ productos no es un array:', productos);
-    productos = [];
-  }
-  
-  const filtered = productos.filter(p => 
-    p.name.toLowerCase().includes(filter.toLowerCase()) ||
-    (p.description && p.description.toLowerCase().includes(filter.toLowerCase()))
-  );
+function renderCarrito() {
+  const container = document.getElementById('carritoItems');
+  const totalSection = document.getElementById('carritoTotal');
+  const finalizarBtn = document.getElementById('finalizarBtn');
 
-  if (filtered.length === 0) {
-    grid.innerHTML = '<p style="text-align: center; color: #95a5a6; padding: 40px; grid-column: 1 / -1;">No se encontraron productos</p>';
+  if (carrito.length === 0) {
+    container.innerHTML = `
+      <div class="carrito-empty">
+        <div class="carrito-empty-icon">🛒</div>
+        <p>No hay productos en el carrito</p>
+      </div>
+    `;
+    totalSection.style.display = 'none';
+    finalizarBtn.disabled = true;
     return;
   }
 
-  grid.innerHTML = filtered.map(producto => `
-    <div class="producto-card" onclick="agregarAlCarrito('${producto.id}')">
-      <div class="producto-icon">${producto.icon || '📦'}</div>
-      <div class="producto-name">${producto.name}</div>
-      <div class="producto-price">${formatCurrency(producto.price)}</div>
+  container.innerHTML = carrito.map((item, index) => `
+    <div class="carrito-item">
+      <div style="font-size: 40px;">${item.icon}</div>
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-price">${formatCurrency(item.price)} c/u</div>
+      </div>
+      <div class="item-controls">
+        <button class="qty-btn" onclick="cambiarCantidad(${index}, -1)">−</button>
+        <div class="qty-value">${item.quantity}</div>
+        <button class="qty-btn" onclick="cambiarCantidad(${index}, 1)">+</button>
+        <button class="remove-btn" onclick="eliminarItem(${index})">×</button>
+      </div>
     </div>
   `).join('');
+
+  const total = carrito.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  document.getElementById('totalAmount').textContent = formatCurrency(total);
+  totalSection.style.display = 'block';
+  
+  validateFinalizarBtn();
 }
 
 function cambiarCantidad(index, change) {
@@ -1316,7 +1326,5 @@ document.addEventListener('input', function(e) {
 
 init();
   </script>
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-<script src="../shared/socket-client.js"></script>
 </body>
 </html>

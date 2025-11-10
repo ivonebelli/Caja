@@ -378,8 +378,8 @@
                 <div class="local-subtitle">📍 ${admin.localNombre} - ${admin.localUbicacion}</div>
               </div>
               <button class="btn btn-danger" onclick="event.stopPropagation(); deleteAdminProfile('${admin.id}', '${admin.localId}')">
-  ${currentUser && currentUser.role === 'administrativo' ? '📋 Solicitar Eliminación' : '🗑️ Eliminar'}
-</button>
+                🗑️ Eliminar
+              </button>
             </div>
           `;
         });
@@ -406,71 +406,26 @@
       window.location.href = './locales.html?mode=admin&action=create';
     }
 
-async function deleteAdminProfile(profileId, localId) {
-  const currentUser = getCurrentUser();
-  
-  // SI ES ADMINISTRADOR, DEBE SOLICITAR AUTORIZACIÓN
-  if (currentUser && currentUser.role === 'administrativo') {
-    const data = await readData('profiles.json');
-    const local = data.locales.find(l => l.id === localId);
-    const profile = local?.perfiles.administrativo.find(p => p.id === profileId);
-    
-    if (!profile) {
-      showNotification('Perfil no encontrado', 'error');
-      return;
-    }
-    
-    if (!confirm(`¿Solicitar al gerente eliminar el perfil de ${profile.name}?`)) {
-      return;
-    }
-    
-    const authData = {
-      type: 'delete_profile',
-      requestedBy: currentUser.profile.name,
-      reason: `Solicitud de eliminación del perfil administrativo: ${profile.name}`,
-      data: {
-        profileId: profileId,
-        profileName: profile.name,
-        role: 'administrativo',
-        localId: localId,
-        localName: local.nombre
+    async function deleteAdminProfile(profileId, localId) {
+      if (!confirm('¿Estás seguro de eliminar este perfil administrativo?')) {
+        return;
       }
-    };
-    
-    const success = await createAuthorization(authData);
-    
-    if (success) {
-      showNotification('✅ Solicitud enviada al gerente para aprobación', 'success');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } else {
-      showNotification('❌ Error al crear la solicitud', 'error');
+      
+      const data = await readData('profiles.json');
+      const local = data.locales.find(l => l.id === localId);
+      
+      if (local) {
+        local.perfiles.administrativo = local.perfiles.administrativo.filter(p => p.id !== profileId);
+        
+        const success = await writeData('profiles.json', data);
+        if (success) {
+          showNotification('Perfil administrativo eliminado correctamente', 'success');
+          loadProfiles();
+        } else {
+          showNotification('Error al eliminar el perfil', 'error');
+        }
+      }
     }
-    
-    return;
-  }
-  
-  // SI ES GERENCIA, PUEDE ELIMINAR DIRECTAMENTE
-  if (!confirm('¿Estás seguro de eliminar este perfil administrativo?')) {
-    return;
-  }
-  
-  const data = await readData('profiles.json');
-  const local = data.locales.find(l => l.id === localId);
-  
-  if (local) {
-    local.perfiles.administrativo = local.perfiles.administrativo.filter(p => p.id !== profileId);
-    
-    const success = await writeData('profiles.json', data);
-    if (success) {
-      showNotification('Perfil administrativo eliminado correctamente', 'success');
-      loadProfiles();
-    } else {
-      showNotification('Error al eliminar el perfil', 'error');
-    }
-  }
-}
 
     function renderLocalProfiles(data, canDelete) {
       const container = document.getElementById('profilesContainer');
@@ -485,12 +440,11 @@ async function deleteAdminProfile(profileId, localId) {
         container.innerHTML = '<p style="color:rgba(255,255,255,0.7);text-align:center;">No hay perfiles en este local.</p>';
       } else {
         container.innerHTML = allProfiles.map(p => {
-          const currentUser = getCurrentUser();
-const deleteBtn = canDelete ? `
-  <button class="btn btn-danger" onclick="event.stopPropagation(); deleteProfile('${p.id}', '${p.role}')">
-    ${currentUser && currentUser.role === 'administrativo' ? '📋' : '🗑️'}
-  </button>
-` : '';
+          const deleteBtn = canDelete ? `
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteProfile('${p.id}', '${p.role}')">
+              🗑️
+            </button>
+          ` : '';
           
           const bgGradient = p.role === 'cajero' 
             ? 'background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);'
@@ -623,73 +577,26 @@ const deleteBtn = canDelete ? `
       }
     }
 
-async function deleteProfile(profileId, role) {
-  const currentUser = getCurrentUser();
-  
-  // SI ES ADMINISTRADOR, DEBE SOLICITAR AUTORIZACIÓN
-  if (currentUser && currentUser.role === 'administrativo') {
-    const data = await readData('profiles.json');
-    const local = data.locales.find(l => l.id === localId);
-    const profile = local?.perfiles[role]?.find(p => p.id === profileId);
-    
-    if (!profile) {
-      showNotification('Perfil no encontrado', 'error');
-      return;
-    }
-    
-    if (!confirm(`¿Solicitar al gerente eliminar el perfil de ${profile.name}?`)) {
-      return;
-    }
-    
-    const roleName = role === 'cajero' ? 'Cajero' : 'Administrativo';
-    
-    const authData = {
-      type: 'delete_profile',
-      requestedBy: currentUser.profile.name,
-      reason: `Solicitud de eliminación del perfil de ${roleName}: ${profile.name}`,
-      data: {
-        profileId: profileId,
-        profileName: profile.name,
-        role: role,
-        localId: localId,
-        localName: local.nombre
+    async function deleteProfile(profileId, role) {
+      if (!confirm('¿Estás seguro de eliminar este perfil?')) {
+        return;
       }
-    };
-    
-    const success = await createAuthorization(authData);
-    
-    if (success) {
-      showNotification('✅ Solicitud enviada al gerente para aprobación', 'success');
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    } else {
-      showNotification('❌ Error al crear la solicitud', 'error');
+      
+      const data = await readData('profiles.json');
+      const local = data.locales.find(l => l.id === localId);
+      
+      if (local) {
+        local.perfiles[role] = local.perfiles[role].filter(p => p.id !== profileId);
+        
+        const success = await writeData('profiles.json', data);
+        if (success) {
+          showNotification('Perfil eliminado correctamente', 'success');
+          loadProfiles();
+        } else {
+          showNotification('Error al eliminar el perfil', 'error');
+        }
+      }
     }
-    
-    return;
-  }
-  
-  // SI ES GERENCIA O SUBGERENTE, PUEDE ELIMINAR DIRECTAMENTE
-  if (!confirm('¿Estás seguro de eliminar este perfil?')) {
-    return;
-  }
-  
-  const data = await readData('profiles.json');
-  const local = data.locales.find(l => l.id === localId);
-  
-  if (local) {
-    local.perfiles[role] = local.perfiles[role].filter(p => p.id !== profileId);
-    
-    const success = await writeData('profiles.json', data);
-    if (success) {
-      showNotification('Perfil eliminado correctamente', 'success');
-      loadProfiles();
-    } else {
-      showNotification('Error al eliminar el perfil', 'error');
-    }
-  }
-}
 
     function goBack() {
       const specialAccess = localStorage.getItem('specialAccess');
@@ -719,7 +626,5 @@ async function deleteProfile(profileId, role) {
     // Cargar perfiles al iniciar
     loadProfiles();
   </script>
-<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-<script src="../shared/socket-client.js"></script>
 </body>
 </html>
