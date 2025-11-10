@@ -295,7 +295,7 @@ app.get('/api/reports/:filename', async (req, res) => {
 });
 
 // Inicializar base de datos
-app.post('/api/init-db', async (req, res) => {
+app.get('/api/init-db', async (req, res) => {
   try {
     // Crear tabla de datos si no existe
     await pool.query(`
