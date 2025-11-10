@@ -1,33 +1,34 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
-const path = require('path');
-const fs = require('fs').promises;
+const { app, BrowserWindow, ipcMain } = require("electron");
+const path = require("path");
+const fs = require("fs").promises;
+const dbService = require("./dbService");
 
 let mainWindow;
 
 // Rutas de datos
-const DATA_DIR = path.join(__dirname, 'data');
-const REPORTES_DIR = path.join(__dirname, 'reportes');
+const DATA_DIR = path.join(__dirname, "data");
+const REPORTES_DIR = path.join(__dirname, "reportes");
 
 // Crear ventana principal
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    icon: path.join(__dirname, 'build', 'icon.ico'),
+    icon: path.join(__dirname, "build", "icon.ico"),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      enableRemoteModule: true
-    }
+      enableRemoteModule: true,
+    },
   });
 
-  mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, "src", "index.html"));
 
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools();
   }
 
-  mainWindow.on('closed', () => {
+  mainWindow.on("closed", () => {
     mainWindow = null;
   });
 }
@@ -36,22 +37,29 @@ function createWindow() {
 app.whenReady().then(async () => {
   await ensureDirectories();
   await initializeDataFiles();
+
+  try {
+    await dbService.connectToDatabase();
+  } catch (e) {
+    // Estan mal los valores en .env que se leen para conectar a la base de datos
+    console.error("La aplicación NO pudo acceder a la base de datos remota.");
+  }
   createWindow();
 
-  console.log('============================================');
-  console.log('📁 UBICACIÓN DE DATOS:');
-  console.log('📂 Data:', DATA_DIR);
-  console.log('📊 Reportes:', REPORTES_DIR);
-  console.log('🔧 Modo:', process.env.NODE_ENV || 'Desarrollo');
-  console.log('📦 Ejecutable:', process.execPath);
-  console.log('============================================');
+  console.log("============================================");
+  console.log("📁 UBICACIÓN DE DATOS:");
+  console.log("📂 Data:", DATA_DIR);
+  console.log("📊 Reportes:", REPORTES_DIR);
+  console.log("🔧 Modo:", process.env.NODE_ENV || "Desarrollo");
+  console.log("📦 Ejecutable:", process.execPath);
+  console.log("============================================");
 });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });
 
-app.on('activate', () => {
+app.on("activate", () => {
   if (mainWindow === null) createWindow();
 });
 
@@ -64,42 +72,42 @@ async function ensureDirectories() {
 // Inicializar archivos de datos con la nueva estructura
 async function initializeDataFiles() {
   const defaultFiles = {
-    'profiles.json': { 
+    "profiles.json": {
       locales: [
         {
-          id: 'boulevard-maritimo',
-          nombre: 'Boulevard Marítimo',
-          ubicacion: 'Av. Costanera 123',
+          id: "boulevard-maritimo",
+          nombre: "Boulevard Marítimo",
+          ubicacion: "Av. Costanera 123",
           perfiles: {
             cajero: [],
-            administrativo: []
-          }
+            administrativo: [],
+          },
         },
         {
-          id: 'photostation',
-          nombre: 'PhotoStation',
-          ubicacion: 'Calle Imagen 456',
+          id: "photostation",
+          nombre: "PhotoStation",
+          ubicacion: "Calle Imagen 456",
           perfiles: {
             cajero: [],
-            administrativo: []
-          }
-        }
+            administrativo: [],
+          },
+        },
       ],
-      gerencia: [] 
+      gerencia: [],
     },
-    'products.json': [],
-    'orders.json': [],
-    'categories.json': [],
-    'config.json': {
-      storeName: 'Mi Negocio',
-      currency: 'ARS',
+    "products.json": [],
+    "orders.json": [],
+    "categories.json": [],
+    "config.json": {
+      storeName: "Mi Negocio",
+      currency: "ARS",
       taxRate: 0,
       createdAt: new Date().toISOString(),
-      lastOrderNumber: 0
+      lastOrderNumber: 0,
     },
-    'cash_register.json': { sessions: [] },
-    'active_sessions.json': {},
-    'authorizations.json': []
+    "cash_register.json": { sessions: [] },
+    "active_sessions.json": {},
+    "authorizations.json": [],
   };
 
   for (const [filename, data] of Object.entries(defaultFiles)) {
@@ -117,10 +125,10 @@ async function initializeDataFiles() {
 // ==============================
 // IPC PARA LECTURA/ESCRITURA
 // ==============================
-ipcMain.handle('read-json', async (_, filename) => {
+ipcMain.handle("read-json", async (_, filename) => {
   try {
     const filePath = path.join(DATA_DIR, filename);
-    const data = await fs.readFile(filePath, 'utf8');
+    const data = await fs.readFile(filePath, "utf8");
     return JSON.parse(data);
   } catch (err) {
     console.error(`Error leyendo ${filename}:`, err.message);
@@ -128,7 +136,7 @@ ipcMain.handle('read-json', async (_, filename) => {
   }
 });
 
-ipcMain.handle('write-json', async (_, filename, data) => {
+ipcMain.handle("write-json", async (_, filename, data) => {
   try {
     const filePath = path.join(DATA_DIR, filename);
     await fs.writeFile(filePath, JSON.stringify(data, null, 2));
@@ -140,7 +148,7 @@ ipcMain.handle('write-json', async (_, filename, data) => {
   }
 });
 
-ipcMain.handle('save-excel-report', async (_, filename, buffer) => {
+ipcMain.handle("save-excel-report", async (_, filename, buffer) => {
   try {
     const filePath = path.join(REPORTES_DIR, filename);
     await fs.writeFile(filePath, Buffer.from(buffer));
@@ -152,19 +160,19 @@ ipcMain.handle('save-excel-report', async (_, filename, buffer) => {
   }
 });
 
-ipcMain.handle('list-files', async (_, directory) => {
+ipcMain.handle("list-files", async (_, directory) => {
   try {
-    const dirPath = directory === 'reportes' ? REPORTES_DIR : DATA_DIR;
+    const dirPath = directory === "reportes" ? REPORTES_DIR : DATA_DIR;
     return await fs.readdir(dirPath);
   } catch (err) {
-    console.error('Error listando archivos:', err.message);
+    console.error("Error listando archivos:", err.message);
     return [];
   }
 });
 
-ipcMain.handle('delete-file', async (_, filename, directory) => {
+ipcMain.handle("delete-file", async (_, filename, directory) => {
   try {
-    const dirPath = directory === 'reportes' ? REPORTES_DIR : DATA_DIR;
+    const dirPath = directory === "reportes" ? REPORTES_DIR : DATA_DIR;
     await fs.unlink(path.join(dirPath, filename));
     console.log(`✅ Archivo eliminado: ${filename}`);
     return true;
@@ -177,25 +185,25 @@ ipcMain.handle('delete-file', async (_, filename, directory) => {
 // ==============================
 // IPC PARA IMPRESORAS
 // ==============================
-ipcMain.handle('get-printers', async () => {
+ipcMain.handle("get-printers", async () => {
   try {
     const { webContents } = mainWindow;
     const printers = await webContents.getPrintersAsync();
     return printers;
   } catch (err) {
-    console.error('Error obteniendo impresoras:', err.message);
+    console.error("Error obteniendo impresoras:", err.message);
     return [];
   }
 });
 
-ipcMain.handle('print-ticket', async (_, ticketData) => {
+ipcMain.handle("print-ticket", async (_, ticketData) => {
   try {
     // Aquí puedes implementar la lógica de impresión térmica
     // Por ahora solo simularemos la impresión
-    console.log('🖨️ Imprimiendo ticket:', ticketData);
+    console.log("🖨️ Imprimiendo ticket:", ticketData);
     return { success: true };
   } catch (err) {
-    console.error('Error imprimiendo ticket:', err.message);
+    console.error("Error imprimiendo ticket:", err.message);
     return { success: false, error: err.message };
   }
 });
@@ -203,10 +211,10 @@ ipcMain.handle('print-ticket', async (_, ticketData) => {
 // ==============================
 // MANEJO DE ERRORES
 // ==============================
-process.on('uncaughtException', (error) => {
-  console.error('Error no capturado:', error);
+process.on("uncaughtException", (error) => {
+  console.error("Error no capturado:", error);
 });
 
-process.on('unhandledRejection', (error) => {
-  console.error('Promesa rechazada:', error);
+process.on("unhandledRejection", (error) => {
+  console.error("Promesa rechazada:", error);
 });
