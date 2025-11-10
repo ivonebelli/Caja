@@ -10,6 +10,9 @@
     "build": "electron-builder --win portable",
     "build-installer": "electron-builder --win nsis",
     "build-all": "electron-builder --win"
+   },
+  "engines": {
+    "node": "18.x"
   },
   "build": {
     "appId": "com.caja.registradora",
