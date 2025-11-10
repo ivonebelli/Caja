@@ -1,11 +1,5 @@
-[phases.setup]
-nixPkgs = ["nodejs"]
-
 [phases.install]
-cmds = ["npm install --production"]
-
-[phases.build]
-cmds = []
+cmds = ["npm install --omit=dev"]
 
 [start]
 cmd = "node server.js"
