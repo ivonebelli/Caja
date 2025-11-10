@@ -2,7 +2,7 @@
   "name": "caja-registradora",
   "version": "1.0.0",
   "description": "Una caja registradora simple",
-  "main": "src/index.js",  
+  "main": "src/index.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win portable"
