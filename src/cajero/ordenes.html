@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial de Órdenes</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .filters-bar {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .filter-group {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .orders-container {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .order-card {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-left: 4px solid var(--primary);
+      transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+      background: #f3f4f6;
+      transform: translateX(5px);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .order-card.completed {
+      border-left-color: var(--success);
+    }
+
+    .order-card.cancelled {
+      border-left-color: var(--danger);
+      opacity: 0.7;
+    }
+
+    .order-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 15px;
+    }
+
+    .order-number {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .order-status {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-paid {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .order-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: var(--text-light);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .info-value {
+      font-size: 15px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .order-items {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+    }
+
+    .item-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .item-icon {
+      font-size: 24px;
+    }
+
+    .item-price {
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .order-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn-view-pin {
+      background: var(--primary);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-view-pin:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+    }
+
+    .empty-icon {
+      font-size: 72px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+
+    .pin-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pin-modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      animation: fadeInUp 0.4s ease-out;
+    }
+
+    .pin-display {
+      font-size: 56px;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 8px;
+      margin: 30px 0;
+      padding: 20px;
+      background: #f3f4f6;
+      border-radius: 12px;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📋 Historial de Órdenes</h1>
+      <button class="back-button" onclick="goBack()">Volver</button>
+    </div>
+
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label class="form-label">Fecha</label>
+        <select class="form-select" id="dateFilter" onchange="applyFilters()">
+          <option value="hoy">Hoy</option>
+          <option value="ayer">Ayer</option>
+          <option value="semana">Última Semana</option>
+          <option value="mes">Último Mes</option>
+          <option value="todo">Todo</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="form-label">Estado</label>
+        <select class="form-select" id="statusFilter" onchange="applyFilters()">
+          <option value="todos">Todos</option>
+          <option value="paid">Pagado</option>
+          <option value="completed">Completado</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label class="form-label">Buscar</label>
+        <input 
+          type="text" 
+          class="form-input" 
+          id="searchInput" 
+          placeholder="PIN, Nro orden..."
+          oninput="applyFilters()"
+        >
+      </div>
+
+      <button class="btn btn-primary" onclick="loadOrders()">
+        🔄 Actualizar
+      </button>
+    </div>
+
+    <div class="orders-container">
+      <div id="ordersContent"></div>
+    </div>
+  </div>
+
+  <div class="pin-modal" id="pinModal">
+    <div class="pin-modal-content">
+      <h2 style="font-size: 28px; font-weight: 700; color: var(--text); margin-bottom: 10px;">
+        PIN del Cliente
+      </h2>
+      <p style="color: var(--text-light); margin-bottom: 20px;">
+        Orden #<span id="modalOrderNumber"></span>
+      </p>
+      <div class="pin-display" id="modalPIN">000000</div>
+      <div id="modalQR" style="margin: 20px 0;"></div>
+      <p style="color: var(--text-light); margin-bottom: 25px; font-size: 14px;">
+        El cliente debe usar este PIN o escanear el QR en la cabina
+      </p>
+      <button class="btn btn-primary" onclick="closePinModal()" style="width: 100%; padding: 16px;">
+        Cerrar
+      </button>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script>
+    let currentUser = null;
+    let allOrders = [];
+    let filteredOrders = [];
+
+    async function init() {
+      const userStr = localStorage.getItem('currentUser');
+      if (!userStr) {
+        window.location.href = '../index.html';
+        return;
+      }
+      
+      currentUser = JSON.parse(userStr);
+      await loadOrders();
+    }
+
+    async function loadOrders() {
+      const ordersData = await readData('orders.json');
+      
+      if (currentUser.role === 'cajero') {
+        allOrders = ordersData.filter(o => o.cashier === currentUser.profile.name);
+      } else {
+        allOrders = ordersData;
+      }
+
+      allOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const dateFilter = document.getElementById('dateFilter').value;
+      const statusFilter = document.getElementById('statusFilter').value;
+      const searchText = document.getElementById('searchInput').value.toLowerCase();
+
+      const now = new Date();
+      filteredOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        
+        switch(dateFilter) {
+          case 'hoy':
+            if (orderDate.toDateString() !== now.toDateString()) return false;
+            break;
+          case 'ayer':
+            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            if (orderDate.toDateString() !== yesterday.toDateString()) return false;
+            break;
+          case 'semana':
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            if (orderDate < weekAgo) return false;
+            break;
+          case 'mes':
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            if (orderDate < monthAgo) return false;
+            break;
+        }
+
+        if (statusFilter !== 'todos' && order.status !== statusFilter) return false;
+
+        if (searchText && !order.pin.includes(searchText) && !order.orderNumber.toString().includes(searchText)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      renderOrders();
+    }
+
+    function renderOrders() {
+      const container = document.getElementById('ordersContent');
+
+      if (filteredOrders.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <h3>No hay órdenes</h3>
+            <p>No se encontraron órdenes con los filtros aplicados</p>
+          </div>
+        `;
+        return;
+      }
+
+      const statusLabels = {
+        paid: 'Pagado',
+        completed: 'Completado',
+        cancelled: 'Cancelado'
+      };
+
+      const paymentIcons = {
+        efectivo: '💵',
+        mercadopago: '💳',
+        debito: '💳',
+        credito: '💳',
+        transferencia: '🏦'
+      };
+
+      const paymentNames = {
+        efectivo: 'Efectivo',
+        mercadopago: 'Mercado Pago',
+        debito: 'Débito',
+        credito: 'Crédito',
+        transferencia: 'Transferencia'
+      };
+
+      container.innerHTML = filteredOrders.map(order => `
+        <div class="order-card ${order.status}">
+          <div class="order-header">
+            <div>
+              <div class="order-number">Orden #${order.orderNumber}</div>
+              <div style="font-size: 13px; color: var(--text-light); margin-top: 4px;">
+                ${formatDateTime(order.createdAt)}
+              </div>
+            </div>
+            <div class="order-status status-${order.status}">
+              ${statusLabels[order.status]}
+            </div>
+          </div>
+
+          <div class="order-info">
+            <div class="info-item">
+              <div class="info-label">Cajero</div>
+              <div class="info-value">🧑‍💼 ${order.cashier}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Medio de Pago</div>
+              <div class="info-value">
+                ${paymentIcons[order.paymentMethod]} ${paymentNames[order.paymentMethod]}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">PIN Cliente</div>
+              <div class="info-value" style="font-family: monospace; letter-spacing: 2px;">
+                ${order.pin}
+              </div>
+            </div>
+          </div>
+
+          <div class="order-items">
+            ${order.items.map(item => `
+              <div class="item-row">
+                <div class="item-name">
+                  <span class="item-icon">${item.icon || '📦'}</span>
+                  <span>${item.name} x${item.quantity}</span>
+                </div>
+                <div class="item-price">${formatCurrency(item.price * item.quantity)}</div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="order-total">
+            <span>Total</span>
+            <span>${formatCurrency(order.total)}</span>
+          </div>
+
+          <div class="order-actions">
+            <button class="btn-view-pin" onclick="showPinModal('${order.id}')">
+              🔍 Ver PIN y QR
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function showPinModal(orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) return;
+
+      document.getElementById('modalOrderNumber').textContent = order.orderNumber;
+      document.getElementById('modalPIN').textContent = order.pin;
+
+      const qrCode = await generateQR(order.pin);
+      document.getElementById('modalQR').innerHTML = `
+        <img src="${qrCode}" style="max-width: 250px; border-radius: 12px;" alt="QR Code">
+      `;
+
+      document.getElementById('pinModal').style.display = 'flex';
+    }
+
+    function closePinModal() {
+      document.getElementById('pinModal').style.display = 'none';
+    }
+
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('pinModal');
+      if (event.target === modal) {
+        closePinModal();
+      }
+    };
+
+    init();
+  </script>
+</body>
+</html>

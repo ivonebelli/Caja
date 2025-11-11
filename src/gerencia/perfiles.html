@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Perfiles - Gerencia</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    .profiles-section {
+      background: white;
+      border-radius: 20px;
+      padding: 35px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 25px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .role-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .role-tab {
+      padding: 12px 30px;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+
+    .role-tab:hover {
+      color: var(--text);
+    }
+
+    .role-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .profile-card {
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      border-radius: 16px;
+      padding: 25px;
+      text-align: center;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .profile-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .profile-avatar {
+      width: 100px;
+      height: 100px;
+      margin: 0 auto 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      overflow: hidden;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .profile-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 10px;
+    }
+
+    .profile-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+
+    .btn-small {
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+
+    .btn-edit {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background: #2563eb;
+    }
+
+    .btn-delete {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background: #dc2626;
+    }
+
+    .btn-disabled {
+      background: #d1d5db;
+      color: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-light);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .pin-inputs {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .pin-input {
+      width: 60px;
+      height: 70px;
+      font-size: 32px;
+      text-align: center;
+      background: #f3f4f6;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .pin-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>👥 Gestión de Perfiles</h1>
+      <button class="back-button" onclick="goBack()">Volver</button>
+    </div>
+
+    <div class="profiles-section">
+      <h2 class="section-title">Perfiles del Sistema</h2>
+      
+      <div class="role-tabs">
+        <button class="role-tab active" onclick="switchRole('gerencia')">👔 Gerencia</button>
+        <button class="role-tab" onclick="switchRole('administrativo')">📊 Administrativo</button>
+        <button class="role-tab" onclick="switchRole('cajero')">🧑‍💼 Cajero</button>
+      </div>
+
+      <div id="profilesGrid" class="profiles-grid"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="editModal">
+    <div class="modal-content">
+      <h2 class="modal-title">Cambiar PIN</h2>
+      <p style="color: var(--text-light); margin-bottom: 20px;" id="editProfileName"></p>
+      
+      <div class="pin-inputs">
+        <input type="password" maxlength="1" class="pin-input" id="newPin1" oninput="moveToNext(1)">
+        <input type="password" maxlength="1" class="pin-input" id="newPin2" oninput="moveToNext(2)">
+        <input type="password" maxlength="1" class="pin-input" id="newPin3" oninput="moveToNext(3)">
+        <input type="password" maxlength="1" class="pin-input" id="newPin4">
+      </div>
+
+      <div style="display: flex; gap: 15px; margin-top: 30px;">
+        <button class="btn btn-secondary" onclick="closeModal()" style="flex: 1;">Cancelar</button>
+        <button class="btn btn-primary" onclick="savePinChange()" style="flex: 1;">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../shared/utils.js"></script>
+  <script>
+    let currentUser = null;
+    let currentViewRole = 'gerencia';
+    let allProfiles = {};
+    let editingProfile = null;
+
+    async function init() {
+      clearAppState();
+      
+      const userStr = localStorage.getItem('currentUser');
+      if (!userStr) {
+        window.location.href = '../index.html';
+        return;
+      }
+      
+      currentUser = JSON.parse(userStr);
+      await loadAllProfiles();
+      renderProfiles();
+    }
+
+    async function loadAllProfiles() {
+      allProfiles = await readData('profiles.json') || { cajero: [], administrativo: [], gerencia: [] };
+    }
+
+    function switchRole(role) {
+      currentViewRole = role;
+      document.querySelectorAll('.role-tab').forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+      renderProfiles();
+    }
+
+    function renderProfiles() {
+      const grid = document.getElementById('profilesGrid');
+      const profiles = allProfiles[currentViewRole] || [];
+
+      if (profiles.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <div style="font-size: 64px; margin-bottom: 20px;">👤</div>
+            <h3>No hay perfiles</h3>
+            <p>No hay perfiles creados para este rol</p>
+          </div>
+        `;
+        return;
+      }
+
+      const roleIcons = {
+        cajero: '🧑‍💼',
+        administrativo: '📊',
+        gerencia: '👔'
+      };
+
+      grid.innerHTML = profiles.map(profile => {
+        // Gerencia puede editar su propio perfil, todos los de admin y cajero, pero NO otros gerentes
+        const canEdit = currentViewRole !== 'gerencia' || profile.id === currentUser.profile.id;
+        const canDelete = currentViewRole !== 'gerencia';
+
+        const avatarContent = profile.photo 
+          ? `<img src="${profile.photo}" alt="${profile.name}">`
+          : roleIcons[currentViewRole];
+
+        return `
+          <div class="profile-card">
+            <div class="profile-avatar">${avatarContent}</div>
+            <div class="profile-name">${profile.name}</div>
+            <div class="profile-actions">
+              <button class="btn-small ${canEdit ? 'btn-edit' : 'btn-disabled'}" 
+                      onclick="${canEdit ? `editProfile('${profile.id}', '${currentViewRole}')` : 'return false'}"
+                      ${!canEdit ? 'disabled' : ''}>
+                ✏️ Editar PIN
+              </button>
+              ${canDelete ? `
+                <button class="btn-small btn-delete" onclick="deleteProfile('${profile.id}', '${currentViewRole}')">
+                  🗑️ Eliminar
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function editProfile(profileId, role) {
+      const profile = allProfiles[role].find(p => p.id === profileId);
+      if (!profile) return;
+
+      editingProfile = { profile, role };
+      document.getElementById('editProfileName').textContent = `Cambiar PIN de ${profile.name}`;
+      document.getElementById('editModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('newPin1').focus(), 100);
+    }
+
+    function moveToNext(current) {
+      if (current < 4 && document.getElementById(`newPin${current}`).value) {
+        document.getElementById(`newPin${current + 1}`).focus();
+      }
+    }
+
+    async function savePinChange() {
+      const newPin = ['newPin1', 'newPin2', 'newPin3', 'newPin4']
+        .map(id => document.getElementById(id).value)
+        .join('');
+
+      if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) {
+        showNotification('El PIN debe ser de 4 dígitos numéricos', 'error');
+        return;
+      }
+
+      const { profile, role } = editingProfile;
+      const index = allProfiles[role].findIndex(p => p.id === profile.id);
+      allProfiles[role][index].pin = newPin;
+      allProfiles[role][index].updatedAt = new Date().toISOString();
+
+      await writeData('profiles.json', allProfiles);
+      showNotification('PIN actualizado correctamente', 'success');
+      closeModal();
+      await loadAllProfiles();
+      renderProfiles();
+    }
+
+    async function deleteProfile(profileId, role) {
+      const profile = allProfiles[role].find(p => p.id === profileId);
+      if (!confirm(`¿Estás seguro de eliminar el perfil de ${profile.name}?`)) {
+        return;
+      }
+
+      allProfiles[role] = allProfiles[role].filter(p => p.id !== profileId);
+      await writeData('profiles.json', allProfiles);
+      showNotification('Perfil eliminado correctamente', 'success');
+      await loadAllProfiles();
+      renderProfiles();
+    }
+
+    function closeModal() {
+      document.getElementById('editModal').style.display = 'none';
+      editingProfile = null;
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`newPin${i}`).value = '';
+      }
+    }
+
+    function goBack() {
+      clearAppState();
+      window.location.href = 'index.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>
