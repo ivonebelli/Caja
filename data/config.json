@@ -1,0 +1,18 @@
+{
+  "storeName": "Mi Negocio",
+  "currency": "ARS",
+  "taxRate": 0,
+  "createdAt": "2025-10-27T14:39:56.628Z",
+  "lastOrderNumber": 2,
+  "gerenciaPassword": "000000",
+  "administracionPassword": "111111", 
+  
+  "database": {
+    "dialect": "mariadb", 
+    "host": "localhost",
+    "port": 3307,
+    "name": "Caja", 
+    "user": "Ivone",
+    "password": "41556434" 
+  }
+}
