@@ -1,17 +1,23 @@
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
+const fs = require('fs').promises;
+const path = require('path');
 const cors = require('cors');
-const { Pool } = require('pg');
+const mysql = require('mysql2/promise'); // 👈 AÑADIDO: Conector MySQL/MariaDB
 
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
     origin: '*',
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
   }
 });
+
+// VARIABLES GLOBALES
+let pool; // Pool de conexión global para la base de datos
+let config; // Configuración de la aplicación
 
 // Middleware
 app.use(cors());
@@ -20,517 +26,215 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Configuración
 const PORT = process.env.PORT || 3000;
+// Directorio de Datos se mantiene para leer config.json
+const DATA_DIR = path.join(__dirname, 'data'); 
+const REPORTES_DIR = path.join(__dirname, 'reportes');
 
-// PostgreSQL Pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
-});
+// Nombres de los archivos JSON que usaremos como nombres de tabla
+const DATA_FILES = [
+    'profiles.json',
+    'products.json',
+    'orders.json',
+    'categories.json',
+    'config.json',
+    'cash_register.json',
+    'active_sessions.json',
+    'authorizations.json'
+];
 
-// Verificar conexión a la base de datos
-pool.connect((err, client, release) => {
-  if (err) {
-    console.error('❌ Error conectando a PostgreSQL:', err.stack);
-  } else {
-    console.log('✅ Conectado a PostgreSQL');
-    release();
-  }
-});
+// Asegurar que existan los directorios
+async function ensureDirectories() {
+  await fs.mkdir(DATA_DIR, { recursive: true });
+  await fs.mkdir(REPORTES_DIR, { recursive: true });
+}
 
 // ============================================
 // FUNCIONES DE BASE DE DATOS
 // ============================================
 
-// Obtener datos de un archivo
-async function getData(filename) {
-  try {
-    const result = await pool.query(
-      'SELECT data FROM app_data WHERE filename = $1',
-      [filename]
-    );
-    
-    if (result.rows.length === 0) {
-      return null;
-    }
-    
-    let data = result.rows[0].data;
-    
-    // Lista de archivos que DEBEN ser arrays
-    const arrayFiles = [
-      'products.json',
-      'orders.json',
-      'categories.json',
-      'authorizations.json',
-      'change_history.json'
-    ];
-    
-    // Normalizar: si es un archivo que debe ser array pero es {}, convertir a []
-    if (arrayFiles.includes(filename)) {
-      if (!data || (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0)) {
-        console.log(`⚠️ ${filename} era {} en BD, devolviendo [] en su lugar`);
-        data = [];
-      } else if (!Array.isArray(data)) {
-        console.error(`❌ ${filename} debería ser array pero es:`, typeof data);
-        data = [];
-      }
-    }
-    
-    return data;
-  } catch (error) {
-    console.error(`Error obteniendo ${filename}:`, error);
-    return null;
-  }
+// Mapea el nombre del archivo JSON a un nombre de tabla SQL
+function getTableName(filename) {
+  return filename.replace('.json', '');
 }
 
-// Guardar datos de un archivo - CORREGIDO: JSONB directo sin stringify
-async function setData(filename, data) {
-  try {
-    // Lista de archivos que DEBEN ser arrays
-    const arrayFiles = [
-      'products.json',
-      'orders.json',
-      'categories.json',
-      'authorizations.json',
-      'change_history.json'
-    ];
-    
-    // Normalizar: si es un archivo que debe ser array pero es {}, convertir a []
-    let normalizedData = data;
-    if (arrayFiles.includes(filename)) {
-      if (!data || (typeof data === 'object' && !Array.isArray(data) && Object.keys(data).length === 0)) {
-        console.log(`⚠️ Convirtiendo ${filename} de {} a [] antes de guardar`);
-        normalizedData = [];
-      } else if (!Array.isArray(data)) {
-        console.error(`❌ ${filename} debería ser array pero es:`, typeof data);
-        normalizedData = [];
-      }
+async function dbReadData(tableName) {
+  if (!pool) throw new Error("Base de datos no conectada");
+  const [rows] = await pool.query(`SELECT data_json FROM ${tableName} WHERE id = 1`);
+
+  if (rows.length === 0) {
+    // Si no hay datos en la BD, se retorna la estructura base (ej. array vacío o objeto vacío)
+    if (tableName === 'orders' || tableName === 'products' || tableName === 'categories' || tableName === 'authorizations') {
+        return [];
     }
-    
-    // CORRECCIÓN CRÍTICA: Pasar el objeto directamente, PostgreSQL maneja JSONB automáticamente
-    await pool.query(
-      `INSERT INTO app_data (filename, data, updated_at) 
-       VALUES ($1, $2::jsonb, NOW()) 
-       ON CONFLICT (filename) 
-       DO UPDATE SET data = $2::jsonb, updated_at = NOW()`,
-      [filename, normalizedData]
-    );
-    
-    console.log(`✅ Guardado: ${filename} - Tipo: ${Array.isArray(normalizedData) ? 'array' : 'object'}`);
-    return true;
-  } catch (error) {
-    console.error(`Error guardando ${filename}:`, error);
-    return false;
+    return {}; 
   }
+  return JSON.parse(rows[0].data_json);
+}
+
+async function dbWriteData(tableName, data) {
+  if (!pool) throw new Error("Base de datos no conectada");
+  const jsonData = JSON.stringify(data);
+  
+  // Query para insertar o actualizar el registro con ID=1
+  const query = `
+    INSERT INTO ${tableName} (id, data_json) VALUES (?, ?)
+    ON DUPLICATE KEY UPDATE data_json = VALUES(data_json);
+  `;
+  await pool.query(query, [1, jsonData]);
 }
 
 // ============================================
-// RUTAS DE API
+// RUTAS DE API - MODIFICADAS PARA USAR MARIA DB
 // ============================================
 
-// Sincronización inicial - devuelve todos los datos
-app.get('/api/sync', async (req, res) => {
-  try {
-    const dataFiles = [
-      'active_sessions.json',
-      'authorizations.json',
-      'cash_register.json',
-      'categories.json',
-      'change_history.json',
-      'config.json',
-      'orders.json',
-      'products.json',
-      'profiles.json'
-    ];
-
-    const syncData = {};
-    
-    for (const filename of dataFiles) {
-      const data = await getData(filename);
-      syncData[filename] = data;
-    }
-
-    console.log('✅ Sincronización inicial completada');
-    res.json({ 
-      success: true, 
-      data: syncData,
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error en sincronización:', error.message);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// Leer archivo JSON
+// Leer datos de la tabla (Base de Datos)
 app.get('/api/data/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
-    const data = await getData(filename);
-    
-    if (data === null) {
-      return res.status(404).json({ success: false, error: 'Archivo no encontrado' });
-    }
-    
-    res.json({ success: true, data });
+    const tableName = getTableName(filename);
+    const data = await dbReadData(tableName); // 👈 Usa la función de BD
+    res.json({ success: true, data: data });
   } catch (error) {
-    console.error('Error leyendo archivo:', error.message);
+    console.error(`Error leyendo tabla ${getTableName(req.params.filename)}:`, error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Escribir archivo JSON
+// Escribir datos en la tabla (Base de Datos) con sincronización automática
 app.post('/api/data/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
     const { data } = req.body;
+    const tableName = getTableName(filename);
+
+    await dbWriteData(tableName, data); // 👈 Usa la función de BD
     
-    const success = await setData(filename, data);
+    // Notificar a TODOS los clientes conectados sobre la actualización
+    io.emit('data-updated', { filename, data, timestamp: new Date().toISOString() });
     
-    if (success) {
-      // Notificar a todos los clientes conectados
-      io.emit('data-updated', { filename, data });
-      console.log(`✅ Archivo actualizado y emitido: ${filename}`);
-      res.json({ success: true });
-    } else {
-      res.status(500).json({ success: false, error: 'Error guardando datos' });
-    }
+    console.log(`✅ Tabla actualizada: ${tableName} - Notificando a ${io.engine.clientsCount} clientes`);
+    res.json({ success: true, timestamp: new Date().toISOString() });
   } catch (error) {
-    console.error('Error escribiendo archivo:', error.message);
+    console.error(`Error escribiendo tabla ${getTableName(req.params.filename)}:`, error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Ruta de salud
-app.get('/health', async (req, res) => {
+// Sincronización forzada - obtener todos los archivos actualizados (MODIFICADA)
+app.get('/api/sync/all', async (req, res) => {
   try {
-    // Verificar conexión a la base de datos
-    await pool.query('SELECT NOW()');
+    const allData = {};
+    
+    for (const file of DATA_FILES) {
+        const tableName = getTableName(file);
+        const data = await dbReadData(tableName);
+        allData[file] = data;
+    }
     
     res.json({ 
-      status: 'ok', 
-      timestamp: new Date().toISOString(),
-      connections: io.engine.clientsCount,
-      database: 'connected'
+      success: true, 
+      data: allData,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
-      timestamp: new Date().toISOString(),
-      database: 'disconnected',
-      error: error.message
-    });
+    console.error('Error en sincronización completa:', error.message);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Guardar reporte (PDF/Excel) como binario en PostgreSQL
+// --------------------------------------------
+// LAS DEMÁS RUTAS NO CAMBIAN SU LÓGICA DE ARCHIVOS
+// --------------------------------------------
+
+// Guardar reporte Excel
 app.post('/api/reports/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
     const { buffer } = req.body;
+    const filePath = path.join(REPORTES_DIR, filename);
     
-    if (!buffer) {
-      return res.status(400).json({ success: false, error: 'No se proporcionó el archivo' });
-    }
-    
-    // Convertir buffer a bytea para PostgreSQL
-    const bufferData = Buffer.from(buffer);
-    
-    await pool.query(
-      `INSERT INTO reports (filename, file_data, created_at) 
-       VALUES ($1, $2, NOW())`,
-      [filename, bufferData]
-    );
+    await fs.writeFile(filePath, Buffer.from(buffer));
     
     console.log(`✅ Reporte guardado: ${filename}`);
-    res.json({ success: true, path: `/api/reports/${filename}` });
+    res.json({ success: true, path: filePath });
   } catch (error) {
     console.error('Error guardando reporte:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Listar reportes guardados
-app.get('/api/reports', async (req, res) => {
+// Listar archivos
+app.get('/api/files/:directory', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, filename, created_at FROM reports ORDER BY created_at DESC'
-    );
-    
-    const reports = result.rows.map(row => ({
-      id: row.id,
-      filename: row.filename,
-      createdAt: row.created_at
-    }));
-    
-    res.json({ success: true, reports });
+    const { directory } = req.params;
+    const dirPath = directory === 'reportes' ? REPORTES_DIR : DATA_DIR;
+    const files = await fs.readdir(dirPath);
+    res.json({ success: true, files });
   } catch (error) {
-    console.error('Error listando reportes:', error.message);
+    console.error('Error listando archivos:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Descargar un reporte específico
-app.get('/api/reports/:filename', async (req, res) => {
+// Eliminar archivo
+app.delete('/api/files/:directory/:filename', async (req, res) => {
   try {
-    const { filename } = req.params;
-    
-    const result = await pool.query(
-      'SELECT file_data, filename FROM reports WHERE filename = $1 ORDER BY created_at DESC LIMIT 1',
-      [filename]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, error: 'Reporte no encontrado' });
-    }
-    
-    const { file_data } = result.rows[0];
-    
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(file_data);
+    const { directory, filename } = req.params;
+    const dirPath = directory === 'reportes' ? REPORTES_DIR : DATA_DIR;
+    await fs.unlink(path.join(dirPath, filename));
+    console.log(`✅ Archivo eliminado: ${filename}`);
+    res.json({ success: true });
   } catch (error) {
-    console.error('Error descargando reporte:', error.message);
+    console.error('Error eliminando archivo:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Inicializar base de datos
-app.get('/api/init-db', async (req, res) => {
-  try {
-    // Crear tabla de datos si no existe
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS app_data (
-        id SERIAL PRIMARY KEY,
-        filename VARCHAR(255) UNIQUE NOT NULL,
-        data JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    // Crear tabla de reportes si no existe
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS reports (
-        id SERIAL PRIMARY KEY,
-        filename VARCHAR(255) NOT NULL,
-        file_data BYTEA NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    // Crear índice para búsquedas rápidas de reportes
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_reports_filename ON reports(filename, created_at DESC)
-    `);
-
-    // Datos iniciales CORREGIDOS
-    const defaultData = {
-      'profiles.json': { 
-        locales: [
-          {
-            id: 'boulevard-maritimo',
-            nombre: 'Boulevard Marítimo',
-            ubicacion: 'Av. Costanera 123',
-            subgerente: {
-              name: '',
-              pin: '',
-              photo: null,
-              createdAt: null
-            },
-            perfiles: {
-              cajero: [],
-              administrativo: []
-            }
-          },
-          {
-            id: 'photostation',
-            nombre: 'PhotoStation',
-            ubicacion: 'Calle Imagen 456',
-            subgerente: {
-              name: '',
-              pin: '',
-              photo: null,
-              createdAt: null
-            },
-            perfiles: {
-              cajero: [],
-              administrativo: []
-            }
-          }
-        ],
-        gerencia: {
-          name: '',
-          pin: '',
-          photo: null,
-          createdAt: null
-        },
-        administrativos: []
-      },
-      'products.json': [],
-      'orders.json': [],
-      'categories.json': [],
-      'config.json': {
-        storeName: 'Mi Negocio',
-        currency: 'ARS',
-        taxRate: 0,
-        serverURL: 'https://caja-production-5ef5.up.railway.app',
-        createdAt: new Date().toISOString(),
-        lastOrderNumber: 0
-      },
-      'cash_register.json': { sessions: [] },
-      'active_sessions.json': {},
-      'authorizations.json': [],
-      'change_history.json': []
-    };
-
-    // Insertar datos iniciales solo si no existen
-    for (const [filename, data] of Object.entries(defaultData)) {
-      await pool.query(
-        `INSERT INTO app_data (filename, data) 
-         VALUES ($1, $2::jsonb) 
-         ON CONFLICT (filename) DO NOTHING`,
-        [filename, data]
-      );
-    }
-
-    console.log('✅ Base de datos inicializada');
-    res.json({ success: true, message: 'Base de datos inicializada correctamente' });
-  } catch (error) {
-    console.error('Error inicializando BD:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+// Ruta de salud
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    connections: io.engine.clientsCount,
+    uptime: process.uptime()
+  });
 });
 
-// Resetear base de datos completamente
-app.post('/api/reset-db', async (req, res) => {
-  try {
-    console.log('⚠️ Reseteando base de datos...');
-    
-    // Borrar todas las tablas
-    await pool.query('DROP TABLE IF EXISTS app_data CASCADE');
-    await pool.query('DROP TABLE IF EXISTS reports CASCADE');
-    
-    console.log('✅ Tablas eliminadas');
-    
-    // Recrear tablas
-    await pool.query(`
-      CREATE TABLE app_data (
-        id SERIAL PRIMARY KEY,
-        filename VARCHAR(255) UNIQUE NOT NULL,
-        data JSONB NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    await pool.query(`
-      CREATE TABLE reports (
-        id SERIAL PRIMARY KEY,
-        filename VARCHAR(255) NOT NULL,
-        file_data BYTEA NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW()
-      )
-    `);
-
-    await pool.query(`
-      CREATE INDEX idx_reports_filename ON reports(filename, created_at DESC)
-    `);
-    
-    console.log('✅ Tablas recreadas');
-
-    // Insertar datos iniciales correctos
-    const defaultData = {
-      'profiles.json': { 
-        locales: [
-          {
-            id: 'boulevard-maritimo',
-            nombre: 'Boulevard Marítimo',
-            ubicacion: 'Av. Costanera 123',
-            subgerente: {
-              name: '',
-              pin: '',
-              photo: null,
-              createdAt: null
-            },
-            perfiles: {
-              cajero: [],
-              administrativo: []
-            }
-          },
-          {
-            id: 'photostation',
-            nombre: 'PhotoStation',
-            ubicacion: 'Calle Imagen 456',
-            subgerente: {
-              name: '',
-              pin: '',
-              photo: null,
-              createdAt: null
-            },
-            perfiles: {
-              cajero: [],
-              administrativo: []
-            }
-          }
-        ],
-        gerencia: {
-          name: '',
-          pin: '',
-          photo: null,
-          createdAt: null
-        },
-        administrativos: []
-      },
-      'products.json': [],
-      'orders.json': [],
-      'categories.json': [],
-      'config.json': {
-        storeName: 'Mi Negocio',
-        currency: 'ARS',
-        taxRate: 0,
-        serverURL: 'https://caja-production-5ef5.up.railway.app',
-        createdAt: new Date().toISOString(),
-        lastOrderNumber: 0
-      },
-      'cash_register.json': { sessions: [] },
-      'active_sessions.json': {},
-      'authorizations.json': [],
-      'change_history.json': []
-    };
-
-    for (const [filename, data] of Object.entries(defaultData)) {
-      await pool.query(
-        'INSERT INTO app_data (filename, data) VALUES ($1, $2::jsonb)',
-        [filename, data]
-      );
-      console.log(`✅ Insertado: ${filename}`);
-    }
-
-    console.log('✅ Base de datos reseteada completamente');
-    res.json({ 
-      success: true, 
-      message: 'Base de datos reseteada correctamente con datos limpios' 
-    });
-  } catch (error) {
-    console.error('Error reseteando BD:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+// Ruta para obtener estado del servidor
+app.get('/api/status', (req, res) => {
+  res.json({
+    success: true,
+    server: 'Caja Registradora Server',
+    version: '2.0',
+    connections: io.engine.clientsCount,
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString()
+  });
 });
 
 // ============================================
-// SOCKET.IO - EVENTOS EN TIEMPO REAL
+// SOCKET.IO - EVENTOS EN TIEMPO REAL (MODIFICADA LA SINCRONIZACIÓN)
 // ============================================
 
 io.on('connection', (socket) => {
-  console.log('✅ Cliente conectado:', socket.id);
+  console.log(`✅ Cliente conectado: ${socket.id} - Total: ${io.engine.clientsCount}`);
+
+  // Enviar estado inicial al cliente que se acaba de conectar
+  socket.emit('connection-established', {
+    clientId: socket.id,
+    timestamp: new Date().toISOString(),
+    totalClients: io.engine.clientsCount
+  });
 
   // Login de cajero
   socket.on('cashier-login', (data) => {
     console.log('👤 Cajero iniciando sesión:', data.cashierName, 'Local:', data.localId);
+    // Notificar a TODOS los demás clientes
     socket.broadcast.emit('cashier-status-change', { 
       cashierName: data.cashierName, 
       localId: data.localId,
-      status: 'online' 
+      status: 'online',
+      timestamp: new Date().toISOString()
     });
   });
 
@@ -540,14 +244,28 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('cashier-status-change', { 
       cashierName: data.cashierName,
       localId: data.localId, 
-      status: 'offline' 
+      status: 'offline',
+      timestamp: new Date().toISOString()
     });
   });
 
   // Nueva orden creada
   socket.on('order-created', (order) => {
     console.log('📦 Nueva orden:', order.orderNumber, 'Local:', order.localId);
+    // Emitir a todos los clientes
     socket.broadcast.emit('order-created', order);
+  });
+
+  // Orden actualizada
+  socket.on('order-updated', (order) => {
+    console.log('📝 Orden actualizada:', order.orderNumber);
+    socket.broadcast.emit('order-updated', order);
+  });
+
+  // Orden cancelada
+  socket.on('order-cancelled', (order) => {
+    console.log('❌ Orden cancelada:', order.orderNumber);
+    socket.broadcast.emit('order-cancelled', order);
   });
 
   // Caja cerrada
@@ -574,23 +292,139 @@ io.on('connection', (socket) => {
     socket.broadcast.emit('authorization-rejected', auth);
   });
 
+  // Producto agregado/modificado
+  socket.on('product-updated', (product) => {
+    console.log('📦 Producto actualizado:', product.name);
+    socket.broadcast.emit('product-updated', product);
+  });
+
+  // Producto eliminado
+  socket.on('product-deleted', (productId) => {
+    console.log('🗑️ Producto eliminado:', productId);
+    socket.broadcast.emit('product-deleted', productId);
+  });
+
+  // Perfil creado
+  socket.on('profile-created', (profile) => {
+    console.log('👤 Perfil creado:', profile.name);
+    socket.broadcast.emit('profile-created', profile);
+  });
+
+  // Perfil eliminado
+  socket.on('profile-deleted', (data) => {
+    console.log('🗑️ Perfil eliminado:', data.profileId);
+    socket.broadcast.emit('profile-deleted', data);
+  });
+
+  // Local creado
+  socket.on('local-created', (local) => {
+    console.log('🏢 Local creado:', local.nombre);
+    socket.broadcast.emit('local-created', local);
+  });
+
+  // Local eliminado
+  socket.on('local-deleted', (localId) => {
+    console.log('🗑️ Local eliminado:', localId);
+    socket.broadcast.emit('local-deleted', localId);
+  });
+
+  // Solicitud de sincronización (MODIFICADA PARA USAR BD)
+  socket.on('request-sync', async () => {
+    console.log('🔄 Solicitud de sincronización de:', socket.id);
+    try {
+        const allData = {};
+        for (const file of DATA_FILES) {
+            const tableName = getTableName(file);
+            const data = await dbReadData(tableName);
+            allData[file] = data;
+        }
+      
+      socket.emit('sync-complete', {
+        data: allData,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error en sincronización:', error);
+      socket.emit('sync-error', { error: error.message });
+    }
+  });
+
   // Desconexión
   socket.on('disconnect', () => {
-    console.log('❌ Cliente desconectado:', socket.id);
+    console.log(`❌ Cliente desconectado: ${socket.id} - Restantes: ${io.engine.clientsCount}`);
   });
 });
 
 // ============================================
-// INICIAR SERVIDOR
+// INICIAR SERVIDOR (MODIFICADA PARA CONEXIÓN BD)
 // ============================================
 
+async function setupDatabase() {
+    console.log('🔗 Conectando a MariaDB...');
+    
+    // 1. Leer Configuración (tu archivo modificado)
+    const configPath = path.join(DATA_DIR, 'config.json');
+    config = JSON.parse(await fs.readFile(configPath, 'utf8'));
+
+    if (!config.database || config.database.dialect !== 'mariadb') {
+        throw new Error("La configuración 'database' en config.json es inválida o falta.");
+    }
+
+    // 2. Crear Pool de Conexión
+    const dbConfig = {
+        host: config.database.host,
+        user: config.database.user,
+        password: config.database.password,
+        database: config.database.name,
+        port: config.database.port || 3306,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+    };
+    
+    pool = mysql.createPool(dbConfig);
+    
+    // 3. Testear la Conexión
+    await pool.query('SELECT 1 + 1 AS solution');
+    console.log('✅ Conexión a MariaDB exitosa.');
+
+    // 4. Migración: Crear Tablas (Todas las tablas guardarán todo el JSON en un solo registro con ID=1)
+    console.log('🔄 Verificando/Creando tablas...');
+    for (const file of DATA_FILES) {
+        const tableName = getTableName(file);
+        const query = `
+            CREATE TABLE IF NOT EXISTS ${tableName} (
+                id INT PRIMARY KEY,
+                data_json LONGTEXT NOT NULL
+            );
+        `;
+        await pool.query(query);
+        console.log(`   - Tabla creada/verificada: ${tableName}`);
+    }
+    console.log('✅ Migraciones completadas.');
+}
+
+
 async function startServer() {
+  await ensureDirectories();
+  try {
+    await setupDatabase(); // Conectar y crear tablas antes de iniciar el servidor web
+  } catch (error) {
+    console.error('❌ ERROR CRÍTICO DE BASE DE DATOS:', error.message);
+    console.error('Verifica que MariaDB esté corriendo y que tu archivo config.json esté correcto.');
+    console.error('El servidor se detendrá.');
+    process.exit(1); // Detener la aplicación si falla la conexión
+    return;
+  }
+    
   server.listen(PORT, '0.0.0.0', () => {
     console.log('============================================');
-    console.log('🚀 SERVIDOR INICIADO');
+    console.log('🚀 SERVIDOR DE CAJA REGISTRADORA INICIADO');
     console.log(`📡 Puerto: ${PORT}`);
-    console.log(`🌐 URL: http://localhost:${PORT}`);
-    console.log(`💾 Base de datos: PostgreSQL`);
+    console.log(`🌐 URL Local: http://localhost:${PORT}`);
+    console.log(`🌐 URL Red: http://0.0.0.0:${PORT}`);
+    console.log(`💾 Persistencia: MariaDB`); // INDICAR EL CAMBIO
+    console.log('✅ Sincronización en tiempo real: ACTIVA');
     console.log('============================================');
   });
 }
@@ -602,6 +436,25 @@ process.on('uncaughtException', (error) => {
 
 process.on('unhandledRejection', (error) => {
   console.error('❌ Promesa rechazada:', error);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('⚠️ SIGTERM recibido, cerrando servidor...');
+  server.close(() => {
+    console.log('✅ Servidor cerrado correctamente');
+    if (pool) pool.end(); // Cerrar la conexión de la BD
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\n⚠️ SIGINT recibido, cerrando servidor...');
+  server.close(() => {
+    console.log('✅ Servidor cerrado correctamente');
+    if (pool) pool.end(); // Cerrar la conexión de la BD
+    process.exit(0);
+  });
 });
 
 // Iniciar servidor
