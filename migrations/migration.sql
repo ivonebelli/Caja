@@ -2,24 +2,21 @@
 -- UP MIGRATION: CREACIÓN DEL ESQUEMA Y TABLAS
 -- ==============================================================================
 
--- 1. Crear el esquema (base de datos) si no existe (opcional, si no lo haces en el ORM)
-CREATE SCHEMA IF NOT EXISTS Investments;
-USE Investments; 
 
-CREATE TABLE IF NOT EXISTS Categories (
+CREATE TABLE IF NOT EXISTS dev_db.Categories (
     category_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- 2. Tabla Stores (Tiendas)
-CREATE TABLE IF NOT EXISTS Stores (
+-- 2. Tabla Stores (Tiendas)    
+CREATE TABLE IF NOT EXISTS dev_db.Stores (
     store_id INT AUTO_INCREMENT PRIMARY KEY,
     category_id INT NULL,
     name VARCHAR(100) NOT NULL UNIQUE,
     location VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (category_id) REFERENCES Categories(category_id)
         ON DELETE SET NULL
@@ -27,7 +24,7 @@ CREATE TABLE IF NOT EXISTS Stores (
 
 -- 3. Tabla Profiles (Perfiles de Usuarios/Cajeros)
 -- Relación: 1 Store tiene muchos Profiles
-CREATE TABLE IF NOT EXISTS Profiles (
+CREATE TABLE IF NOT EXISTS dev_db.Profiles (
     profile_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
@@ -43,7 +40,7 @@ CREATE TABLE IF NOT EXISTS Profiles (
 
 -- 4. Tabla Inflows (Ingresos / Sesiones de Caja)
 -- Relación: 1 Store tiene muchos Inflows
-CREATE TABLE IF NOT EXISTS Inflows (
+CREATE TABLE IF NOT EXISTS dev_db.Inflows (
     inflow_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT NOT NULL,
     profile_id INT, -- Opcional: El perfil que abrió la caja/sesión (puede ser nulo si es un ingreso automático)
@@ -62,7 +59,7 @@ CREATE TABLE IF NOT EXISTS Inflows (
 
 -- 5. Tabla Sales (Ventas / Órdenes)
 -- Relación: 1 Inflow tiene muchas Sales (pero el Inflow puede tener 0 sales)
-CREATE TABLE IF NOT EXISTS Sales (
+CREATE TABLE IF NOT EXISTS dev_db.Sales (
     sale_id INT AUTO_INCREMENT PRIMARY KEY,
     inflow_id INT NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,

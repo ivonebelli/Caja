@@ -36,7 +36,6 @@ function createWindow() {
 // Inicializar aplicación
 app.whenReady().then(async () => {
   await ensureDirectories(); //FUERZA CREACION DIRECTORIOS ***
-  await initializeDataFiles(); //INICIALIZA DATOS PARA TEST ****
 
   createWindow();
 });
@@ -53,59 +52,6 @@ app.on("activate", () => {
 async function ensureDirectories() {
   await fs.mkdir(DATA_DIR, { recursive: true });
   await fs.mkdir(REPORTES_DIR, { recursive: true });
-}
-
-// Inicializar archivos de datos con la nueva estructura
-async function initializeDataFiles() {
-  const defaultFiles = {
-    "profiles.json": {
-      locales: [
-        {
-          id: "boulevard-maritimo",
-          nombre: "Boulevard Marítimo",
-          ubicacion: "Av. Costanera 123",
-          perfiles: {
-            cajero: [],
-            administrativo: [],
-          },
-        },
-        {
-          id: "photostation",
-          nombre: "PhotoStation",
-          ubicacion: "Calle Imagen 456",
-          perfiles: {
-            cajero: [],
-            administrativo: [],
-          },
-        },
-      ],
-      gerencia: [],
-    },
-    "products.json": [],
-    "orders.json": [],
-    "categories.json": [],
-    "config.json": {
-      storeName: "Mi Negocio",
-      currency: "ARS",
-      taxRate: 0,
-      createdAt: new Date().toISOString(),
-      lastOrderNumber: 0,
-    },
-    "cash_register.json": { sessions: [] },
-    "active_sessions.json": {},
-    "authorizations.json": [],
-  };
-
-  for (const [filename, data] of Object.entries(defaultFiles)) {
-    const file = path.join(DATA_DIR, filename);
-    try {
-      await fs.access(file);
-      console.log(`✅ Archivo existente: ${filename}`);
-    } catch {
-      await fs.writeFile(file, JSON.stringify(data, null, 2));
-      console.log(`✅ Archivo creado: ${filename}`);
-    }
-  }
 }
 
 // ==============================
@@ -125,9 +71,20 @@ ipcMain.handle("db:connect", async (event, credentials) => {
   }
 });
 
-ipcMain.handle("db:get-all-stores", async (event) => {
+ipcMain.handle("db:get-stores", async (event) => {
   try {
-    const stores = await dbService.getAllStores();
+    const stores = await db.getStores();
+    return { success: true, data: stores };
+  } catch (error) {
+    console.error(error.message);
+    // Este error ahora puede ser "No hay conexión a la base de datos..."
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("db:delete-store", async (event, id) => {
+  try {
+    const stores = await db.deleteStore(id);
     return { success: true, data: stores };
   } catch (error) {
     console.error(error.message);

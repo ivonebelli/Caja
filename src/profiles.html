@@ -1,288 +1,319 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seleccionar Perfil</title>
-  <link rel="stylesheet" href="./shared/styles.css">
-  <style>
-    body {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .container {
-      background: rgba(0,0,0,0.7);
-      border-radius: 24px;
-      padding: 40px;
-      max-width: 800px;
-      width: 100%;
-      animation: fadeInUp 0.5s ease-out;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .title {
-      font-size: 36px;
-      color: white;
-      text-align: center;
-      margin-bottom: 30px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
-
-    .profile-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 20px;
-      margin-bottom: 15px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .profile-card:hover {
-      background: rgba(255,255,255,0.1);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-      border-color: rgba(102, 126, 234, 0.5);
-    }
-
-    .avatar {
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      color: white;
-      flex-shrink: 0;
-      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-    }
-
-    .profile-info {
-      flex: 1;
-    }
-
-    .profile-name {
-      font-size: 20px;
-      font-weight: 700;
-      color: white;
-    }
-
-    .role-badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-top: 5px;
-    }
-
-    .role-cajero { background: #6366f1; color: white; }
-    .role-admin { background: #ec4899; color: white; }
-    .role-gerencia { background: #f59e0b; color: white; }
-    .role-subgerente { background: #8b5cf6; color: white; }
-
-    .local-subtitle {
-      color: rgba(255,255,255,0.5);
-      font-size: 14px;
-      margin-top: 2px;
-    }
-
-    .btn-container {
-      display: flex;
-      gap: 15px;
-      margin-top: 30px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 14px;
-      font-size: 16px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-    }
-
-    .btn-secondary {
-      background: rgba(255,255,255,0.1);
-      color: white;
-      border: 2px solid rgba(255,255,255,0.3);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255,255,255,0.2);
-      border-color: rgba(255,255,255,0.5);
-    }
-
-    .btn-danger {
-      background: #ef4444;
-      color: white;
-      padding: 8px 16px;
-      font-size: 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      border: none;
-      font-weight: 600;
-      transition: all 0.3s ease;
-    }
-
-    .btn-danger:hover {
-      background: #dc2626;
-      transform: scale(1.05);
-    }
-
-    h3 {
-      color: white;
-      margin-top: 30px;
-      margin-bottom: 15px;
-      font-size: 20px;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Seleccionar Perfil</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <style>
+      body {
+        background: linear-gradient(
+          135deg,
+          #1a1a2e 0%,
+          #16213e 50%,
+          #0f3460 100%
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+
+      .container {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 24px;
+        padding: 40px;
+        max-width: 800px;
+        width: 100%;
+        animation: fadeInUp 0.5s ease-out;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1 class="title" id="pageTitle">Selecciona tu Perfil</h1>
-    <div id="profilesContainer"></div>
-    <div class="btn-container">
-      <button class="btn btn-secondary" onclick="goBack()">← Volver</button>
-      <div id="createButtons" style="display: flex; gap: 15px; flex: 1;"></div>
+
+      .title {
+        font-size: 36px;
+        color: white;
+        text-align: center;
+        margin-bottom: 30px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
+
+      .profile-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 15px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .profile-card:hover {
+        background: rgba(255, 255, 255, 0.1);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        border-color: rgba(102, 126, 234, 0.5);
+      }
+
+      .avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+      }
+
+      .profile-info {
+        flex: 1;
+      }
+
+      .profile-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+      }
+
+      .role-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 5px;
+      }
+
+      .role-cajero {
+        background: #6366f1;
+        color: white;
+      }
+      .role-admin {
+        background: #ec4899;
+        color: white;
+      }
+      .role-gerencia {
+        background: #f59e0b;
+        color: white;
+      }
+      .role-subgerente {
+        background: #8b5cf6;
+        color: white;
+      }
+
+      .local-subtitle {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 14px;
+        margin-top: 2px;
+      }
+
+      .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 14px;
+        font-size: 16px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        border: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-danger:hover {
+        background: #dc2626;
+        transform: scale(1.05);
+      }
+
+      h3 {
+        color: white;
+        margin-top: 30px;
+        margin-bottom: 15px;
+        font-size: 20px;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title" id="pageTitle">Selecciona tu Perfil</h1>
+      <div id="profilesContainer"></div>
+      <div class="btn-container">
+        <button class="btn btn-secondary" onclick="goBack()">← Volver</button>
+        <div id="createButtons" style="display: flex; gap: 15px; flex: 1"></div>
+      </div>
     </div>
-  </div>
 
-  <script src="./shared/utils.js"></script>
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const localId = urlParams.get('localId');
-    const mode = urlParams.get('mode'); // 'gerencia', 'admin', 'gerencia-manage', o null
+    <script src="./shared/utils.js"></script>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const localId = urlParams.get("localId");
+      const mode = urlParams.get("mode"); // 'gerencia', 'admin', 'gerencia-manage', o null
 
-    let currentLocal = null;
+      let currentLocal = null;
 
-    console.log('📄 profiles.html cargado');
-    console.log('🔍 Parámetros URL:', { localId, mode });
-    console.log('🔍 specialAccess en localStorage:', localStorage.getItem('specialAccess'));
+      console.log("📄 profiles.html cargado");
+      console.log("🔍 Parámetros URL:", { localId, mode });
+      console.log(
+        "🔍 specialAccess en localStorage:",
+        localStorage.getItem("specialAccess")
+      );
 
-    async function loadProfiles() {
-      const data = await readData('profiles.json');
-      
-      if (!data) {
-        showNotification('Error al cargar datos', 'error');
-        return;
-      }
-      
-      // Verificar el acceso especial guardado
-      const specialAccess = localStorage.getItem('specialAccess');
-      console.log('🔍 specialAccess actual:', specialAccess);
-      console.log('🔍 mode URL:', mode);
-      
-      // MODO GERENCIA: Solo si mode=gerencia Y specialAccess=gerencia
-      if (mode === 'gerencia' && specialAccess === 'gerencia') {
-        console.log('✅ Entrando a modo GERENCIA');
-        renderGerenciaMode(data);
-        return;
-      }
-      
-      // MODO ADMIN: Solo si mode=admin Y specialAccess=administracion
-      if (mode === 'admin' && specialAccess === 'administracion') {
-        console.log('✅ Entrando a modo ADMINISTRACIÓN');
-        // Si NO hay localId, mostrar todos los administrativos
-        if (!localId) {
-          document.getElementById('pageTitle').textContent = 'Administración - Todos los Perfiles';
-          renderAdminProfiles(data);
+      async function loadProfiles() {
+        const data = await readData("profiles.json");
+
+        if (!data) {
+          showNotification("Error al cargar datos", "error");
           return;
         }
-        // Si hay localId, mostrar solo ese local
-        currentLocal = data.locales.find(l => l.id === localId);
-        if (!currentLocal) {
-          showNotification('Local no encontrado', 'error');
-          setTimeout(() => goBack(), 1500);
-          return;
-        }
-        document.getElementById('pageTitle').textContent = `Administración - ${currentLocal.nombre}`;
-        renderLocalProfiles(data, true); // true = isAdminMode
-        return;
-      }
-      
-      // MODO GERENCIA-MANAGE: Gerencia gestionando un local específico
-      if (mode === 'gerencia-manage' && specialAccess === 'gerencia' && localId) {
-        console.log('✅ Entrando a modo GERENCIA-MANAGE');
-        currentLocal = data.locales.find(l => l.id === localId);
-        if (!currentLocal) {
-          showNotification('Local no encontrado', 'error');
-          setTimeout(() => goBack(), 1500);
-          return;
-        }
-        document.getElementById('pageTitle').textContent = `Gerencia - Gestión de ${currentLocal.nombre}`;
-        renderLocalProfiles(data, true); // true = isGerenciaManage
-        return;
-      }
-      
-      // MODO LOCAL NORMAL: Usuario normal seleccionando perfil
-      if (localId && !mode) {
-        console.log('✅ Entrando a modo LOCAL NORMAL');
-        currentLocal = data.locales.find(l => l.id === localId);
-        if (!currentLocal) {
-          showNotification('Local no encontrado', 'error');
-          setTimeout(() => goBack(), 1500);
-          return;
-        }
-        document.getElementById('pageTitle').textContent = `Perfiles en ${currentLocal.nombre}`;
-        renderLocalProfiles(data, false); // false = modo normal
-        return;
-      }
-      
-      // Si llegamos aquí, algo está mal
-      console.error('❌ Acceso inválido:', { mode, specialAccess, localId });
-      showNotification('Acceso no válido', 'error');
-      setTimeout(() => {
-        localStorage.removeItem('specialAccess');
-        window.location.href = './index.html';
-      }, 1500);
-    }
 
-    function renderGerenciaMode(data) {
-      const container = document.getElementById('profilesContainer');
-      let html = '<h3>Gerente General</h3>';
-      
-      // Perfil de gerencia
-      if (data.gerencia && data.gerencia.name) {
-        html += `
+        // Verificar el acceso especial guardado
+        const specialAccess = localStorage.getItem("specialAccess");
+        console.log("🔍 specialAccess actual:", specialAccess);
+        console.log("🔍 mode URL:", mode);
+
+        // MODO GERENCIA: Solo si mode=gerencia Y specialAccess=gerencia
+        if (mode === "gerencia" && specialAccess === "gerencia") {
+          console.log("✅ Entrando a modo GERENCIA");
+          renderGerenciaMode(data);
+          return;
+        }
+
+        // MODO ADMIN: Solo si mode=admin Y specialAccess=administracion
+        if (mode === "admin" && specialAccess === "administracion") {
+          console.log("✅ Entrando a modo ADMINISTRACIÓN");
+          // Si NO hay localId, mostrar todos los administrativos
+          if (!localId) {
+            document.getElementById("pageTitle").textContent =
+              "Administración - Todos los Perfiles";
+            renderAdminProfiles(data);
+            return;
+          }
+          // Si hay localId, mostrar solo ese local
+          currentLocal = data.locales.find((l) => l.id === localId);
+          if (!currentLocal) {
+            showNotification("Local no encontrado", "error");
+            setTimeout(() => goBack(), 1500);
+            return;
+          }
+          document.getElementById(
+            "pageTitle"
+          ).textContent = `Administración - ${currentLocal.nombre}`;
+          renderLocalProfiles(data, true); // true = isAdminMode
+          return;
+        }
+
+        // MODO GERENCIA-MANAGE: Gerencia gestionando un local específico
+        if (
+          mode === "gerencia-manage" &&
+          specialAccess === "gerencia" &&
+          localId
+        ) {
+          console.log("✅ Entrando a modo GERENCIA-MANAGE");
+          currentLocal = data.locales.find((l) => l.id === localId);
+          if (!currentLocal) {
+            showNotification("Local no encontrado", "error");
+            setTimeout(() => goBack(), 1500);
+            return;
+          }
+          document.getElementById(
+            "pageTitle"
+          ).textContent = `Gerencia - Gestión de ${currentLocal.nombre}`;
+          renderLocalProfiles(data, true); // true = isGerenciaManage
+          return;
+        }
+
+        // MODO LOCAL NORMAL: Usuario normal seleccionando perfil
+        if (localId && !mode) {
+          console.log("✅ Entrando a modo LOCAL NORMAL");
+          currentLocal = data.locales.find((l) => l.id === localId);
+          if (!currentLocal) {
+            showNotification("Local no encontrado", "error");
+            setTimeout(() => goBack(), 1500);
+            return;
+          }
+          document.getElementById(
+            "pageTitle"
+          ).textContent = `Perfiles en ${currentLocal.nombre}`;
+          renderLocalProfiles(data, false); // false = modo normal
+          return;
+        }
+
+        // Si llegamos aquí, algo está mal
+        console.error("❌ Acceso inválido:", { mode, specialAccess, localId });
+        showNotification("Acceso no válido", "error");
+        setTimeout(() => {
+          localStorage.removeItem("specialAccess");
+          window.location.href = "./index.html";
+        }, 1500);
+      }
+
+      function renderGerenciaMode(data) {
+        const container = document.getElementById("profilesContainer");
+        let html = "<h3>Gerente General</h3>";
+
+        // Perfil de gerencia
+        if (data.gerencia && data.gerencia.name) {
+          html += `
           <div class="profile-card" onclick="selectGerenciaProfile()">
             <div class="avatar" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">👔</div>
             <div class="profile-info">
@@ -294,8 +325,8 @@
             </button>
           </div>
         `;
-      } else {
-        html += `
+        } else {
+          html += `
           <div class="profile-card" onclick="createGerente()">
             <div class="avatar" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">➕</div>
             <div class="profile-info">
@@ -304,14 +335,14 @@
             </div>
           </div>
         `;
-      }
-      
-      // Subgerentes por local
-      html += '<h3>Subgerentes por Local</h3>';
-      
-      data.locales.forEach(local => {
-        if (local.subgerente && local.subgerente.name) {
-          html += `
+        }
+
+        // Subgerentes por local
+        html += "<h3>Subgerentes por Local</h3>";
+
+        data.locales.forEach((local) => {
+          if (local.subgerente && local.subgerente.name) {
+            html += `
             <div class="profile-card" onclick="selectSubgerenteProfile('${local.id}')">
               <div class="avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">👤</div>
               <div class="profile-info">
@@ -324,8 +355,8 @@
               </button>
             </div>
           `;
-        } else {
-          html += `
+          } else {
+            html += `
             <div class="profile-card" onclick="createSubgerente('${local.id}')">
               <div class="avatar" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">➕</div>
               <div class="profile-info">
@@ -335,296 +366,332 @@
               </div>
             </div>
           `;
-        }
-      });
-      
-      // CAMBIO: Ya NO se muestra la sección de "Gestión de Locales" aquí
-      // Los locales solo se gestionan desde el dashboard de gerencia
-      
-      container.innerHTML = html;
-      
-      // Botones de crear - NO incluir crear local aquí
-      const createButtons = document.getElementById('createButtons');
-      createButtons.innerHTML = ''; // Sin botones adicionales
-    }
+          }
+        });
 
-    function renderAdminProfiles(data) {
-      const container = document.getElementById('profilesContainer');
-      let html = '<h3>Perfiles Administrativos</h3>';
-      
-      // Recopilar todos los administrativos de todos los locales
-      const allAdmins = [];
-      data.locales.forEach(local => {
-        local.perfiles.administrativo.forEach(admin => {
-          allAdmins.push({
-            ...admin,
-            localNombre: local.nombre,
-            localId: local.id,
-            localUbicacion: local.ubicacion
+        // CAMBIO: Ya NO se muestra la sección de "Gestión de Locales" aquí
+        // Los locales solo se gestionan desde el dashboard de gerencia
+
+        container.innerHTML = html;
+
+        // Botones de crear - NO incluir crear local aquí
+        const createButtons = document.getElementById("createButtons");
+        createButtons.innerHTML = ""; // Sin botones adicionales
+      }
+
+      function renderAdminProfiles(data) {
+        const container = document.getElementById("profilesContainer");
+        let html = "<h3>Perfiles Administrativos</h3>";
+
+        // Recopilar todos los administrativos de todos los locales
+        const allAdmins = [];
+        data.locales.forEach((local) => {
+          local.perfiles.administrativo.forEach((admin) => {
+            allAdmins.push({
+              ...admin,
+              localNombre: local.nombre,
+              localId: local.id,
+              localUbicacion: local.ubicacion,
+            });
           });
         });
-      });
 
-      if (allAdmins.length === 0) {
-        html += '<p style="color:rgba(255,255,255,0.7);text-align:center;">No hay perfiles administrativos creados.</p>';
-      } else {
-        allAdmins.forEach(admin => {
-          html += `
-            <div class="profile-card" onclick="selectAdminProfile('${admin.id}', '${admin.localId}')">
-              <div class="avatar" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">${admin.name.charAt(0)}</div>
+        if (allAdmins.length === 0) {
+          html +=
+            '<p style="color:rgba(255,255,255,0.7);text-align:center;">No hay perfiles administrativos creados.</p>';
+        } else {
+          allAdmins.forEach((admin) => {
+            html += `
+            <div class="profile-card" onclick="selectAdminProfile('${
+              admin.id
+            }', '${admin.localId}')">
+              <div class="avatar" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">${admin.name.charAt(
+                0
+              )}</div>
               <div class="profile-info">
                 <div class="profile-name">${admin.name}</div>
                 <span class="role-badge role-admin">Administrativo</span>
-                <div class="local-subtitle">📍 ${admin.localNombre} - ${admin.localUbicacion}</div>
+                <div class="local-subtitle">📍 ${admin.localNombre} - ${
+              admin.localUbicacion
+            }</div>
               </div>
-              <button class="btn btn-danger" onclick="event.stopPropagation(); deleteAdminProfile('${admin.id}', '${admin.localId}')">
+              <button class="btn btn-danger" onclick="event.stopPropagation(); deleteAdminProfile('${
+                admin.id
+              }', '${admin.localId}')">
                 🗑️ Eliminar
               </button>
             </div>
           `;
-        });
-      }
-      
-      container.innerHTML = html;
-      
-      // Botón para crear nuevo administrativo
-      const createButtons = document.getElementById('createButtons');
-      createButtons.innerHTML = `
+          });
+        }
+
+        container.innerHTML = html;
+
+        // Botón para crear nuevo administrativo
+        const createButtons = document.getElementById("createButtons");
+        createButtons.innerHTML = `
         <button class="btn btn-primary" onclick="selectLocalForNewAdmin()">
           + Crear Administrativo
         </button>
       `;
-    }
-
-    function selectAdminProfile(profileId, localId) {
-      localStorage.setItem('selectedRole', 'administrativo');
-      window.location.href = `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}&mode=admin`;
-    }
-
-    function selectLocalForNewAdmin() {
-      // Redirigir a la vista de locales para elegir donde crear el admin
-      window.location.href = './locales.html?mode=admin&action=create';
-    }
-
-    async function deleteAdminProfile(profileId, localId) {
-      if (!confirm('¿Estás seguro de eliminar este perfil administrativo?')) {
-        return;
       }
-      
-      const data = await readData('profiles.json');
-      const local = data.locales.find(l => l.id === localId);
-      
-      if (local) {
-        local.perfiles.administrativo = local.perfiles.administrativo.filter(p => p.id !== profileId);
-        
-        const success = await writeData('profiles.json', data);
-        if (success) {
-          showNotification('Perfil administrativo eliminado correctamente', 'success');
-          loadProfiles();
-        } else {
-          showNotification('Error al eliminar el perfil', 'error');
+
+      function selectAdminProfile(profileId, localId) {
+        localStorage.setItem("selectedRole", "administrativo");
+        window.location.href = `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}&mode=admin`;
+      }
+
+      function selectLocalForNewAdmin() {
+        // Redirigir a la vista de locales para elegir donde crear el admin
+        window.location.href = "./locales.html?mode=admin&action=create";
+      }
+
+      async function deleteAdminProfile(profileId, localId) {
+        if (!confirm("¿Estás seguro de eliminar este perfil administrativo?")) {
+          return;
+        }
+
+        const data = await readData("profiles.json");
+        const local = data.locales.find((l) => l.id === localId);
+
+        if (local) {
+          local.perfiles.administrativo = local.perfiles.administrativo.filter(
+            (p) => p.id !== profileId
+          );
+
+          const success = await writeData("profiles.json", data);
+          if (success) {
+            showNotification(
+              "Perfil administrativo eliminado correctamente",
+              "success"
+            );
+            loadProfiles();
+          } else {
+            showNotification("Error al eliminar el perfil", "error");
+          }
         }
       }
-    }
 
-    function renderLocalProfiles(data, canDelete) {
-      const container = document.getElementById('profilesContainer');
-      const profiles = currentLocal.perfiles;
-      
-      const allProfiles = [
-        ...profiles.cajero.map(p => ({...p, role: 'cajero'})),
-        ...profiles.administrativo.map(p => ({...p, role: 'administrativo'}))
-      ];
+      function renderLocalProfiles(data, canDelete) {
+        const container = document.getElementById("profilesContainer");
+        const profiles = currentLocal.perfiles;
 
-      if (allProfiles.length === 0) {
-        container.innerHTML = '<p style="color:rgba(255,255,255,0.7);text-align:center;">No hay perfiles en este local.</p>';
-      } else {
-        container.innerHTML = allProfiles.map(p => {
-          const deleteBtn = canDelete ? `
+        const allProfiles = [
+          ...profiles.cajero.map((p) => ({ ...p, role: "cajero" })),
+          ...profiles.administrativo.map((p) => ({
+            ...p,
+            role: "administrativo",
+          })),
+        ];
+
+        if (allProfiles.length === 0) {
+          container.innerHTML =
+            '<p style="color:rgba(255,255,255,0.7);text-align:center;">No hay perfiles en este local.</p>';
+        } else {
+          container.innerHTML = allProfiles
+            .map((p) => {
+              const deleteBtn = canDelete
+                ? `
             <button class="btn btn-danger" onclick="event.stopPropagation(); deleteProfile('${p.id}', '${p.role}')">
               🗑️
             </button>
-          ` : '';
-          
-          const bgGradient = p.role === 'cajero' 
-            ? 'background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);'
-            : 'background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);';
-          
-          return `
-            <div class="profile-card" onclick="selectProfile('${p.id}', '${p.role}')">
-              <div class="avatar" style="${bgGradient}">${p.name.charAt(0)}</div>
+          `
+                : "";
+
+              const bgGradient =
+                p.role === "cajero"
+                  ? "background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);"
+                  : "background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);";
+
+              return `
+            <div class="profile-card" onclick="selectProfile('${p.id}', '${
+                p.role
+              }')">
+              <div class="avatar" style="${bgGradient}">${p.name.charAt(
+                0
+              )}</div>
               <div class="profile-info">
                 <div class="profile-name">${p.name}</div>
-                <span class="role-badge role-${p.role === 'cajero' ? 'cajero' : 'admin'}">
-                  ${p.role === 'cajero' ? 'Cajero' : 'Administrativo'}
+                <span class="role-badge role-${
+                  p.role === "cajero" ? "cajero" : "admin"
+                }">
+                  ${p.role === "cajero" ? "Cajero" : "Administrativo"}
                 </span>
               </div>
               ${deleteBtn}
             </div>
           `;
-        }).join('');
-      }
+            })
+            .join("");
+        }
 
-      // Configurar botón de crear perfil
-      const createButtons = document.getElementById('createButtons');
-      createButtons.innerHTML = `
+        // Configurar botón de crear perfil
+        const createButtons = document.getElementById("createButtons");
+        createButtons.innerHTML = `
         <button class="btn btn-primary" onclick="createNewProfile()">
           + Crear Perfil
         </button>
       `;
-    }
-
-    function createNewProfile() {
-      if (mode === 'admin') {
-        window.location.href = `./create-profile.html?localId=${localId}&mode=admin`;
-      } else if (mode === 'gerencia-manage') {
-        window.location.href = `./create-profile.html?localId=${localId}&mode=gerencia-manage`;
-      } else {
-        window.location.href = `./create-profile.html?localId=${localId}`;
       }
-    }
 
-    function selectProfile(profileId, role) {
-      localStorage.setItem('selectedRole', role);
-      window.location.href = `./login.html?profileId=${profileId}&role=${role}&localId=${localId}`;
-    }
-
-    function selectGerenciaProfile() {
-      localStorage.setItem('selectedRole', 'gerencia');
-      window.location.href = `./login.html?role=gerencia&mode=gerencia`;
-    }
-
-    function selectSubgerenteProfile(localId) {
-      localStorage.setItem('selectedRole', 'subgerente');
-      window.location.href = `./login.html?role=subgerente&localId=${localId}&mode=gerencia`;
-    }
-
-    function createGerente() {
-      window.location.href = './create-profile.html?role=gerencia&mode=gerencia';
-    }
-
-    function createSubgerente(localId) {
-      window.location.href = `./create-profile.html?role=subgerente&localId=${localId}&mode=gerencia`;
-    }
-
-    function goToManageLocal(localId) {
-      window.location.href = `./profiles.html?localId=${localId}&mode=gerencia-manage`;
-    }
-
-    async function deleteLocal(localId) {
-      if (!confirm('¿Estás seguro de eliminar este local? Se eliminarán todos los perfiles asociados.')) {
-        return;
+      function createNewProfile() {
+        if (mode === "admin") {
+          window.location.href = `./create-profile.html?localId=${localId}&mode=admin`;
+        } else if (mode === "gerencia-manage") {
+          window.location.href = `./create-profile.html?localId=${localId}&mode=gerencia-manage`;
+        } else {
+          window.location.href = `./create-profile.html?localId=${localId}`;
+        }
       }
-      
-      const data = await readData('profiles.json');
-      data.locales = data.locales.filter(l => l.id !== localId);
-      
-      const success = await writeData('profiles.json', data);
-      if (success) {
-        showNotification('Local eliminado correctamente', 'success');
-        loadProfiles();
-      } else {
-        showNotification('Error al eliminar el local', 'error');
-      }
-    }
 
-    async function deleteGerente() {
-      if (!confirm('¿Estás seguro de eliminar el gerente general?')) {
-        return;
+      function selectProfile(profileId, role) {
+        localStorage.setItem("selectedRole", role);
+        window.location.href = `./login.html?profileId=${profileId}&role=${role}&localId=${localId}`;
       }
-      
-      const data = await readData('profiles.json');
-      
-      data.gerencia = {
-        name: '',
-        pin: '',
-        photo: null,
-        createdAt: null
-      };
-      
-      const success = await writeData('profiles.json', data);
-      if (success) {
-        showNotification('Gerente eliminado correctamente', 'success');
-        loadProfiles();
-      } else {
-        showNotification('Error al eliminar el gerente', 'error');
-      }
-    }
 
-    async function deleteSubgerente(localId) {
-      if (!confirm('¿Estás seguro de eliminar este subgerente?')) {
-        return;
+      function selectGerenciaProfile() {
+        localStorage.setItem("selectedRole", "gerencia");
+        window.location.href = `./login.html?role=gerencia&mode=gerencia`;
       }
-      
-      const data = await readData('profiles.json');
-      const local = data.locales.find(l => l.id === localId);
-      
-      if (local) {
-        local.subgerente = {
-          name: '',
-          pin: '',
+
+      function selectSubgerenteProfile(localId) {
+        localStorage.setItem("selectedRole", "subgerente");
+        window.location.href = `./login.html?role=subgerente&localId=${localId}&mode=gerencia`;
+      }
+
+      function createGerente() {
+        window.location.href =
+          "./create-profile.html?role=gerencia&mode=gerencia";
+      }
+
+      function createSubgerente(localId) {
+        window.location.href = `./create-profile.html?role=subgerente&localId=${localId}&mode=gerencia`;
+      }
+
+      function goToManageLocal(localId) {
+        window.location.href = `./profiles.html?localId=${localId}&mode=gerencia-manage`;
+      }
+
+      async function deleteLocal(localId) {
+        if (
+          !confirm(
+            "¿Estás seguro de eliminar este local? Se eliminarán todos los perfiles asociados."
+          )
+        ) {
+          return;
+        }
+
+        const data = await readData("profiles.json");
+        data.locales = data.locales.filter((l) => l.id !== localId);
+
+        const success = await writeData("profiles.json", data);
+        if (success) {
+          showNotification("Local eliminado correctamente", "success");
+          loadProfiles();
+        } else {
+          showNotification("Error al eliminar el local", "error");
+        }
+      }
+
+      async function deleteGerente() {
+        if (!confirm("¿Estás seguro de eliminar el gerente general?")) {
+          return;
+        }
+
+        const data = await readData("profiles.json");
+
+        data.gerencia = {
+          name: "",
+          pin: "",
           photo: null,
-          createdAt: null
+          createdAt: null,
         };
-        
-        const success = await writeData('profiles.json', data);
+
+        const success = await writeData("profiles.json", data);
         if (success) {
-          showNotification('Subgerente eliminado correctamente', 'success');
+          showNotification("Gerente eliminado correctamente", "success");
           loadProfiles();
         } else {
-          showNotification('Error al eliminar el subgerente', 'error');
+          showNotification("Error al eliminar el gerente", "error");
         }
       }
-    }
 
-    async function deleteProfile(profileId, role) {
-      if (!confirm('¿Estás seguro de eliminar este perfil?')) {
-        return;
+      async function deleteSubgerente(localId) {
+        if (!confirm("¿Estás seguro de eliminar este subgerente?")) {
+          return;
+        }
+
+        const data = await readData("profiles.json");
+        const local = data.locales.find((l) => l.id === localId);
+
+        if (local) {
+          local.subgerente = {
+            name: "",
+            pin: "",
+            photo: null,
+            createdAt: null,
+          };
+
+          const success = await writeData("profiles.json", data);
+          if (success) {
+            showNotification("Subgerente eliminado correctamente", "success");
+            loadProfiles();
+          } else {
+            showNotification("Error al eliminar el subgerente", "error");
+          }
+        }
       }
-      
-      const data = await readData('profiles.json');
-      const local = data.locales.find(l => l.id === localId);
-      
-      if (local) {
-        local.perfiles[role] = local.perfiles[role].filter(p => p.id !== profileId);
-        
-        const success = await writeData('profiles.json', data);
-        if (success) {
-          showNotification('Perfil eliminado correctamente', 'success');
-          loadProfiles();
+
+      async function deleteProfile(profileId, role) {
+        if (!confirm("¿Estás seguro de eliminar este perfil?")) {
+          return;
+        }
+
+        const data = await readData("profiles.json");
+        const local = data.locales.find((l) => l.id === localId);
+
+        if (local) {
+          local.perfiles[role] = local.perfiles[role].filter(
+            (p) => p.id !== profileId
+          );
+
+          const success = await writeData("profiles.json", data);
+          if (success) {
+            showNotification("Perfil eliminado correctamente", "success");
+            loadProfiles();
+          } else {
+            showNotification("Error al eliminar el perfil", "error");
+          }
+        }
+      }
+
+      function goBack() {
+        const specialAccess = localStorage.getItem("specialAccess");
+
+        console.log("⬅️ goBack - specialAccess:", specialAccess, "mode:", mode);
+
+        if (mode === "gerencia" && specialAccess === "gerencia") {
+          // Volviendo de gerencia principal
+          localStorage.removeItem("specialAccess");
+          window.location.href = "./index.html";
+        } else if (mode === "gerencia-manage") {
+          // Volviendo de gestión de local desde gerencia
+          window.location.href = "./profiles.html?mode=gerencia";
+        } else if (mode === "admin" && specialAccess === "administracion") {
+          // Volviendo de administración de local
+          window.location.href = "./locales.html?mode=admin";
+        } else if (localId) {
+          // Volviendo de selección de perfil normal
+          window.location.href = "./locales.html";
         } else {
-          showNotification('Error al eliminar el perfil', 'error');
+          // Fallback
+          localStorage.removeItem("specialAccess");
+          window.location.href = "./index.html";
         }
       }
-    }
 
-    function goBack() {
-      const specialAccess = localStorage.getItem('specialAccess');
-      
-      console.log('⬅️ goBack - specialAccess:', specialAccess, 'mode:', mode);
-      
-      if (mode === 'gerencia' && specialAccess === 'gerencia') {
-        // Volviendo de gerencia principal
-        localStorage.removeItem('specialAccess');
-        window.location.href = './index.html';
-      } else if (mode === 'gerencia-manage') {
-        // Volviendo de gestión de local desde gerencia
-        window.location.href = './profiles.html?mode=gerencia';
-      } else if (mode === 'admin' && specialAccess === 'administracion') {
-        // Volviendo de administración de local
-        window.location.href = './locales.html?mode=admin';
-      } else if (localId) {
-        // Volviendo de selección de perfil normal
-        window.location.href = './locales.html';
-      } else {
-        // Fallback
-        localStorage.removeItem('specialAccess');
-        window.location.href = './index.html';
-      }
-    }
-
-    // Cargar perfiles al iniciar
-    loadProfiles();
-  </script>
-</body>
+      // Cargar perfiles al iniciar
+      loadProfiles();
+    </script>
+  </body>
 </html>

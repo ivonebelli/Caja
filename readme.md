@@ -10,3 +10,6 @@ DB_PORT=3306
 DB_USER=app_user
 DB_PASSWORD=app_secret
 DB_DATABASE=dev_db
+
+docker exec -it mariadb_dev bash
+sh -c 'mariadb -u app_user -p'
