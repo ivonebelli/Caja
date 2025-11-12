@@ -434,14 +434,6 @@
           .map((id) => document.getElementById(id).value)
           .join("");
 
-        console.log("Guardando perfil:", {
-          name,
-          profileRole,
-          localId,
-          role,
-          mode,
-        });
-
         if (!name || !profileRole) {
           showNotification("Completa todos los campos", "error");
           return;
