@@ -100,8 +100,8 @@ ipcMain.handle("db:delete-store", async (event, id) => {
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:get-profiles", async (event, store_id) => {
   try {
-    const profiles = await db.getProfiles(store_id);
-    return { success: true, data: profiles };
+    const profiles = await db.getProfiles(store_id, mariadb_instance);
+    return { success: true, data: profiles.map((profile) => profile.toJSON()) };
   } catch (error) {
     console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."

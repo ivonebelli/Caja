@@ -310,7 +310,7 @@ async function deleteStore(storeId) {
 /**
  * (Refactorizado) Obtiene perfiles activos de una tienda específica.
  */
-async function getProfiles(store_id) {
+async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
   try {
