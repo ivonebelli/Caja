@@ -1,50 +1,288 @@
-const mysql = require("mysql2/promise");
+const {
+  Sequelize,
+  DataTypes,
+  Model,
+  Op,
+  SequelizeForeignKeyConstraintError,
+} = require("sequelize");
 
-let poll = null;
+// Variables globales para la instancia de Sequelize y los modelos
+// Se inicializarán en connectWithCredentials
+let Store;
+let Profile;
+let Inflow;
+let Sale;
 
 /**
- * Inicializa el pool de conexiones de la base de datos.
+ * Define todos los modelos y sus asociaciones (relaciones).
+ * Esta función se llama después de que se establece la conexión.
+ */
+function initModels(sequelize) {
+  // --- 1. Definición del Modelo: Store (Tiendas) ---
+  Store = sequelize.define(
+    "Store",
+    {
+      store_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      category_id: {
+        // Agregado para coincidir con SQL
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      name: {
+        type: DataTypes.STRING(100), // STRING(100) para UNIQUE
+        allowNull: false,
+        unique: true,
+      },
+      location: {
+        // Agregado para coincidir con SQL
+        type: DataTypes.STRING(255),
+        allowNull: true,
+      },
+      is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+      created_at: {
+        // Agregado para coincidir con SQL
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+    },
+    { timestamps: false, tableName: "Stores" }
+  );
+
+  // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
+  Profile = sequelize.define(
+    "Profile",
+    {
+      profile_id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      store_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      username: {
+        type: DataTypes.STRING(50), // STRING(50) para UNIQUE
+        allowNull: false,
+        unique: true,
+      },
+      role: {
+        // Mapeo del ENUM de SQL a STRING de Sequelize.
+        // Sequelize lo convertirá a ENUM en MySQL/MariaDB.
+        type: DataTypes.ENUM(
+          "cajero",
+          "administrativo",
+          "subgerencia",
+          "gerente"
+        ),
+        allowNull: false,
+      },
+      pin: {
+        type: DataTypes.STRING(4), // VARCHAR(4)
+        allowNull: false,
+        defaultValue: "1234",
+      },
+      photo: {
+        type: DataTypes.TEXT("long"), // Uso de LONGTEXT para fotos (DataURL grande)
+        allowNull: true,
+      },
+      is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+      created_at: {
+        // Agregado para coincidir con SQL
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+    },
+    { timestamps: false, tableName: "Profiles" }
+  );
+
+  // --- 3. Definición del Modelo: Inflow (Sesiones de Caja) ---
+  Inflow = sequelize.define(
+    "Inflow",
+    {
+      inflow_id: {
+        // Renombrado a 'inflow_id' para coincidir con el PK de SQL
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      store_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      profile_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true, // Puede ser NULL en SQL
+      },
+      start_time: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      end_time: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      starting_cash: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0.0,
+      },
+    },
+    { timestamps: false, tableName: "Inflows" }
+  );
+
+  // --- 4. Definición del Modelo: Sale (Ventas) ---
+  Sale = sequelize.define(
+    "Sale",
+    {
+      sale_id: {
+        // Renombrado a 'sale_id' para coincidir con el PK de SQL
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      inflow_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      total_amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+      },
+      sale_date: {
+        // Renombrado de 'sale_date' a 'sale_date' y tipo DATE
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      // ... otros campos de venta
+    },
+    { timestamps: false, tableName: "Sales" }
+  );
+
+  // --- Definición de Asociaciones (Relaciones) ---
+
+  // Store <-> Profile
+  Store.hasMany(Profile, {
+    foreignKey: "store_id",
+    as: "profiles",
+    onDelete: "CASCADE",
+  }); // onDelete: CASCADE
+  Profile.belongsTo(Store, { foreignKey: "store_id", as: "store" });
+
+  // Store <-> Inflow
+  Store.hasMany(Inflow, {
+    foreignKey: "store_id",
+    as: "inflows",
+    onDelete: "RESTRICT",
+  }); // onDelete: RESTRICT
+  Inflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
+
+  // Profile <-> Inflow (Agregada para completar la FK)
+  Profile.hasMany(Inflow, { foreignKey: "profile_id", as: "sessions" });
+  Inflow.belongsTo(Profile, {
+    foreignKey: "profile_id",
+    as: "profile",
+    onDelete: "SET NULL",
+  }); // onDelete: SET NULL
+
+  // Inflow <-> Sale
+  Inflow.hasMany(Sale, {
+    foreignKey: "inflow_id",
+    as: "sales",
+    onDelete: "CASCADE",
+  }); // onDelete: CASCADE
+  Sale.belongsTo(Inflow, { foreignKey: "inflow_id", as: "inflow" });
+
+  // Devolvemos los modelos inicializados para que el 'setter' del módulo los almacene.
+  return { Store, Profile, Inflow, Sale };
+}
+/**
+ * Inicializa la conexión de Sequelize (MariaDB o SQLite).
  * Esta función debe ser llamada en main.js ANTES de cualquier operación de BD.
  */
 async function connectWithCredentials(credentials) {
+  const { dialect, host, user, password, database, storage } = credentials;
   try {
-    pool = mysql.createPool({
-      host: credentials.host,
-      port: 3306,
-      user: credentials.user,
-      password: credentials.password,
-      database: credentials.database,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0,
-    });
+    let sequelize = null;
+    if (dialect === "mysql" || dialect === "mariadb") {
+      sequelize = new Sequelize(database, user, password, {
+        host: host,
+        port: 3306, // Puerto estándar
+        dialect: "mysql", // El driver de 'mysql' funciona para MariaDB
+        logging: false, // Desactiva los logs de SQL en la consola
+      });
+    } else if (dialect === "sqlite") {
+      sequelize = new Sequelize({
+        dialect: "sqlite",
+        storage: storage, // Ruta al archivo .sqlite (ej: './database.sqlite')
+        logging: false,
+      });
+    } else {
+      throw new Error("Dialecto de base de datos no soportado.");
+    }
 
     // Prueba la conexión
-    await pool.query("SELECT 1");
-    console.log("✅ Conexión a la base de datos (pool) establecida.");
+    await sequelize.authenticate();
+    console.log(`✅ Conexión a la base de datos (${dialect}) establecida.`);
 
-    // Devuelve la instancia del pool si main.js la necesita
-    return pool;
+    // Inicializa los modelos
+    initModels(sequelize);
+
+    return sequelize;
   } catch (error) {
     console.error("❌ Error al conectar con la base de datos:", error.message);
     throw error; // Lanza el error para que main.js lo capture
   }
 }
 
-async function deleteStore(id) {
-  if (!pool) {
-    throw new Error(
-      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
-    );
-  }
+/**
+ * (Refactorizado) Obtiene todas las tiendas (Stores) activas.
+ */
+async function getStores(sequelize) {
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
   try {
-    const query = `DELETE FROM Stores WHERE store_id = ?`;
-    const values = [storeId];
-    const [result] = await pool.query(query, values);
+    const rows = await Store.findAll({
+      where: { is_active: true },
+    });
 
-    // result.affectedRows te dirá cuántas filas fueron borradas.
-    if (result.affectedRows > 0) {
+    console.log(
+      `Consulta 'getStores' ejecutada, ${rows.length} tiendas encontradas.`
+    );
+    console.log(rows);
+    return rows;
+  } catch (error) {
+    console.error("Error al obtener las tiendas (getStores):", error.message);
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
+/**
+ * (Refactorizado) Elimina una tienda.
+ */
+async function deleteStore(storeId) {
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
+
+  try {
+    const result = await Store.destroy({
+      where: { store_id: storeId },
+    });
+
+    if (result > 0) {
       console.log(`✅ Tienda ${storeId} eliminada correctamente.`);
       return true;
     } else {
@@ -56,202 +294,182 @@ async function deleteStore(id) {
   } catch (error) {
     console.error(`❌ Error al eliminar la tienda ${storeId}:`, error.message);
 
-    // --- MANEJO DE ERROR CRÍTICO ---
-    // 'ER_ROW_IS_REFERENCED_2' es el código de error de MySQL/MariaDB
+    // --- MANEJO DE ERROR CRÍTICO (Agnóstico al dialecto) ---
+    // 'SequelizeForeignKeyConstraintError' es el error de Sequelize
     // cuando una clave foránea (FOREIGN KEY) previene la eliminación.
-    if (error.code === "ER_ROW_IS_REFERENCED_2") {
+    if (error instanceof SequelizeForeignKeyConstraintError) {
       throw new Error(
         "No se puede eliminar la tienda porque tiene cajas o perfiles asociados."
       );
     }
 
-    // Lanza un error genérico si es otro problema
     throw new Error("Error al consultar la base de datos.");
   }
 }
 
 /**
- * Obtiene todas las tiendas (Stores) de la base de datos.
- * @returns {Promise<Array>} Un array de objetos de tienda.
+ * (Refactorizado) Obtiene perfiles activos de una tienda específica.
  */
-async function getStores() {
-  if (!pool) {
-    throw new Error(
-      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
-    );
-  }
-
-  try {
-    const query = "SELECT * FROM Stores WHERE is_active = TRUE";
-    const [rows] = await pool.query(query);
-
-    console.log(
-      `Consulta 'getAllStores' ejecutada, ${rows.length} tiendas encontradas.`
-    );
-    console.log(rows);
-    return rows;
-  } catch (error) {
-    console.error("Error al obtener las tiendas (getStores):", error.message);
-    // Lanza el error para que ipcMain.handle pueda capturarlo
-    throw new Error("Error al consultar la base de datos.");
-  }
-}
-
 async function getProfiles(store_id) {
-  if (!pool) {
-    throw new Error(
-      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
-    );
-  }
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
   try {
-    const query = `SELECT * FROM Profiles WHERE is_active = TRUE AND store_id = ?`;
-    const values = [store_id];
-    const [rows] = await pool.query(query, values);
+    const rows = await Profile.findAll({
+      where: {
+        is_active: true,
+        store_id: store_id,
+      },
+    });
 
     console.log(
-      `Consulta 'getProfiles' ejecutada, ${rows.length} tiendas encontradas.`
+      `Consulta 'getProfiles' ejecutada, ${rows.length} perfiles encontrados.`
     );
-    console.log(rows);
     return rows;
   } catch (error) {
     console.error(
       "Error al obtener los perfiles (getProfiles):",
       error.message
     );
-    // Lanza el error para que ipcMain.handle pueda capturarlo
     throw new Error("Error al consultar la base de datos.");
   }
 }
 
+/**
+ * (Refactorizado) Crea un nuevo perfil.
+ */
 async function createProfile(newProfile) {
-  if (!pool) {
-    throw new Error(
-      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
-    );
-  }
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
+
   try {
-    const query = `INSERT INTO Profiles (store_id, username, role, pin, photo) 
-    VALUES (?, ?, ?, ?, ?)`;
+    // newProfile debe ser un objeto que coincida con los campos del modelo
+    // (store_id, username, role, pin, photo)
+    const createdProfile = await Profile.create(newProfile);
 
-    const values = [
-      newProfile.store_id,
-      newProfile.username,
-      newProfile.role,
-      newProfile.pin,
-      newProfile.photo,
-    ];
-
-    const [result] = await pool.query(query, values);
-    if (result.insertId) {
-      console.log(`✅ Nuevo perfil creado con ID: ${result.insertId}`);
-      return result.insertId;
+    if (createdProfile.profile_id) {
+      console.log(
+        `✅ Nuevo perfil creado con ID: ${createdProfile.profile_id}`
+      );
+      return createdProfile.profile_id;
     } else {
       throw new Error("Error desconocido al insertar el perfil.");
     }
   } catch (error) {
     console.error("Error al crear perfil (createProfile):", error.message);
-    // Lanza el error para que ipcMain.handle pueda capturarlo
     throw new Error("Error al consultar la base de datos.");
   }
 }
 
+/**
+ * (Refactorizado) Obtiene un perfil y la tienda asociada (JOIN).
+ */
 async function getProfile(profile_id) {
-  if (!pool) {
-    throw new Error(
-      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
-    );
-  }
-  try {
-    const query =
-      "SELECT P.*, S.name FROM Profiles P INNER JOIN Stores S ON P.store_id = S.store_id WHERE P.profile_id = ?;";
-    const values = [profile_id];
-    const [rows] = await pool.query(query, values);
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
-    console.log(
-      `Consulta 'getProfile' ejecutada, ${rows.length} perfiles encontrados.`
-    );
-    return rows;
+  try {
+    // findByPk (Find By Primary Key)
+    // 'include' realiza el JOIN automáticamente gracias a las asociaciones definidas.
+    const profile = await Profile.findByPk(profile_id, {
+      include: {
+        model: Store,
+        as: "store", // Este 'as' debe coincidir con el definido en la asociación
+        attributes: ["name"], // Solo trae el campo 'name' de Store
+      },
+    });
+
+    console.log(`Consulta 'getProfile' ejecutada.`);
+    // Sequelize devuelve un solo objeto (o null) con findByPk
+    return profile ? [profile] : []; // Mantenemos el formato de array de tu código original
   } catch (error) {
     console.error("Error al obtener perfil (GetProfile):", error.message);
-    // Lanza el error para que ipcMain.handle pueda capturarlo
     throw new Error("Error al consultar la base de datos.");
   }
 }
 
+/**
+ * (Refactorizado) Función compleja de login/dashboard.
+ */
 async function getProfileAndDailyInflowData(profile_id) {
-  if (!pool) {
-    throw new Error(
-      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
-    );
-  }
-  try {
-    const query1 =
-      "SELECT P.*, S.name AS store_name, S.store_id FROM Profiles P INNER JOIN Stores S ON P.store_id = S.store_id WHERE P.profile_id = ?;";
-    const values1 = [profile_id];
-    const [rows1] = await pool.query(query1, values1);
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
-    if (rows1.length === 0) {
-      // Handle case where profile is not found
-      return null;
+  try {
+    // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
+    const profileData = await Profile.findByPk(profile_id, {
+      include: { model: Store, as: "store" },
+    });
+
+    if (!profileData) {
+      return null; // Perfil no encontrado
     }
 
-    const profileData = rows1[0];
     const storeId = profileData.store_id;
 
-    const query2 =
-      "SELECT id FROM Inflows WHERE store_id = ? AND DATE(inflow_timestamp) = CURDATE() ORDER BY inflow_timestamp DESC LIMIT 1;";
-    const values2 = [storeId];
-    const [inflowRows] = await pool.query(query2, values2);
+    // --- QUERY 2: Encontrar el último Inflow DE HOY ---
+
+    // Lógica de fecha agnóstica al dialecto (MySQL/SQLite)
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0); // Inicio del día
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999); // Fin del día
+
+    const inflow = await Inflow.findOne({
+      where: {
+        store_id: storeId,
+        inflow_timestamp: {
+          [Op.between]: [todayStart, todayEnd], // [Op.gte]: todayStart
+        },
+      },
+      order: [["inflow_timestamp", "DESC"]],
+      limit: 1,
+    });
 
     let lastInflowId = null;
-    if (inflowRows.length > 0) {
-      lastInflowId = inflowRows[0].id;
-    }
-
     let salesData = [];
+    let totalSalesAmount = 0;
+    let salesCount = 0;
+    let averageSale = 0;
 
-    if (lastInflowId) {
-      // Only execute if an inflow was found today
+    if (inflow) {
+      lastInflowId = inflow.id;
 
-      // Query 3: Get all sales associated with today's inflow
-      const query3 = "SELECT * FROM Sales WHERE inflow_id = ?;";
-      const values3 = [lastInflowId];
-      const [salesRows] = await pool.query(query3, values3);
+      // --- QUERY 3: Obtener todas las ventas de ese Inflow ---
+      salesData = await Sale.findAll({
+        where: { inflow_id: lastInflowId },
+      });
 
-      salesData = salesRows;
+      // Reutilizamos la lógica de agregación de tu código original
       salesCount = salesData.length;
 
-      // Calculate total sum of sales amounts
-      totalSalesAmount = salesData.reduce(
-        (sum, sale) => sum + parseFloat(sale.total_amount),
-        0
-      );
-
-      // Calculate average sale amount
       if (salesCount > 0) {
+        totalSalesAmount = salesData.reduce(
+          (sum, sale) => sum + parseFloat(sale.total_amount),
+          0
+        );
         averageSale = totalSalesAmount / salesCount;
       }
     }
 
+    // Devolvemos la misma estructura de objeto que tu código original
     return {
-      profile: profileData,
+      profile: profileData, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
       last_inflow_id: lastInflowId,
       sales_summary: {
         total_amount: parseFloat(totalSalesAmount.toFixed(2)),
         count: salesCount,
         average_sale: parseFloat(averageSale.toFixed(2)),
       },
-      sales_list: salesData, // List of individual sales records
+      sales_list: salesData,
     };
   } catch (error) {
-    console.error("Error al obtener perfil (GetProfile):", error.message);
-    // Lanza el error para que ipcMain.handle pueda capturarlo
+    console.error(
+      "Error al obtener datos (getProfileAndDailyInflowData):",
+      error.message
+    );
     throw new Error("Error al consultar la base de datos.");
   }
 }
 
-// Exporta las funciones para que main.js pueda usarlas
+// Exporta las funciones refactorizadas
 module.exports = {
   connectWithCredentials,
   getStores,

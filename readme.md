@@ -13,3 +13,6 @@ DB_DATABASE=dev_db
 
 docker exec -it mariadb_dev bash
 sh -c 'mariadb -u app_user -p'
+
+deployment
+npm run dist -> usar installer
