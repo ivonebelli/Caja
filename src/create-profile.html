@@ -330,14 +330,13 @@
       const urlParams = new URLSearchParams(window.location.search);
       const localId = urlParams.get("localId");
       const role = urlParams.get("role");
-      const mode = urlParams.get("mode");
 
       let stream = null;
       let capturedPhoto = null;
       let photoChanged = false;
 
       async function init() {
-        console.log("Iniciando create-profile con:", { localId, role, mode });
+        console.log("Iniciando create-profile con:", { localId, role });
 
         const roleGroup = document.getElementById("roleGroup");
         const pageTitle = document.getElementById("pageTitle");
@@ -451,10 +450,13 @@
           role: profileRole,
           photo: photoChanged ? capturedPhoto : null,
         };
+
+        console.log(newProfile);
         const res = await ipcRenderer.invoke("db:create-profile", newProfile);
 
-        if (res == "success") {
+        if (res.success) {
           showNotification("Perfil creado exitosamente", "success");
+          goBack();
         } else {
           console.error("Error al guardar perfil:", error);
           showNotification(
@@ -466,18 +468,7 @@
 
       function goBack() {
         closeCamera();
-
-        if (mode === "gerencia") {
-          window.location.href = "./profiles.html?mode=gerencia";
-        } else if (mode === "admin") {
-          window.location.href = `./profiles.html?localId=${localId}&mode=admin`;
-        } else if (mode === "gerencia-manage") {
-          window.location.href = `./profiles.html?localId=${localId}&mode=gerencia-manage`;
-        } else if (localId) {
-          window.location.href = `./profiles.html?localId=${localId}`;
-        } else {
-          window.location.href = "./profiles.html";
-        }
+        window.location.href = `./profiles.html?localId=${localId}`;
       }
 
       // DELEGACIÓN DE EVENTOS para PIN inputs

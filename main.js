@@ -114,62 +114,64 @@ ipcMain.handle("db:create-profile", async (event, newProfile) => {
   }
 });
 
-ipcMain.handle("read-json", async (_, filename) => {
-  try {
-    const filePath = path.join(DATA_DIR, filename);
-    const data = await fs.readFile(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (err) {
-    console.error(`Error leyendo ${filename}:`, err.message);
-    return null;
-  }
-});
+// FALTA UPDATE/DELETE PROFILE, CAJA Y VENTAS
 
-ipcMain.handle("write-json", async (_, filename, data) => {
-  try {
-    const filePath = path.join(DATA_DIR, filename);
-    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-    console.log(`✅ Archivo guardado: ${filename}`);
-    return true;
-  } catch (err) {
-    console.error(`Error escribiendo ${filename}:`, err.message);
-    return false;
-  }
-});
+// ipcMain.handle("read-json", async (_, filename) => {
+//   try {
+//     const filePath = path.join(DATA_DIR, filename);
+//     const data = await fs.readFile(filePath, "utf8");
+//     return JSON.parse(data);
+//   } catch (err) {
+//     console.error(`Error leyendo ${filename}:`, err.message);
+//     return null;
+//   }
+// });
 
-ipcMain.handle("save-excel-report", async (_, filename, buffer) => {
-  try {
-    const filePath = path.join(REPORTES_DIR, filename);
-    await fs.writeFile(filePath, Buffer.from(buffer));
-    console.log(`✅ Reporte guardado: ${filename}`);
-    return { success: true, path: filePath };
-  } catch (err) {
-    console.error(`Error guardando reporte ${filename}:`, err.message);
-    return { success: false, error: err.message };
-  }
-});
+// ipcMain.handle("write-json", async (_, filename, data) => {
+//   try {
+//     const filePath = path.join(DATA_DIR, filename);
+//     await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+//     console.log(`✅ Archivo guardado: ${filename}`);
+//     return true;
+//   } catch (err) {
+//     console.error(`Error escribiendo ${filename}:`, err.message);
+//     return false;
+//   }
+// });
 
-ipcMain.handle("list-files", async (_, directory) => {
-  try {
-    const dirPath = directory === "reportes" ? REPORTES_DIR : DATA_DIR;
-    return await fs.readdir(dirPath);
-  } catch (err) {
-    console.error("Error listando archivos:", err.message);
-    return [];
-  }
-});
+// ipcMain.handle("save-excel-report", async (_, filename, buffer) => {
+//   try {
+//     const filePath = path.join(REPORTES_DIR, filename);
+//     await fs.writeFile(filePath, Buffer.from(buffer));
+//     console.log(`✅ Reporte guardado: ${filename}`);
+//     return { success: true, path: filePath };
+//   } catch (err) {
+//     console.error(`Error guardando reporte ${filename}:`, err.message);
+//     return { success: false, error: err.message };
+//   }
+// });
 
-ipcMain.handle("delete-file", async (_, filename, directory) => {
-  try {
-    const dirPath = directory === "reportes" ? REPORTES_DIR : DATA_DIR;
-    await fs.unlink(path.join(dirPath, filename));
-    console.log(`✅ Archivo eliminado: ${filename}`);
-    return true;
-  } catch (err) {
-    console.error(`Error eliminando ${filename}:`, err.message);
-    return false;
-  }
-});
+// ipcMain.handle("list-files", async (_, directory) => {
+//   try {
+//     const dirPath = directory === "reportes" ? REPORTES_DIR : DATA_DIR;
+//     return await fs.readdir(dirPath);
+//   } catch (err) {
+//     console.error("Error listando archivos:", err.message);
+//     return [];
+//   }
+// });
+
+// ipcMain.handle("delete-file", async (_, filename, directory) => {
+//   try {
+//     const dirPath = directory === "reportes" ? REPORTES_DIR : DATA_DIR;
+//     await fs.unlink(path.join(dirPath, filename));
+//     console.log(`✅ Archivo eliminado: ${filename}`);
+//     return true;
+//   } catch (err) {
+//     console.error(`Error eliminando ${filename}:`, err.message);
+//     return false;
+//   }
+// });
 
 // ==============================
 // MANEJO DE ERRORES

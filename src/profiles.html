@@ -207,11 +207,9 @@
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const localId = urlParams.get("localId");
-      const mode = urlParams.get("mode"); // 'gerencia', 'admin', 'gerencia-manage', o null
 
       let currentLocal = null;
 
-      console.log("🔍 Parámetros URL:", { localId, mode });
       console.log(
         "🔍 specialAccess en localStorage:",
         localStorage.getItem("specialAccess")
@@ -229,7 +227,6 @@
         // Verificar el acceso especial guardado
         // const specialAccess = localStorage.getItem("specialAccess");
         // console.log("🔍 specialAccess actual:", specialAccess);
-        // console.log("🔍 mode URL:", mode);
 
         // // MODO GERENCIA: Solo si mode=gerencia Y specialAccess=gerencia
         // if (mode === "gerencia" && specialAccess === "gerencia") {
@@ -440,12 +437,12 @@
 
       function selectAdminProfile(profileId, localId) {
         localStorage.setItem("selectedRole", "administrativo");
-        window.location.href = `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}&mode=admin`;
+        window.location.href = `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}`;
       }
 
       function selectLocalForNewAdmin() {
         // Redirigir a la vista de locales para elegir donde crear el admin
-        window.location.href = "./locales.html?mode=admin&action=create";
+        window.location.href = "./locales.html?action=create";
       }
 
       async function deleteAdminProfile(profileId, localId) {
@@ -528,13 +525,7 @@
       }
 
       function createNewProfile() {
-        if (mode === "admin") {
-          window.location.href = `./create-profile.html?localId=${localId}&mode=admin`;
-        } else if (mode === "gerencia-manage") {
-          window.location.href = `./create-profile.html?localId=${localId}&mode=gerencia-manage`;
-        } else {
-          window.location.href = `./create-profile.html?localId=${localId}`;
-        }
+        window.location.href = `./create-profile.html?localId=${localId}`;
       }
 
       function selectProfile(profileId, role) {
@@ -544,25 +535,24 @@
 
       function selectGerenciaProfile() {
         localStorage.setItem("selectedRole", "gerencia");
-        window.location.href = `./login.html?role=gerencia&mode=gerencia`;
+        window.location.href = `./login.html?role=gerencia`;
       }
 
       function selectSubgerenteProfile(localId) {
         localStorage.setItem("selectedRole", "subgerente");
-        window.location.href = `./login.html?role=subgerente&localId=${localId}&mode=gerencia`;
+        window.location.href = `./login.html?role=subgerente&localId=${localId}`;
       }
 
       function createGerente() {
-        window.location.href =
-          "./create-profile.html?role=gerencia&mode=gerencia";
+        window.location.href = "./create-profile.html?role=gerencia";
       }
 
       function createSubgerente(localId) {
-        window.location.href = `./create-profile.html?role=subgerente&localId=${localId}&mode=gerencia`;
+        window.location.href = `./create-profile.html?role=subgerente&localId=${localId}`;
       }
 
       function goToManageLocal(localId) {
-        window.location.href = `./profiles.html?localId=${localId}&mode=gerencia-manage`;
+        window.location.href = `./profiles.html?localId=${localId}`;
       }
 
       async function deleteLocal(localId) {
@@ -660,27 +650,7 @@
 
       function goBack() {
         const specialAccess = localStorage.getItem("specialAccess");
-
-        console.log("⬅️ goBack - specialAccess:", specialAccess, "mode:", mode);
-
-        if (mode === "gerencia" && specialAccess === "gerencia") {
-          // Volviendo de gerencia principal
-          localStorage.removeItem("specialAccess");
-          window.location.href = "./index.html";
-        } else if (mode === "gerencia-manage") {
-          // Volviendo de gestión de local desde gerencia
-          window.location.href = "./profiles.html?mode=gerencia";
-        } else if (mode === "admin" && specialAccess === "administracion") {
-          // Volviendo de administración de local
-          window.location.href = "./locales.html?mode=admin";
-        } else if (localId) {
-          // Volviendo de selección de perfil normal
-          window.location.href = "./locales.html";
-        } else {
-          // Fallback
-          localStorage.removeItem("specialAccess");
-          window.location.href = "./index.html";
-        }
+        window.location.href = "./profiles.html";
       }
 
       // Cargar perfiles al iniciar

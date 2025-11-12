@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS dev_db.Profiles (
     store_id INT NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
     role ENUM('cajero', 'administrativo', 'subgerencia','gerente') NOT NULL,
-    pin VARCHAR(4) NOT NULL,
+    pin VARCHAR(4) NOT NULL DEFAULT '1234',
     photo LONGTEXT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -83,8 +83,8 @@ INSERT INTO Stores (store_id, name, location, category_id) VALUES
 (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1),
 (2, 'PhotoStation', 'Calle Imagen 456', 2);
 
-INSERT INTO Profiles (profile_id, store_id, username, role) VALUES
-(1, 1, 'Juan Gonzalez', 'cajero'),
-(2, 1, 'John Smith', 'cajero'),
-(3, 2, 'Ricardo Haliburton', 'cajero'),
-(4, 2, 'Pablo Smith', 'cajero');
+INSERT INTO Profiles (profile_id, store_id, username, role, pin) VALUES
+(1, 1, 'Juan Gonzalez', 'cajero', 1234),
+(2, 1, 'John Smith', 'cajero', 1234),
+(3, 2, 'Ricardo Haliburton', 'cajero', 1234),
+(4, 2, 'Pablo Smith', 'cajero', 1234);

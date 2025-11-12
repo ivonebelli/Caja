@@ -132,10 +132,10 @@ async function createProfile(newProfile) {
   }
   try {
     const query = `INSERT INTO Profiles (store_id, username, role, pin, photo) 
-    VALUES (?, ?, ?)`;
+    VALUES (?, ?, ?, ?, ?)`;
 
     const values = [
-      newProfile.storeId,
+      newProfile.store_id,
       newProfile.username,
       newProfile.role,
       newProfile.pin,
