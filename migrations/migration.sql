@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS dev_db.Profiles (
     profile_id INT AUTO_INCREMENT PRIMARY KEY,
     store_id INT NOT NULL,
     username VARCHAR(50) NOT NULL UNIQUE,
-    role ENUM('cajero', 'admin', 'manager') NOT NULL,
+    role ENUM('cajero', 'administrativo', 'subgerencia','gerente') NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     

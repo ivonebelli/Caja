@@ -219,7 +219,6 @@
 
       async function loadProfiles(localId) {
         const res = await ipcRenderer.invoke("db:get-profiles", localId);
-        console.log("holandaBBB");
         const data = res.data;
         console.log(data);
         if (!data) {

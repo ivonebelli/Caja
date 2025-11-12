@@ -39,8 +39,9 @@ async function deleteStore(id) {
   }
 
   try {
-    const query = `DELETE FROM Stores WHERE store_id = ${id}`;
-    const [result] = await pool.query(query, [storeId]);
+    const query = `DELETE FROM Stores WHERE store_id = ?`;
+    const values = [storeId];
+    const [result] = await pool.query(query, values);
 
     // result.affectedRows te dirá cuántas filas fueron borradas.
     if (result.affectedRows > 0) {
@@ -104,8 +105,9 @@ async function getProfiles(store_id) {
   }
 
   try {
-    const query = `SELECT * FROM Profiles WHERE is_active = TRUE AND store_id = ${store_id}`;
-    const [rows] = await pool.query(query);
+    const query = `SELECT * FROM Profiles WHERE is_active = TRUE AND store_id = ?`;
+    const values = [store_id];
+    const [rows] = await pool.query(query, values);
 
     console.log(
       `Consulta 'getProfiles' ejecutada, ${rows.length} tiendas encontradas.`
@@ -122,10 +124,43 @@ async function getProfiles(store_id) {
   }
 }
 
+async function createProfile(newProfile) {
+  if (!pool) {
+    throw new Error(
+      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
+    );
+  }
+  try {
+    const query = `INSERT INTO Profiles (store_id, username, role, pin, photo) 
+    VALUES (?, ?, ?)`;
+
+    const values = [
+      newProfile.storeId,
+      newProfile.username,
+      newProfile.role,
+      newProfile.pin,
+      newProfile.photo,
+    ];
+
+    const [result] = await pool.query(query, values);
+    if (result.insertId) {
+      console.log(`✅ Nuevo perfil creado con ID: ${result.insertId}`);
+      return result.insertId;
+    } else {
+      throw new Error("Error desconocido al insertar el perfil.");
+    }
+  } catch (error) {
+    console.error("Error al crear perfil (createProfile):", error.message);
+    // Lanza el error para que ipcMain.handle pueda capturarlo
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
 // Exporta las funciones para que main.js pueda usarlas
 module.exports = {
   connectWithCredentials,
   getStores,
   deleteStore,
   getProfiles,
+  createProfile,
 };
