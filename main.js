@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs").promises;
+const db = require("./database");
 
 let mainWindow;
 
@@ -110,6 +111,31 @@ async function initializeDataFiles() {
 // ==============================
 // IPC PARA LECTURA/ESCRITURA
 // ==============================
+ipcMain.handle("db:connect", async (event, credentials) => {
+  try {
+    console.log(credentials);
+    await db.connectWithCredentials(credentials);
+
+    // Si la conexión es exitosa, devuelve éxito
+    return { success: true, message: "Conexión exitosa." };
+  } catch (error) {
+    // Si dbService lanza un error (ej. contraseña incorrecta), lo capturamos
+    console.error(error.message);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle("db:get-all-stores", async (event) => {
+  try {
+    const stores = await dbService.getAllStores();
+    return { success: true, data: stores };
+  } catch (error) {
+    console.error(error.message);
+    // Este error ahora puede ser "No hay conexión a la base de datos..."
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle("read-json", async (_, filename) => {
   try {
     const filePath = path.join(DATA_DIR, filename);
@@ -166,32 +192,6 @@ ipcMain.handle("delete-file", async (_, filename, directory) => {
     return false;
   }
 });
-
-// ==============================
-// IPC PARA IMPRESORAS
-// ==============================
-// ipcMain.handle("get-printers", async () => {
-//   try {
-//     const { webContents } = mainWindow;
-//     const printers = await webContents.getPrintersAsync();
-//     return printers;
-//   } catch (err) {
-//     console.error("Error obteniendo impresoras:", err.message);
-//     return [];
-//   }
-// });
-
-// ipcMain.handle("print-ticket", async (_, ticketData) => {
-//   try {
-//     // Aquí puedes implementar la lógica de impresión térmica
-//     // Por ahora solo simularemos la impresión
-//     console.log("🖨️ Imprimiendo ticket:", ticketData);
-//     return { success: true };
-//   } catch (err) {
-//     console.error("Error imprimiendo ticket:", err.message);
-//     return { success: false, error: err.message };
-//   }
-// });
 
 // ==============================
 // MANEJO DE ERRORES

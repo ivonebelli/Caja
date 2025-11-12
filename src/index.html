@@ -1,192 +1,350 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bienvenido - Sistema de Caja</title>
-  <link rel="stylesheet" href="./shared/styles.css">
-  <style>
-    body {
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      overflow: hidden;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
-
-    .welcome-container {
-      background: rgba(0,0,0,0.7);
-      border-radius: 24px;
-      padding: 60px;
-      max-width: 500px;
-      width: 100%;
-      text-align: center;
-      animation: fadeInScale 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-
-    .logo {
-      font-size: 80px;
-      margin-bottom: 20px;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-    }
-
-    @keyframes fadeInScale {
-      from {
-        opacity: 0;
-        transform: scale(0.8) translateY(20px);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bienvenido - Sistema de Caja</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <style>
+      body {
+        background: linear-gradient(
+          135deg,
+          #1a1a2e 0%,
+          #16213e 50%,
+          #0f3460 100%
+        );
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: auto;
+        margin: 0;
+        padding: 20px;
+        box-sizing: border-box;
       }
-      to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
+
+      .welcome-container {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 24px;
+        padding: 60px;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        animation: fadeInScale 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
-    }
 
-    .welcome-title {
-      font-size: 42px;
-      font-weight: 700;
-      color: white;
-      margin-bottom: 15px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
+      .logo {
+        font-size: 80px;
+        margin-bottom: 20px;
+        animation: pulse 2s ease-in-out infinite;
+      }
 
-    .welcome-subtitle {
-      font-size: 18px;
-      color: rgba(255,255,255,0.7);
-      margin-bottom: 40px;
-      line-height: 1.6;
-    }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
 
-    .btn-main {
-      width: 100%;
-      padding: 20px;
-      font-size: 20px;
-      font-weight: 700;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
+      @keyframes fadeInScale {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
 
-    .btn-main:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
-    }
+      .welcome-title {
+        font-size: 42px;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 15px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      }
 
-    .btn-main:active {
-      transform: translateY(-1px);
-    }
+      .welcome-subtitle {
+        font-size: 18px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 40px;
+        line-height: 1.6;
+      }
 
-    .version-info {
-      margin-top: 30px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.4);
-    }
+      .btn-main {
+        width: 100%;
+        padding: 20px;
+        font-size: 20px;
+        font-weight: 700;
+        border: none;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+      }
 
-    .particles {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: -1;
-    }
+      .btn-main:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
+      }
 
-    .particle {
-      position: absolute;
-      background: rgba(102, 126, 234, 0.2);
-      border-radius: 50%;
-      animation: float 8s infinite ease-in-out;
-    }
+      .btn-main:active {
+        transform: translateY(-1px);
+      }
 
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-      50% { transform: translateY(-30px) rotate(180deg); opacity: 0.6; }
-    }
-  </style>
-</head>
-<body>
-  <div class="particles" id="particles"></div>
+      .btn-main:disabled {
+        background: #555;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+        opacity: 0.7;
+      }
 
-  <div class="welcome-container">
-    <div class="logo">🏪</div>
-    <h1 class="welcome-title">Sistema de Caja</h1>
-    <p class="welcome-subtitle">
-      Bienvenido al sistema de gestión de caja registradora.<br>
-      Selecciona tu local para comenzar.
-    </p>
+      .version-info {
+        margin-top: 30px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.4);
+      }
 
-    <button class="btn-main" onclick="goToLocales()">
-      🎯 Seleccionar Local
-    </button>
+      /* ---- INICIO: NUEVOS ESTILOS PARA EL FORMULARIO ---- */
+      #dbLoginForm {
+        width: 100%;
+      }
 
-    <div class="version-info">
-      v1.0.0 - Modo Local
+      .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 15px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.3);
+        color: white;
+        font-size: 16px;
+        box-sizing: border-box; /* Importante para que el padding no rompa el ancho */
+        transition: all 0.3s ease;
+      }
+
+      .form-group input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+        outline: none;
+      }
+
+      .error-message {
+        color: #ff6b6b; /* Un color rojo claro para errores */
+        margin-top: 15px;
+        font-size: 14px;
+        display: none; /* Oculto por defecto */
+        line-height: 1.5;
+      }
+      /* ---- FIN: NUEVOS ESTILOS PARA EL FORMULARIO ---- */
+
+      .particles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .particle {
+        position: absolute;
+        background: rgba(102, 126, 234, 0.2);
+        border-radius: 50%;
+        animation: float 8s infinite ease-in-out;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0deg);
+          opacity: 0.3;
+        }
+        50% {
+          transform: translateY(-30px) rotate(180deg);
+          opacity: 0.6;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="particles" id="particles"></div>
+
+    <div class="welcome-container">
+      <div class="logo">🏪</div>
+      <h1 class="welcome-title">Sistema de Caja</h1>
+      <p class="welcome-subtitle" id="welcomeSubtitle">
+        Ingresa las credenciales de la base de datos para iniciar.
+      </p>
+
+      <form id="dbLoginForm">
+        <div class="form-group">
+          <label for="dbHost">Host</label>
+          <input type="text" id="dbHost" value="localhost" required />
+        </div>
+        <div class="form-group">
+          <label for="dbName">Nombre de la Base de Datos</label>
+          <input type="text" id="dbName" value="dev_db" required />
+        </div>
+        <div class="form-group">
+          <label for="dbUser">Usuario</label>
+          <input type="text" id="dbUser" required autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <label for="dbPass">Contraseña</label>
+          <input
+            type="password"
+            id="dbPass"
+            required
+            autocomplete="current-password"
+          />
+        </div>
+        <button type="submit" class="btn-main" id="connectButton">
+          🔌 Conectar
+        </button>
+        <p id="errorMessage" class="error-message"></p>
+      </form>
+      <div id="storeSelector" style="display: none">
+        <button class="btn-main" onclick="goToLocales()">
+          🎯 Seleccionar Local
+        </button>
+      </div>
+      <div class="version-info">v1.0.0 - Modo Local</div>
     </div>
-  </div>
 
-  <script src="./shared/utils.js"></script>
-  <script>
-    // Crear partículas de fondo
-    function createParticles() {
-      const particlesContainer = document.getElementById('particles');
-      for (let i = 0; i < 15; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        const size = Math.random() * 60 + 20;
-        particle.style.width = size + 'px';
-        particle.style.height = size + 'px';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 8 + 's';
-        particle.style.animationDuration = (Math.random() * 10 + 8) + 's';
-        particlesContainer.appendChild(particle);
+    <script src="./shared/utils.js"></script>
+    <script>
+      // --- INICIO: LÓGICA DE CONEXIÓN Y MANEJO DE FORMULARIO ---
+      // Navegación
+      function goToLocales() {
+        window.location.href = "./locales.html";
       }
-    }
 
-    // Navegación normal
-    function goToLocales() {
-      window.location.href = './locales.html';
-    }
+      // Función para manejar el envío del formulario
+      async function handleDbLogin(event) {
+        event.preventDefault(); // Evitar que el formulario recargue la página
 
-    // ATAJOS DE TECLADO OCULTOS (sin indicaciones visuales)
-    document.addEventListener('keydown', function(e) {
-      // Shift + G = Gerencia (contraseña de 6 dígitos)
-      if (e.shiftKey && e.key === 'G') {
-        e.preventDefault();
-        console.log('🔐 Acceso a Gerencia detectado (Shift+G)');
-        window.location.href = './gerencia-password.html';
+        // 1. Obtener elementos del DOM
+        const connectButton = document.getElementById("connectButton");
+        const errorMessage = document.getElementById("errorMessage");
+
+        // 2. Deshabilitar botón y mostrar estado de carga
+        connectButton.disabled = true;
+        connectButton.textContent = "Conectando... ⏳";
+        errorMessage.style.display = "none";
+
+        // 3. Recolectar credenciales
+        const credentials = {
+          host: document.getElementById("dbHost").value,
+          database: document.getElementById("dbName").value,
+          user: document.getElementById("dbUser").value,
+          password: document.getElementById("dbPass").value,
+        };
+
+        try {
+          // 4. Enviar credenciales al backend (main.js)
+          const response = await ipcRenderer.invoke("db:connect", credentials);
+
+          if (response.success) {
+            // 5. ÉXITO: Ocultar formulario y mostrar botón de selección
+            document.getElementById("dbLoginForm").style.display = "none";
+            document.getElementById("storeSelector").style.display = "block";
+            document.getElementById("welcomeSubtitle").textContent =
+              "¡Conexión exitosa! Elige tu local para continuar.";
+          } else {
+            // 6. FALLO: Mostrar error y rehabilitar formulario
+            showLoginError(response.error);
+          }
+        } catch (err) {
+          // 7. FALLO CATASTRÓFICO (ej. main.js no responde)
+          console.error("Error al invocar db:connect:", err);
+          showLoginError("Error inesperado. Revisa la consola (Ctrl+Shift+I).");
+        }
       }
-      
-      // Shift + A = Administración (contraseña de 6 dígitos)
-      if (e.shiftKey && e.key === 'A') {
-        e.preventDefault();
-        console.log('🔐 Acceso a Administración detectado (Shift+A)');
-        window.location.href = './admin-password.html';
-      }
-    });
 
-    // Inicializar
-    window.addEventListener('load', () => {
-      createParticles();
-      // Limpiar accesos especiales al cargar
-      localStorage.removeItem('specialAccess');
-    });
-  </script>
-</body>
+      // Función auxiliar para mostrar errores y reactivar el botón
+      function showLoginError(message) {
+        const connectButton = document.getElementById("connectButton");
+        const errorMessage = document.getElementById("errorMessage");
+
+        errorMessage.textContent = message;
+        errorMessage.style.display = "block";
+        connectButton.disabled = false;
+        connectButton.textContent = "🔌 Conectar";
+      }
+
+      // --- FIN: LÓGICA DE CONEXIÓN ---
+
+      // Crear partículas de fondo
+      function createParticles() {
+        const particlesContainer = document.getElementById("particles");
+        for (let i = 0; i < 15; i++) {
+          const particle = document.createElement("div");
+          particle.className = "particle";
+          const size = Math.random() * 60 + 20;
+          particle.style.width = size + "px";
+          particle.style.height = size + "px";
+          particle.style.left = Math.random() * 100 + "%";
+          particle.style.top = Math.random() * 100 + "%";
+          particle.style.animationDelay = Math.random() * 8 + "s";
+          particle.style.animationDuration = Math.random() * 10 + 8 + "s";
+          particlesContainer.appendChild(particle);
+        }
+      }
+
+      // ATAJOS DE TECLADO OCULTOS (sin indicaciones visuales)
+      document.addEventListener("keydown", function (e) {
+        // Shift + G = Gerencia (contraseña de 6 dígitos)
+        if (e.shiftKey && e.key === "G") {
+          e.preventDefault();
+          console.log("🔐 Acceso a Gerencia detectado (Shift+G)");
+          window.location.href = "./gerencia-password.html";
+        }
+
+        // Shift + A = Administración (contraseña de 6 dígitos)
+        if (e.shiftKey && e.key === "A") {
+          e.preventDefault();
+          console.log("🔐 Acceso a Administración detectado (Shift+A)");
+          window.location.href = "./admin-password.html";
+        }
+      });
+
+      // Inicializar
+      window.addEventListener("load", () => {
+        createParticles();
+        // Limpiar accesos especiales al cargar
+        localStorage.removeItem("specialAccess");
+
+        // Asignar el evento de submit al formulario
+        const dbLoginForm = document.getElementById("dbLoginForm");
+        dbLoginForm.addEventListener("submit", handleDbLogin);
+
+        // Enfocar el primer campo de entrada
+        document.getElementById("dbHost").focus();
+      });
+    </script>
+  </body>
 </html>
