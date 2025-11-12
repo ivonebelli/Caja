@@ -357,161 +357,67 @@
           </p>
         </div>
       </div>
-
-      <!-- Historial de Cambios -->
-      <div class="history-section">
-        <h2 class="section-title">📋 Historial de Cambios</h2>
-        <div id="historyContainer">
-          <p style="color: #94a3b8; text-align: center">
-            No hay cambios registrados
-          </p>
-        </div>
-      </div>
     </div>
 
     <script src="../shared/utils.js"></script>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const profileId = urlParams.get("profile_id");
-      console.log(urlParams);
       let currentProfile = null;
 
       async function init() {
         const res = await ipcRenderer.invoke(
-          "db:get-profile-with-store-inflow",
+          "db:get-profile-and-daily-inflow-data",
           profileId
         );
-        currentProfile = res.data[0];
+        currentProfile = res.data;
 
-        console.log(currentProfile);
         document.getElementById("cashierName").textContent =
-          currentProfile.username;
+          currentProfile.profile.username;
 
         document.getElementById(
           "localInfo"
-        ).textContent = `📍 ${currentProfile.name}`;
+        ).textContent = `📍 ${currentProfile.profile.store.name}`;
 
         await displayAllStats();
         startClock();
       }
 
       async function displayAllStats() {
-        document.getElementById("todaySales").textContent =
-          formatCurrency(totalSales);
-        document.getElementById("todayOrders").textContent = todayOrders.length;
+        document.getElementById("todaySales").textContent = formatCurrency(
+          currentProfile.sales_summary.total_amount
+        );
+        document.getElementById("todayOrders").textContent =
+          currentProfile.sales_summary.count;
         document.getElementById("avgTicket").textContent =
-          formatCurrency(avgTicket);
-      }
+          currentProfile.sales_summary.average_sale;
 
-      async function loadTodayStats() {
-        try {
-          const orders = (await readData("orders.json")) || [];
-          const today = new Date().toDateString();
+        const container = document.getElementById("recentSalesContainer");
 
-          const todayOrders = orders.filter((o) => {
-            const orderDate = new Date(o.createdAt).toDateString();
-            return (
-              orderDate === today &&
-              o.status !== "cancelled" &&
-              o.status !== "voided" &&
-              o.cashier === currentProfile.profile.name
-            );
-          });
-
-          const totalSales = todayOrders.reduce((sum, o) => sum + o.total, 0);
-          const avgTicket =
-            todayOrders.length > 0 ? totalSales / todayOrders.length : 0;
-
-          document.getElementById("todaySales").textContent =
-            formatCurrency(totalSales);
-          document.getElementById("todayOrders").textContent =
-            todayOrders.length;
-          document.getElementById("avgTicket").textContent =
-            formatCurrency(avgTicket);
-        } catch (error) {
-          console.error("Error cargando estadísticas:", error);
+        if (currentProfile.sales_summary.count === 0) {
+          container.innerHTML =
+            '<p style="color: #94a3b8; text-align: center;">No hay ventas recientes</p>';
+          return;
         }
+
+        // container.innerHTML = currentProfile
+        //   .map(
+        //     (order) => `
+        //   <div class="recent-item">
+        //     <div class="recent-item-info">
+        //       <div class="recent-item-title">Orden #${order.orderNumber}</div>
+        //       <div class="recent-item-meta">
+        //         ${formatDateTime(order.createdAt)} |
+        //         ${order.items.length} producto(s) |
+        //         ${order.status === "voided" ? "❌ Anulada" : "✅ Completada"}
+        //       </div>
+        //     </div>
+        //     <div class="recent-item-amount">${formatCurrency(order.total)}</div>
+        //   </div>
+        // `
+        //   )
+        //   .join("");
       }
-
-      async function loadRecentSales() {
-        try {
-          const orders = (await readData("orders.json")) || [];
-          const userOrders = orders
-            .filter((o) => o.cashier === currentProfile.profile.name)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 5);
-
-          const container = document.getElementById("recentSalesContainer");
-
-          if (userOrders.length === 0) {
-            container.innerHTML =
-              '<p style="color: #94a3b8; text-align: center;">No hay ventas recientes</p>';
-            return;
-          }
-
-          container.innerHTML = userOrders
-            .map(
-              (order) => `
-          <div class="recent-item">
-            <div class="recent-item-info">
-              <div class="recent-item-title">Orden #${order.orderNumber}</div>
-              <div class="recent-item-meta">
-                ${formatDateTime(order.createdAt)} |
-                ${order.items.length} producto(s) |
-                ${order.status === "voided" ? "❌ Anulada" : "✅ Completada"}
-              </div>
-            </div>
-            <div class="recent-item-amount">${formatCurrency(order.total)}</div>
-          </div>
-        `
-            )
-            .join("");
-        } catch (error) {
-          console.error("Error cargando ventas recientes:", error);
-        }
-      }
-
-      async function loadChangeHistory() {
-        try {
-          const history = await getChangeHistory(10);
-          const container = document.getElementById("historyContainer");
-
-          if (history.length === 0) {
-            container.innerHTML =
-              '<p style="color: #94a3b8; text-align: center;">No hay cambios registrados</p>';
-            return;
-          }
-
-          container.innerHTML = history
-            .map(
-              (change) => `
-          <div class="history-item">
-            <div class="history-item-title">
-              ${
-                change.type === "sale_void"
-                  ? "❌ Venta Anulada"
-                  : change.type === "product_change"
-                  ? "📦 Producto Modificado"
-                  : change.type === "profile_change"
-                  ? "👤 Perfil Modificado"
-                  : "📝 " + change.type
-              }
-            </div>
-            <div class="history-item-desc">${change.description}</div>
-            <div class="history-item-meta">
-              Por: ${change.user} | ${new Date(change.timestamp).toLocaleString(
-                "es-AR"
-              )}
-            </div>
-          </div>
-        `
-            )
-            .join("");
-        } catch (error) {
-          console.error("Error cargando historial:", error);
-        }
-      }
-
       function startClock() {
         function updateClock() {
           const now = new Date();

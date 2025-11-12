@@ -337,7 +337,7 @@ async function getProfiles(store_id, sequelize) {
 /**
  * (Refactorizado) Crea un nuevo perfil.
  */
-async function createProfile(newProfile) {
+async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
   try {
@@ -362,7 +362,7 @@ async function createProfile(newProfile) {
 /**
  * (Refactorizado) Obtiene un perfil y la tienda asociada (JOIN).
  */
-async function getProfile(profile_id) {
+async function getProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
   try {
@@ -388,9 +388,8 @@ async function getProfile(profile_id) {
 /**
  * (Refactorizado) Función compleja de login/dashboard.
  */
-async function getProfileAndDailyInflowData(profile_id) {
+async function getProfileAndDailyInflowData(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
     const profileData = await Profile.findByPk(profile_id, {
@@ -415,11 +414,11 @@ async function getProfileAndDailyInflowData(profile_id) {
     const inflow = await Inflow.findOne({
       where: {
         store_id: storeId,
-        inflow_timestamp: {
+        start_time: {
           [Op.between]: [todayStart, todayEnd], // [Op.gte]: todayStart
         },
       },
-      order: [["inflow_timestamp", "DESC"]],
+      order: [["start_time", "DESC"]],
       limit: 1,
     });
 
@@ -446,12 +445,15 @@ async function getProfileAndDailyInflowData(profile_id) {
           0
         );
         averageSale = totalSalesAmount / salesCount;
+        salesData = salesData.map((sale) => sale.toJSON());
       }
     }
 
-    // Devolvemos la misma estructura de objeto que tu código original
-    return {
-      profile: profileData, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
+    const profileJSON = profileData.toJSON();
+    console.log("-----------------");
+    console.log("get inflows");
+    let data = {
+      profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
       last_inflow_id: lastInflowId,
       sales_summary: {
         total_amount: parseFloat(totalSalesAmount.toFixed(2)),
@@ -460,6 +462,10 @@ async function getProfileAndDailyInflowData(profile_id) {
       },
       sales_list: salesData,
     };
+    console.log(data);
+
+    // Devolvemos la misma estructura de objeto que tu código original
+    return data;
   } catch (error) {
     console.error(
       "Error al obtener datos (getProfileAndDailyInflowData):",

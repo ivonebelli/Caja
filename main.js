@@ -112,8 +112,8 @@ ipcMain.handle("db:get-profiles", async (event, store_id) => {
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:get-profile", async (event, profile_id) => {
   try {
-    const profile = await db.getProfile(profile_id);
-    return { success: true, data: profile };
+    const profile = await db.getProfile(profile_id, mariadb_instance);
+    return { success: true, data: profile.map((profile) => profile.toJSON()) };
   } catch (error) {
     console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."
@@ -138,7 +138,10 @@ ipcMain.handle(
   "db:get-profile-and-daily-inflow-data",
   async (event, profile_id) => {
     try {
-      const res = await db.getProfileWithStoreInflow(newProfile);
+      const res = await db.getProfileAndDailyInflowData(
+        profile_id,
+        mariadb_instance
+      );
       return { success: true, data: res };
     } catch (error) {
       console.error(error.message);
