@@ -179,6 +179,78 @@ async function getProfile(profile_id) {
   }
 }
 
+async function getProfileAndDailyInflowData(profile_id) {
+  if (!pool) {
+    throw new Error(
+      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
+    );
+  }
+  try {
+    const query1 =
+      "SELECT P.*, S.name AS store_name, S.store_id FROM Profiles P INNER JOIN Stores S ON P.store_id = S.store_id WHERE P.profile_id = ?;";
+    const values1 = [profile_id];
+    const [rows1] = await pool.query(query1, values1);
+
+    if (rows1.length === 0) {
+      // Handle case where profile is not found
+      return null;
+    }
+
+    const profileData = rows1[0];
+    const storeId = profileData.store_id;
+
+    const query2 =
+      "SELECT id FROM Inflows WHERE store_id = ? AND DATE(inflow_timestamp) = CURDATE() ORDER BY inflow_timestamp DESC LIMIT 1;";
+    const values2 = [storeId];
+    const [inflowRows] = await pool.query(query2, values2);
+
+    let lastInflowId = null;
+    if (inflowRows.length > 0) {
+      lastInflowId = inflowRows[0].id;
+    }
+
+    let salesData = [];
+
+    if (lastInflowId) {
+      // Only execute if an inflow was found today
+
+      // Query 3: Get all sales associated with today's inflow
+      const query3 = "SELECT * FROM Sales WHERE inflow_id = ?;";
+      const values3 = [lastInflowId];
+      const [salesRows] = await pool.query(query3, values3);
+
+      salesData = salesRows;
+      salesCount = salesData.length;
+
+      // Calculate total sum of sales amounts
+      totalSalesAmount = salesData.reduce(
+        (sum, sale) => sum + parseFloat(sale.total_amount),
+        0
+      );
+
+      // Calculate average sale amount
+      if (salesCount > 0) {
+        averageSale = totalSalesAmount / salesCount;
+      }
+    }
+
+    return {
+      profile: profileData,
+      last_inflow_id: lastInflowId,
+      sales_summary: {
+        total_amount: parseFloat(totalSalesAmount.toFixed(2)),
+        count: salesCount,
+        average_sale: parseFloat(averageSale.toFixed(2)),
+      },
+      sales_list: salesData, // List of individual sales records
+    };
+  } catch (error) {
+    console.error("Error al obtener perfil (GetProfile):", error.message);
+    // Lanza el error para que ipcMain.handle pueda capturarlo
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
 // Exporta las funciones para que main.js pueda usarlas
 module.exports = {
   connectWithCredentials,
@@ -187,4 +259,5 @@ module.exports = {
   getProfiles,
   createProfile,
   getProfile,
+  getProfileAndDailyInflowData,
 };

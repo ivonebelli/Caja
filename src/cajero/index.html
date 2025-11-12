@@ -377,7 +377,10 @@
       let currentProfile = null;
 
       async function init() {
-        const res = await ipcRenderer.invoke("db:get-profile", profileId);
+        const res = await ipcRenderer.invoke(
+          "db:get-profile-with-store-inflow",
+          profileId
+        );
         currentProfile = res.data[0];
 
         console.log(currentProfile);
@@ -388,10 +391,16 @@
           "localInfo"
         ).textContent = `📍 ${currentProfile.name}`;
 
-        await loadTodayStats();
-        await loadRecentSales();
-        await loadChangeHistory();
+        await displayAllStats();
         startClock();
+      }
+
+      async function displayAllStats() {
+        document.getElementById("todaySales").textContent =
+          formatCurrency(totalSales);
+        document.getElementById("todayOrders").textContent = todayOrders.length;
+        document.getElementById("avgTicket").textContent =
+          formatCurrency(avgTicket);
       }
 
       async function loadTodayStats() {
@@ -513,7 +522,7 @@
           ).textContent = `${hours}:${minutes}`;
         }
         updateClock();
-        setInterval(updateClock, 1000);
+        setInterval(updateClock, 60000);
       }
 
       function goToVenta() {

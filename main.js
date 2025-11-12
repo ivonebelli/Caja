@@ -125,6 +125,20 @@ ipcMain.handle("db:create-profile", async (event, newProfile) => {
   }
 });
 
+ipcMain.handle(
+  "db:get-profile-and-daily-inflow-data",
+  async (event, profile_id) => {
+    try {
+      const res = await db.getProfileWithStoreInflow(newProfile);
+      return { success: true, data: res };
+    } catch (error) {
+      console.error(error.message);
+      // Este error ahora puede ser "No hay conexión a la base de datos..."
+      return { success: false, error: error.message };
+    }
+  }
+);
+
 // FALTA UPDATE/DELETE PROFILE, CAJA Y VENTAS
 
 // ipcMain.handle("read-json", async (_, filename) => {
