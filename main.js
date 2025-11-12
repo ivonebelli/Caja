@@ -93,6 +93,17 @@ ipcMain.handle("db:delete-store", async (event, id) => {
   }
 });
 
+ipcMain.handle("db:get-profiles", async (event, store_id) => {
+  try {
+    const profiles = await db.getProfiles(store_id);
+    return { success: true, data: profiles };
+  } catch (error) {
+    console.error(error.message);
+    // Este error ahora puede ser "No hay conexión a la base de datos..."
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle("read-json", async (_, filename) => {
   try {
     const filePath = path.join(DATA_DIR, filename);

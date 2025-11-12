@@ -439,8 +439,6 @@ if (typeof document !== "undefined") {
 // ============================================
 
 if (typeof window !== "undefined") {
-  window.readData = readData;
-  window.writeData = writeData;
   window.saveExcelReport = saveExcelReport;
   window.formatCurrency = formatCurrency;
   window.formatDateTime = formatDateTime;

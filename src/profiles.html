@@ -211,100 +211,103 @@
 
       let currentLocal = null;
 
-      console.log("📄 profiles.html cargado");
       console.log("🔍 Parámetros URL:", { localId, mode });
       console.log(
         "🔍 specialAccess en localStorage:",
         localStorage.getItem("specialAccess")
       );
 
-      async function loadProfiles() {
-        const data = await readData("profiles.json");
-
+      async function loadProfiles(localId) {
+        const res = await ipcRenderer.invoke("db:get-profiles", localId);
+        console.log("holandaBBB");
+        const data = res.data;
+        console.log(data);
         if (!data) {
           showNotification("Error al cargar datos", "error");
           return;
         }
 
         // Verificar el acceso especial guardado
-        const specialAccess = localStorage.getItem("specialAccess");
-        console.log("🔍 specialAccess actual:", specialAccess);
-        console.log("🔍 mode URL:", mode);
+        // const specialAccess = localStorage.getItem("specialAccess");
+        // console.log("🔍 specialAccess actual:", specialAccess);
+        // console.log("🔍 mode URL:", mode);
 
-        // MODO GERENCIA: Solo si mode=gerencia Y specialAccess=gerencia
-        if (mode === "gerencia" && specialAccess === "gerencia") {
-          console.log("✅ Entrando a modo GERENCIA");
-          renderGerenciaMode(data);
-          return;
-        }
+        // // MODO GERENCIA: Solo si mode=gerencia Y specialAccess=gerencia
+        // if (mode === "gerencia" && specialAccess === "gerencia") {
+        //   console.log("✅ Entrando a modo GERENCIA");
+        //   renderGerenciaMode(data);
+        //   return;
+        // }
 
-        // MODO ADMIN: Solo si mode=admin Y specialAccess=administracion
-        if (mode === "admin" && specialAccess === "administracion") {
-          console.log("✅ Entrando a modo ADMINISTRACIÓN");
-          // Si NO hay localId, mostrar todos los administrativos
-          if (!localId) {
-            document.getElementById("pageTitle").textContent =
-              "Administración - Todos los Perfiles";
-            renderAdminProfiles(data);
-            return;
-          }
-          // Si hay localId, mostrar solo ese local
-          currentLocal = data.locales.find((l) => l.id === localId);
-          if (!currentLocal) {
-            showNotification("Local no encontrado", "error");
-            setTimeout(() => goBack(), 1500);
-            return;
-          }
-          document.getElementById(
-            "pageTitle"
-          ).textContent = `Administración - ${currentLocal.nombre}`;
-          renderLocalProfiles(data, true); // true = isAdminMode
-          return;
-        }
+        // // MODO ADMIN: Solo si mode=admin Y specialAccess=administracion
+        // if (mode === "admin" && specialAccess === "administracion") {
+        //   console.log("✅ Entrando a modo ADMINISTRACIÓN");
+        //   // Si NO hay localId, mostrar todos los administrativos
+        //   if (!localId) {
+        //     document.getElementById("pageTitle").textContent =
+        //       "Administración - Todos los Perfiles";
+        //     renderAdminProfiles(data);
+        //     return;
+        //   }
+        // Si hay localId, mostrar solo ese local
+        // currentLocal = data.locales.find((l) => l.id === localId);
+        // if (!currentLocal) {
+        //   showNotification("Local no encontrado", "error");
+        //   setTimeout(() => goBack(), 1500);
+        //   return;
+        // }
+        // document.getElementById(
+        //   "pageTitle"
+        // ).textContent = `Administración - ${currentLocal.nombre}`;
+        // renderLocalProfiles(data, true); // true = isAdminMode
+        // return;
+        // }
 
-        // MODO GERENCIA-MANAGE: Gerencia gestionando un local específico
-        if (
-          mode === "gerencia-manage" &&
-          specialAccess === "gerencia" &&
-          localId
-        ) {
-          console.log("✅ Entrando a modo GERENCIA-MANAGE");
-          currentLocal = data.locales.find((l) => l.id === localId);
-          if (!currentLocal) {
-            showNotification("Local no encontrado", "error");
-            setTimeout(() => goBack(), 1500);
-            return;
-          }
-          document.getElementById(
-            "pageTitle"
-          ).textContent = `Gerencia - Gestión de ${currentLocal.nombre}`;
-          renderLocalProfiles(data, true); // true = isGerenciaManage
-          return;
-        }
+        // // MODO GERENCIA-MANAGE: Gerencia gestionando un local específico
+        // if (
+        //   mode === "gerencia-manage" &&
+        //   specialAccess === "gerencia" &&
+        //   localId
+        // ) {
+        //   console.log("✅ Entrando a modo GERENCIA-MANAGE");
+        //   currentLocal = data.locales.find((l) => l.id === localId);
+        //   if (!currentLocal) {
+        //     showNotification("Local no encontrado", "error");
+        //     setTimeout(() => goBack(), 1500);
+        //     return;
+        //   }
+        //   document.getElementById(
+        //     "pageTitle"
+        //   ).textContent = `Gerencia - Gestión de ${currentLocal.nombre}`;
+        //   renderLocalProfiles(data, true); // true = isGerenciaManage
+        //   return;
+        // }
 
-        // MODO LOCAL NORMAL: Usuario normal seleccionando perfil
-        if (localId && !mode) {
-          console.log("✅ Entrando a modo LOCAL NORMAL");
-          currentLocal = data.locales.find((l) => l.id === localId);
-          if (!currentLocal) {
-            showNotification("Local no encontrado", "error");
-            setTimeout(() => goBack(), 1500);
-            return;
-          }
-          document.getElementById(
-            "pageTitle"
-          ).textContent = `Perfiles en ${currentLocal.nombre}`;
-          renderLocalProfiles(data, false); // false = modo normal
-          return;
-        }
+        // // MODO LOCAL NORMAL: Usuario normal seleccionando perfil
+        // if (localId && !mode) {
+        //   console.log("✅ Entrando a modo LOCAL NORMAL");
+        //   currentLocal = data.locales.find((l) => l.id === localId);
+        //   if (!currentLocal) {
+        //     showNotification("Local no encontrado", "error");
+        //     setTimeout(() => goBack(), 1500);
+        //     return;
+        //   }
+        //   document.getElementById(
+        //     "pageTitle"
+        //   ).textContent = `Perfiles en ${currentLocal.nombre}`;
+        //   renderLocalProfiles(data, false); // false = modo normal
+        //   return;
+        // }
 
-        // Si llegamos aquí, algo está mal
-        console.error("❌ Acceso inválido:", { mode, specialAccess, localId });
-        showNotification("Acceso no válido", "error");
-        setTimeout(() => {
-          localStorage.removeItem("specialAccess");
-          window.location.href = "./index.html";
-        }, 1500);
+        // // Si llegamos aquí, algo está mal
+        // console.error("❌ Acceso inválido:", { mode, specialAccess, localId });
+        // showNotification("Acceso no válido", "error");
+        // setTimeout(() => {
+        //   localStorage.removeItem("specialAccess");
+        //   window.location.href = "./index.html";
+        // }, 1500);
+
+        renderLocalProfiles(data, false);
       }
 
       function renderGerenciaMode(data) {
@@ -474,25 +477,16 @@
 
       function renderLocalProfiles(data, canDelete) {
         const container = document.getElementById("profilesContainer");
-        const profiles = currentLocal.perfiles;
 
-        const allProfiles = [
-          ...profiles.cajero.map((p) => ({ ...p, role: "cajero" })),
-          ...profiles.administrativo.map((p) => ({
-            ...p,
-            role: "administrativo",
-          })),
-        ];
-
-        if (allProfiles.length === 0) {
+        if (data.length === 0) {
           container.innerHTML =
             '<p style="color:rgba(255,255,255,0.7);text-align:center;">No hay perfiles en este local.</p>';
         } else {
-          container.innerHTML = allProfiles
+          container.innerHTML = data
             .map((p) => {
               const deleteBtn = canDelete
                 ? `
-            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteProfile('${p.id}', '${p.role}')">
+            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteProfile('${p.profile_id}', '${p.role}')">
               🗑️
             </button>
           `
@@ -504,14 +498,14 @@
                   : "background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);";
 
               return `
-            <div class="profile-card" onclick="selectProfile('${p.id}', '${
-                p.role
-              }')">
-              <div class="avatar" style="${bgGradient}">${p.name.charAt(
+            <div class="profile-card" onclick="selectProfile('${
+              p.profile_id
+            }', '${p.role}')">
+              <div class="avatar" style="${bgGradient}">${p.username.charAt(
                 0
               )}</div>
               <div class="profile-info">
-                <div class="profile-name">${p.name}</div>
+                <div class="profile-name">${p.username}</div>
                 <span class="role-badge role-${
                   p.role === "cajero" ? "cajero" : "admin"
                 }">
@@ -691,7 +685,7 @@
       }
 
       // Cargar perfiles al iniciar
-      loadProfiles();
+      loadProfiles(localId);
     </script>
   </body>
 </html>

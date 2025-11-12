@@ -96,9 +96,36 @@ async function getStores() {
   }
 }
 
+async function getProfiles(store_id) {
+  if (!pool) {
+    throw new Error(
+      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
+    );
+  }
+
+  try {
+    const query = `SELECT * FROM Profiles WHERE is_active = TRUE AND store_id = ${store_id}`;
+    const [rows] = await pool.query(query);
+
+    console.log(
+      `Consulta 'getProfiles' ejecutada, ${rows.length} tiendas encontradas.`
+    );
+    console.log(rows);
+    return rows;
+  } catch (error) {
+    console.error(
+      "Error al obtener los perfiles (getProfiles):",
+      error.message
+    );
+    // Lanza el error para que ipcMain.handle pueda capturarlo
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
 // Exporta las funciones para que main.js pueda usarlas
 module.exports = {
   connectWithCredentials,
   getStores,
   deleteStore,
+  getProfiles,
 };
