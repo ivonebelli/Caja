@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs").promises;
-const dbService = require("./dbService");
 
 let mainWindow;
 
@@ -35,24 +34,10 @@ function createWindow() {
 
 // Inicializar aplicación
 app.whenReady().then(async () => {
-  await ensureDirectories();
-  await initializeDataFiles();
+  await ensureDirectories(); //FUERZA CREACION DIRECTORIOS ***
+  await initializeDataFiles(); //INICIALIZA DATOS PARA TEST ****
 
-  try {
-    await dbService.connectToDatabase();
-  } catch (e) {
-    // Estan mal los valores en .env que se leen para conectar a la base de datos
-    console.error("La aplicación NO pudo acceder a la base de datos remota.");
-  }
   createWindow();
-
-  console.log("============================================");
-  console.log("📁 UBICACIÓN DE DATOS:");
-  console.log("📂 Data:", DATA_DIR);
-  console.log("📊 Reportes:", REPORTES_DIR);
-  console.log("🔧 Modo:", process.env.NODE_ENV || "Desarrollo");
-  console.log("📦 Ejecutable:", process.execPath);
-  console.log("============================================");
 });
 
 app.on("window-all-closed", () => {
@@ -185,28 +170,28 @@ ipcMain.handle("delete-file", async (_, filename, directory) => {
 // ==============================
 // IPC PARA IMPRESORAS
 // ==============================
-ipcMain.handle("get-printers", async () => {
-  try {
-    const { webContents } = mainWindow;
-    const printers = await webContents.getPrintersAsync();
-    return printers;
-  } catch (err) {
-    console.error("Error obteniendo impresoras:", err.message);
-    return [];
-  }
-});
+// ipcMain.handle("get-printers", async () => {
+//   try {
+//     const { webContents } = mainWindow;
+//     const printers = await webContents.getPrintersAsync();
+//     return printers;
+//   } catch (err) {
+//     console.error("Error obteniendo impresoras:", err.message);
+//     return [];
+//   }
+// });
 
-ipcMain.handle("print-ticket", async (_, ticketData) => {
-  try {
-    // Aquí puedes implementar la lógica de impresión térmica
-    // Por ahora solo simularemos la impresión
-    console.log("🖨️ Imprimiendo ticket:", ticketData);
-    return { success: true };
-  } catch (err) {
-    console.error("Error imprimiendo ticket:", err.message);
-    return { success: false, error: err.message };
-  }
-});
+// ipcMain.handle("print-ticket", async (_, ticketData) => {
+//   try {
+//     // Aquí puedes implementar la lógica de impresión térmica
+//     // Por ahora solo simularemos la impresión
+//     console.log("🖨️ Imprimiendo ticket:", ticketData);
+//     return { success: true };
+//   } catch (err) {
+//     console.error("Error imprimiendo ticket:", err.message);
+//     return { success: false, error: err.message };
+//   }
+// });
 
 // ==============================
 // MANEJO DE ERRORES
