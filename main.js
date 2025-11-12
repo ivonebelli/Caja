@@ -103,6 +103,17 @@ ipcMain.handle("db:get-profiles", async (event, store_id) => {
     return { success: false, error: error.message };
   }
 });
+
+ipcMain.handle("db:get-profile", async (event, profile_id) => {
+  try {
+    const profile = await db.getProfile(profile_id);
+    return { success: true, data: profile };
+  } catch (error) {
+    console.error(error.message);
+    // Este error ahora puede ser "No hay conexión a la base de datos..."
+    return { success: false, error: error.message };
+  }
+});
 ipcMain.handle("db:create-profile", async (event, newProfile) => {
   try {
     const insert_id = await db.createProfile(newProfile);

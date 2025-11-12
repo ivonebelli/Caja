@@ -247,9 +247,8 @@
       const profileId = urlParams.get("profileId");
       const role = urlParams.get("role");
       const localId = urlParams.get("localId");
-
       let currentProfile = null;
-      let currentLocal = null;
+
       let pinLength = 4; // Por defecto 4 dígitos
 
       const roleIcons = {
@@ -267,81 +266,25 @@
       };
 
       const roleDashboards = {
-        cajero: "./cajero/index.html",
-        administrativo: "./admin/index.html",
-        gerencia: "./gerencia/index.html",
-        subgerente: "./gerencia/index.html",
+        cajero: `./cajero/index.html?profile_id=${profileId}`,
+        administrativo: `./admin/index.html?profile_id=${profileId}`,
+        gerencia: `./gerencia/index.html?profile_id=${profileId}`,
+        subgerente: `./gerencia/index.html?profile_id=${profileId}`,
       };
 
       async function loadProfile() {
-        if (!role) {
-          showNotification("Datos de sesión inválidos", "error");
-          setTimeout(() => goBack(), 1500);
-          return;
-        }
-
-        const data = await readData("profiles.json");
-
+        const res = await ipcRenderer.invoke("db:get-profile", profileId);
+        currentProfile = res.data[0];
         // Determinar el tipo de perfil y longitud del PIN
-        if (role === "gerencia") {
-          currentProfile = data.gerencia;
-          pinLength = 4;
-
-          if (!currentProfile || !currentProfile.name) {
-            showNotification("Gerente no configurado", "error");
-            setTimeout(() => goBack(), 1500);
-            return;
-          }
-        } else if (role === "subgerente" && localId) {
-          currentLocal = data.locales.find((l) => l.id === localId);
-          if (currentLocal && currentLocal.subgerente) {
-            currentProfile = currentLocal.subgerente;
-            pinLength = 4;
-
-            if (!currentProfile.name) {
-              showNotification("Subgerente no configurado", "error");
-              setTimeout(() => goBack(), 1500);
-              return;
-            }
-          }
-        } else if (role === "administrativo" && profileId && localId) {
-          currentLocal = data.locales.find((l) => l.id === localId);
-          if (currentLocal) {
-            currentProfile = currentLocal.perfiles.administrativo.find(
-              (p) => p.id === profileId
-            );
-            pinLength = 4;
-          }
-        } else if (role === "cajero" && profileId && localId) {
-          currentLocal = data.locales.find((l) => l.id === localId);
-          if (currentLocal) {
-            currentProfile = currentLocal.perfiles.cajero.find(
-              (p) => p.id === profileId
-            );
-            pinLength = 4;
-          }
-        }
-
-        if (!currentProfile) {
-          showNotification("Perfil no encontrado", "error");
-          setTimeout(() => goBack(), 1500);
-          return;
-        }
+        pinLength = 4;
 
         // Mostrar información del perfil
         document.getElementById("profileName").textContent =
-          currentProfile.name;
+          currentProfile.username;
 
         const roleElement = document.getElementById("profileRole");
         roleElement.textContent = roleNames[role];
         roleElement.className = `profile-role role-${role}`;
-
-        // Mostrar información del local si aplica
-        if (currentLocal) {
-          document.getElementById(
-            "localInfo"
-          ).textContent = `📍 ${currentLocal.nombre}`;
-        }
 
         // Mostrar foto o ícono
         const avatar = document.getElementById("avatar");
@@ -407,23 +350,11 @@
         if (pin === currentProfile.pin) {
           // PIN correcto: guardar sesión y redirigir
 
-          // Verificar sesión de cajero si aplica
-          if (role === "cajero" && localId) {
-            const canLogin = await checkAndSetCashierSession(
-              currentProfile.name,
-              localId
-            );
-            if (!canLogin) {
-              showError("Ya hay un cajero activo en este local");
-              return;
-            }
-          }
-
           showNotification("¡Bienvenido!", "success");
 
           // Redirigir al dashboard correspondiente
           setTimeout(() => {
-            const dashboard = roleDashboards[role] || "./index.html";
+            const dashboard = roleDashboards[role];
             window.location.href = dashboard;
           }, 500);
         } else {

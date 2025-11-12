@@ -156,6 +156,29 @@ async function createProfile(newProfile) {
   }
 }
 
+async function getProfile(profile_id) {
+  if (!pool) {
+    throw new Error(
+      "El pool de la base de datos no está inicializado. Llama a connectToDatabase() primero."
+    );
+  }
+  try {
+    const query =
+      "SELECT P.*, S.name FROM Profiles P INNER JOIN Stores S ON P.store_id = S.store_id WHERE P.profile_id = ?;";
+    const values = [profile_id];
+    const [rows] = await pool.query(query, values);
+
+    console.log(
+      `Consulta 'getProfile' ejecutada, ${rows.length} perfiles encontrados.`
+    );
+    return rows;
+  } catch (error) {
+    console.error("Error al obtener perfil (GetProfile):", error.message);
+    // Lanza el error para que ipcMain.handle pueda capturarlo
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
 // Exporta las funciones para que main.js pueda usarlas
 module.exports = {
   connectWithCredentials,
@@ -163,4 +186,5 @@ module.exports = {
   deleteStore,
   getProfiles,
   createProfile,
+  getProfile,
 };
