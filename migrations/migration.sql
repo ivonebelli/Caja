@@ -43,32 +43,43 @@ CREATE TABLE IF NOT EXISTS dev_db.Profiles (
 -- 4. Tabla Inflows (Ingresos / Sesiones de Caja)
 -- Relación: 1 Store tiene muchos Inflows
 CREATE TABLE IF NOT EXISTS dev_db.Inflows (
-    inflow_id INT AUTO_INCREMENT PRIMARY KEY,
-    store_id INT NOT NULL,
-    profile_id INT, -- Opcional: El perfil que abrió la caja/sesión (puede ser nulo si es un ingreso automático)
+    -- 1. CLAVE PRIMARIA LOCAL
+    local_id INT AUTO_INCREMENT PRIMARY KEY, -- Renombrado para Claridad Local
+    
+    -- Campos de la Aplicación
+    store_id INT NOT NULL, 
     start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    end_time TIMESTAMP NULL, -- Puede ser NULL hasta que la sesión de caja se cierre
+    end_time TIMESTAMP NULL,
     starting_cash DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     
-    -- Clave Foránea 1: store_id
+    -- 2. CAMPOS DE SINCRONIZACIÓN
+    remote_id INT NULL, -- ID asignado por el servidor MariaDB si la sincronización fue exitosa.
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE, -- FALSE indica que está pendiente de enviar al servidor remoto.
+    
+    -- 3. CLAVES FORÁNEAS (usan el ID de la tabla Stores/Profiles, que debe ser el mismo en ambas DBs)
     FOREIGN KEY (store_id) REFERENCES Stores(store_id)
-        ON DELETE RESTRICT, -- No permite eliminar la Store si tiene Inflows activos.
-        
-    -- Clave Foránea 2: profile_id
-    FOREIGN KEY (profile_id) REFERENCES Profiles(profile_id)
-        ON DELETE SET NULL -- Si se elimina el Profile, el Inflow mantiene el registro con Profile_id=NULL.
+        ON DELETE RESTRICT,
+
 );
 
 -- 5. Tabla Sales (Ventas / Órdenes)
 -- Relación: 1 Inflow tiene muchas Sales (pero el Inflow puede tener 0 sales)
 CREATE TABLE IF NOT EXISTS dev_db.Sales (
-    sale_id INT AUTO_INCREMENT PRIMARY KEY,
-    inflow_id INT NOT NULL,
+    -- 1. CLAVE PRIMARIA LOCAL
+    local_id INT AUTO_INCREMENT PRIMARY KEY, -- Nuevo PK para seguimiento local
+    
+    -- Campos de la Aplicación
+    inflow_id INT NOT NULL, -- Ahora referencia a Inflows.local_id (o inflow_id si no se renombra)
     total_amount DECIMAL(10, 2) NOT NULL,
     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Clave Foránea: inflow_id referencia a Inflows.inflow_id
-    FOREIGN KEY (inflow_id) REFERENCES Inflows(inflow_id)
+    -- 2. CAMPOS DE SINCRONIZACIÓN
+    remote_id INT NULL, -- ID asignado por el servidor MariaDB para este registro de venta.
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE, -- FALSE indica que está pendiente de enviar a MariaDB.
+    
+    -- 3. CLAVE FORÁNEA
+    -- NOTA: En la BD local, esta FK DEBERÍA apuntar a Inflows.local_id
+    FOREIGN KEY (inflow_id) REFERENCES Inflows(local_id) 
         ON DELETE CASCADE -- Si la sesión de caja (Inflow) se anula, se anulan sus ventas.
 );
 

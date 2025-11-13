@@ -122,10 +122,6 @@ function initModels(sequelize) {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      profile_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true, // Puede ser NULL en SQL
-      },
       start_time: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -210,10 +206,7 @@ function initModels(sequelize) {
   // Devolvemos los modelos inicializados para que el 'setter' del módulo los almacene.
   return { Store, Profile, Inflow, Sale };
 }
-/**
- * Inicializa la conexión de Sequelize (MariaDB o SQLite).
- * Esta función debe ser llamada en main.js ANTES de cualquier operación de BD.
- */
+
 async function connectWithCredentials(credentials) {
   const { dialect, host, user, password, database, storage } = credentials;
   try {
@@ -249,9 +242,7 @@ async function connectWithCredentials(credentials) {
   }
 }
 
-/**
- * (Refactorizado) Obtiene todas las tiendas (Stores) activas.
- */
+//Solo remota
 async function getStores(sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
@@ -271,9 +262,7 @@ async function getStores(sequelize) {
   }
 }
 
-/**
- * (Refactorizado) Elimina una tienda.
- */
+//Solo remota
 async function deleteStore(storeId, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
@@ -311,9 +300,7 @@ async function deleteStore(storeId, sequelize) {
   }
 }
 
-/**
- * (Refactorizado) Obtiene perfiles activos de una tienda específica.
- */
+//Solo remota
 async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
@@ -338,9 +325,7 @@ async function getProfiles(store_id, sequelize) {
   }
 }
 
-/**
- * (Refactorizado) Crea un nuevo perfil.
- */
+//Solo remota
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
@@ -363,9 +348,7 @@ async function createProfile(newProfile, sequelize) {
   }
 }
 
-/**
- * (Refactorizado) Obtiene un perfil y la tienda asociada (JOIN).
- */
+//Solo remota
 async function getProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
@@ -389,9 +372,7 @@ async function getProfile(profile_id, sequelize) {
   }
 }
 
-/**
- * (Refactorizado) Función compleja de login/dashboard.
- */
+//Remota y local
 async function getProfileAndDailyInflowData(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   try {
@@ -479,6 +460,7 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
   }
 }
 
+//Solo remota
 async function deleteProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
@@ -516,7 +498,453 @@ async function deleteProfile(profile_id, sequelize) {
   }
 }
 
-// Falta: RestoreProfile, RestoreStore, UpdateProfile, UpdateStore,
+//Solo remota
+async function restoreProfile(profile_id, sequelize) {
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
+
+  try {
+    // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
+    const [affectedCount] = await Profile.update(
+      { is_active: true },
+      {
+        where: { profile_id: profile_id },
+      }
+    );
+
+    // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
+    if (affectedCount > 0) {
+      console.log(
+        `✅ Perfil ${profile_id} restaurado (is_active = FALSE) correctamente.`
+      );
+      return true;
+    } else {
+      console.warn(
+        `⚠️ Intento de restaurar perfil ${profile_id}, pero no se encontró.`
+      );
+      return false;
+    }
+  } catch (error) {
+    // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
+    // porque el registro no se está eliminando; solo se está modificando un campo.
+    console.error(
+      `❌ Error al restaurar el perfil ${profile_id}:`,
+      error.message
+    );
+
+    // Lanzar un error genérico si el problema persiste (ej. conexión)
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
+//Solo remota
+async function restoreStore(store_id, sequelize) {
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
+
+  try {
+    // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
+    const [affectedCount] = await Store.update(
+      { is_active: true },
+      {
+        where: { store_id: store_id },
+      }
+    );
+
+    // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
+    if (affectedCount > 0) {
+      console.log(
+        `✅ Tienda ${store_id} restaurado (is_active = FALSE) correctamente.`
+      );
+      return true;
+    } else {
+      console.warn(
+        `⚠️ Intento de restaurar tienda ${store_id}, pero no se encontró.`
+      );
+      return false;
+    }
+  } catch (error) {
+    // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
+    // porque el registro no se está eliminando; solo se está modificando un campo.
+    console.error(
+      `❌ Error al restaurar el tienda ${store_id}:`,
+      error.message
+    );
+
+    // Lanzar un error genérico si el problema persiste (ej. conexión)
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
+//Solo remota
+async function updateProfile(newProfile, sequelize) {
+  // Ensure the model is available
+  if (!ProfileModel) {
+    throw new Error("Profile model must be provided or initialized.");
+  }
+
+  try {
+    // 1. Prepare the data to update (excluding the primary key from the data object)
+    const updateData = {
+      username: newProfile.username,
+      pin: newProfile.pin,
+      photo: newProfile.photo,
+    };
+
+    // 2. Execute the update query
+    // The result is an array: [affectedCount, affectedRows]
+    // affectedCount is the number of rows updated (0 or 1 in this case).
+    const [affectedCount] = await ProfileModel.update(updateData, {
+      where: {
+        profile_id: newProfile.profile_id, // CRITICAL: Use the primary key for the WHERE clause
+      },
+    });
+
+    if (affectedCount > 0) {
+      console.log(
+        `✅ Profile ID ${newProfile.profile_id} updated successfully.`
+      );
+      return true; // Or return the updated row count
+    } else {
+      console.warn(
+        `⚠️ Profile ID ${newProfile.profile_id} not found or no changes were made.`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error updating profile ID ${newProfile.profile_id}:`,
+      error.message
+    );
+    throw new Error("Error updating the profile in the database.");
+  }
+}
+
+//Solo remota
+async function updateStore(newStore, sequelize) {
+  // Ensure the model is available
+  if (!StoreModel) {
+    throw new Error("Store model must be provided or initialized.");
+  }
+
+  try {
+    const updateData = {
+      name: newStore.name,
+      location: newStore.location,
+      category_id: newStore.category_id,
+      is_active: newStore.is_active, // Include if activation/deactivation is handled here
+    };
+
+    // 2. Execute the update query
+    // The result is an array: [affectedCount, affectedRows]
+    // affectedCount is the number of rows updated (0 or 1).
+    const [affectedCount] = await StoreModel.update(updateData, {
+      where: {
+        store_id: newStore.store_id,
+      },
+    });
+
+    if (affectedCount > 0) {
+      console.log(`✅ Store ID ${newStore.store_id} updated successfully.`);
+      return true;
+    } else {
+      console.warn(
+        `⚠️ Store ID ${newStore.store_id} not found or no changes were submitted.`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error updating store ID ${newStore.store_id}:`,
+      error.message
+    );
+    // Note: You might want to handle unique constraint errors (e.g., duplicate 'name') here.
+    throw new Error("Error updating the store in the database.");
+  }
+}
+
+//Tiene que ser para remota y local
+async function createInflow(newInflow, sequelize) {
+  if (!InflowLocal) {
+    throw new Error("Local Inflow model must be initialized.");
+  }
+
+  // Datos de la sesión de caja principal
+  const inflowData = {
+    store_id: newInflow.store_id,
+    starting_cash: newInflow.starting_cash,
+  };
+
+  let localInflowRecord;
+  let remoteInflowId = null; // PK de MariaDB
+
+  // --- 1. ESCRITURA LOCAL (Mandatoria) ---
+  try {
+    // is_synced se establece en FALSE
+    inflowData.is_synced = false;
+
+    // Creamos el registro de Inflow localmente (no hay ventas asociadas en este paso)
+    localInflowRecord = await InflowLocal.create(inflowData);
+    const localInflowId = localInflowRecord.inflow_id;
+
+    console.log(`✅ Sesión de caja local (Inflow ID ${localInflowId}) creada.`);
+  } catch (error) {
+    console.error(
+      "❌ FATAL: Error al crear el Inflow localmente.",
+      error.message
+    );
+    throw new Error("Fallo al guardar la sesión de caja localmente.");
+  }
+
+  // --- 2. ESCRITURA REMOTA (Sincronización Condicional) ---
+  if (dbRemote && InflowRemote) {
+    try {
+      // Creamos el Inflow remotamente
+      const remoteInflowRecord = await InflowRemote.create(inflowData);
+      remoteInflowId = remoteInflowRecord.inflow_id;
+
+      // Actualizamos el registro local con el ID remoto y el estado sincronizado
+      await localInflowRecord.update({
+        is_synced: true,
+        remote_id: remoteInflowId,
+      });
+
+      console.log(
+        `✅ Inflow ID ${localInflowRecord.inflow_id} sincronizado remotamente.`
+      );
+    } catch (error) {
+      // Si falla la escritura remota, el registro local permanece como is_synced=false
+      console.warn(
+        `⚠️ Sincronización remota fallida para Inflow ID ${localInflowRecord.inflow_id}: ${error.message}`
+      );
+    }
+  } else {
+    console.log(
+      "🟡 Operando sin conexión. Inflow queda pendiente de sincronización."
+    );
+  }
+
+  // --- 3. RETORNO FINAL ---
+  return {
+    success: true,
+    localId: localInflowRecord.inflow_id,
+    remoteId: remoteInflowId, // Null si falla/offline
+  };
+}
+
+//Tiene que ser para remota y local
+async function closeInflow(local_id, sequelize) {
+  if (!sequelize) {
+    throw new Error("Local database connection is not initialized.");
+  }
+
+  // 1. Retrieve the specific model from the Sequelize instance
+  // NOTE: 'Inflow' must match the name used in sequelize.define()
+  const InflowModel = sequelize.models.Inflow;
+
+  if (!InflowModel) {
+    throw new Error(
+      "Inflow model is not defined on the local Sequelize instance."
+    );
+  }
+
+  const now = new Date();
+
+  try {
+    // 2. Execute the update using the retrieved model
+    const [affectedCount] = await InflowModel.update(
+      {
+        end_time: now,
+        is_synced: false,
+      },
+      {
+        where: {
+          local_id: local_id,
+          end_time: null,
+        },
+      }
+    );
+
+    if (affectedCount > 0) {
+      console.log(`✅ Inflow Local ID ${local_id} closed.`);
+      return true;
+    } else {
+      console.warn(
+        `⚠️ Inflow Local ID ${local_id} not found or already closed.`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error closing Inflow Local ID ${local_id}:`,
+      error.message
+    );
+    throw new Error("Error updating the local cash session.");
+  }
+}
+
+//Tiene que ser para remota y local
+async function openInflow(local_id, sequelize) {
+  // El parámetro ahora se llama 'sequelize'
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
+
+  // 1. Obtener el modelo Inflow de la instancia Sequelize
+  // Nota: Asumimos que el modelo fue definido como 'Inflow'
+  const InflowModel = sequelize.models.Inflow;
+
+  if (!InflowModel) {
+    throw new Error(
+      "Inflow model is not defined on the local Sequelize instance."
+    );
+  }
+
+  try {
+    // 2. Ejecutar la actualización (Reabrir Inflow)
+    const [affectedCount] = await InflowModel.update(
+      {
+        end_time: null, // Establece el tiempo de cierre como nulo (reabierto)
+        is_synced: false, // CRÍTICO: Indica que el registro fue modificado y debe sincronizarse.
+      },
+      {
+        where: {
+          local_id: local_id,
+          // Usamos el Op.not de la instancia de Sequelize para buscar registros no nulos
+          end_time: { [sequelize.Sequelize.Op.not]: null },
+        },
+      }
+    );
+
+    if (affectedCount > 0) {
+      console.log(
+        `✅ Inflow Local ID ${local_id} reabierto (end_time = NULL) correctamente.`
+      );
+      return true;
+    } else {
+      console.warn(
+        `⚠️ Inflow Local ID ${local_id} no encontrado o ya estaba abierto.`
+      );
+      return false;
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error al reabrir Inflow Local ID ${local_id}:`,
+      error.message
+    );
+    throw new Error("Error al revertir el cierre de la sesión de caja local.");
+  }
+}
+// Tiene que ser para remota y local, primero local
+async function createSale(local_inflow_id, newSale, sequelize) {
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
+
+  // Retrieve the local Sale model from the sequelize instance
+  const SaleModel = sequelize.models.Sale;
+
+  if (!SaleModel) {
+    throw new Error(
+      "Sale model is not defined on the local Sequelize instance."
+    );
+  }
+
+  // Assume newSale looks like { total_amount: 500.00, ...other_fields }
+  const saleData = {
+    inflow_id: local_inflow_id,
+    total_amount: newSale.total_amount,
+    // Add other necessary fields (like payment method, items, etc.)
+
+    // --- Sync Fields ---
+    remote_id: null,
+    is_synced: false, // Must be false initially, waiting for remote push
+  };
+
+  let localSaleRecord;
+
+  // --- 1. LOCAL WRITE (Mandatory) ---
+  try {
+    // Create the Sale record locally
+    localSaleRecord = await SaleModel.create(saleData);
+    const localSaleId = localSaleRecord.local_id;
+
+    console.log(
+      `✅ Sale ID ${localSaleId} created locally for Inflow ${local_inflow_id}.`
+    );
+
+    // --- IMPORTANT: Mark the parent Inflow as unsynced ---
+    // Since the Inflow record was modified (it now has new associated sales),
+    // it may need to be flagged for resynchronization if your sync process
+    // tracks changes to related records.
+    // We assume the sync process will check for any related unsynced Sale records.
+
+    // This is a common point to also trigger the background sync job.
+
+    return {
+      success: true,
+      localSaleId: localSaleId,
+      // remoteId remains null until the sync process runs
+      remoteId: null,
+    };
+  } catch (error) {
+    console.error("❌ FATAL: Error creating local Sale record.", error.message);
+    throw new Error("Failed to save sale data locally.");
+  }
+
+  // --- 2. REMOTE WRITE/DUAL-WRITE (Synchronization Attempt) ---
+  // NOTE: In a robust Dual-Write system, the actual remote push for SALES
+  // is often handled by the central SYNC JOB, not instantly in this function,
+  // to keep the user interface fast and handle network failures better.
+  // This function focuses solely on local persistence.
+}
+
+async function readSales(local_inflow_id, sequelize) {
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
+
+  // 1. Retrieve the local Sale model from the sequelize instance
+  // NOTE: 'Sale' must match the name used in sequelize.define()
+  const SaleModel = sequelize.models.Sale;
+
+  if (!SaleModel) {
+    throw new Error(
+      "Sale model is not defined on the local Sequelize instance."
+    );
+  }
+
+  try {
+    // 2. Execute the findAll query
+    const sales = await SaleModel.findAll({
+      where: {
+        // We query the sales table using the local foreign key
+        inflow_id: local_inflow_id,
+      },
+      // Order by sale date or local ID to see them sequentially
+      order: [["sale_date", "ASC"]],
+    });
+
+    // 3. Convert results to plain JavaScript objects for safe return (JSONify)
+    const plainSales = sales.map((sale) => sale.toJSON());
+
+    console.log(
+      `✅ Read ${plainSales.length} sales for Inflow ID ${local_inflow_id}.`
+    );
+
+    return plainSales;
+  } catch (error) {
+    console.error(
+      `❌ Error reading sales for Inflow ID ${local_inflow_id}:`,
+      error.message
+    );
+    throw new Error("Error retrieving sale data from the local database.");
+  }
+}
 module.exports = {
   connectWithCredentials,
   getStores,
@@ -526,4 +954,13 @@ module.exports = {
   getProfile,
   getProfileAndDailyInflowData,
   deleteProfile,
+  restoreProfile,
+  restoreStore,
+  updateProfile,
+  updateStore,
+  createInflow,
+  closeInflow,
+  openInflow,
+  createSale,
+  readSales,
 };
