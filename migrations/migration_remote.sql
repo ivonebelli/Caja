@@ -44,7 +44,6 @@ CREATE TABLE IF NOT EXISTS Inflows (
     
     -- Campos de la Aplicación
     store_id INT NOT NULL, 
-    profile_id INT, -- Reintegrado aquí
     start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP NULL,
     starting_cash DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -52,9 +51,6 @@ CREATE TABLE IF NOT EXISTS Inflows (
     -- CLAVES FORÁNEAS
     FOREIGN KEY (store_id) REFERENCES Stores(store_id)
         ON DELETE RESTRICT,
-        
-    FOREIGN KEY (profile_id) REFERENCES Profiles(profile_id)
-        ON DELETE SET NULL 
 );
 
 -- 5. Tabla Sales (Ventas / Órdenes)

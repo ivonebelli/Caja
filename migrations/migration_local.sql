@@ -60,7 +60,6 @@ CREATE TABLE IF NOT EXISTS Inflows (
     
     -- FKs que apuntan a IDs locales
     store_id INT NOT NULL, 
-    profile_id INT, 
     
     start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP NULL,
@@ -73,9 +72,7 @@ CREATE TABLE IF NOT EXISTS Inflows (
     -- Claves Foráneas
     FOREIGN KEY (store_id) REFERENCES Stores(local_id)
         ON DELETE RESTRICT,
-        
-    FOREIGN KEY (profile_id) REFERENCES Profiles(local_id) -- Ahora apunta al local_id del perfil
-        ON DELETE SET NULL 
+
 );
 
 -- 5. Tabla Sales (Ventas / Órdenes)

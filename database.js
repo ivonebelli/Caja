@@ -16,7 +16,7 @@ function initModels(sequelize) {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
-          field: "store_id", // Mapea el atributo JS 'local_id' al campo DB 'store_id'
+          field: "local_id", // Mapea el atributo JS 'local_id' al campo DB 'local_id'
         },
         category_id: { type: DataTypes.INTEGER, allowNull: true },
         name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
@@ -48,10 +48,10 @@ function initModels(sequelize) {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
-          field: "profile_id", // Mapea el atributo JS 'local_id' al campo DB 'profile_id'
+          field: "local_id", // Mapea el atributo JS 'local_id' al campo DB 'local_id'
         },
-        // NOTA: store_id ahora referencia a Store.local_id
-        store_id: { type: DataTypes.INTEGER, allowNull: false },
+        // NOTA: local_id ahora referencia a Store.local_id
+        local_id: { type: DataTypes.INTEGER, allowNull: false },
 
         username: {
           type: DataTypes.STRING(50),
@@ -98,10 +98,10 @@ function initModels(sequelize) {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
-          field: "inflow_id",
+          field: "local_id",
         }, // Mapeo de nombre
-        store_id: { type: DataTypes.INTEGER, allowNull: false },
-        profile_id: { type: DataTypes.INTEGER, allowNull: true }, // Se asume profile_id es un campo
+        local_id: { type: DataTypes.INTEGER, allowNull: false },
+        local_id: { type: DataTypes.INTEGER, allowNull: true }, // Se asume local_id es un campo
         start_time: {
           type: DataTypes.DATE,
           allowNull: false,
@@ -133,9 +133,9 @@ function initModels(sequelize) {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
-          field: "sale_id",
+          field: "local_id",
         }, // Mapeo de nombre
-        inflow_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Inflows.local_id
+        local_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Inflows.local_id
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
         sale_date: {
           type: DataTypes.DATE,
@@ -159,7 +159,7 @@ function initModels(sequelize) {
     sequelize.define(
       "Store",
       {
-        store_id: {
+        local_id: {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
@@ -181,12 +181,12 @@ function initModels(sequelize) {
     sequelize.define(
       "Profile",
       {
-        profile_id: {
+        local_id: {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
         },
-        store_id: { type: DataTypes.INTEGER, allowNull: false },
+        local_id: { type: DataTypes.INTEGER, allowNull: false },
         username: {
           type: DataTypes.STRING(50),
           allowNull: false,
@@ -219,14 +219,14 @@ function initModels(sequelize) {
     sequelize.define(
       "Inflow",
       {
-        // PK REMOTA: inflow_id
-        inflow_id: {
+        // PK REMOTA: local_id
+        local_id: {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
         },
-        store_id: { type: DataTypes.INTEGER, allowNull: false },
-        profile_id: { type: DataTypes.INTEGER, allowNull: true },
+        local_id: { type: DataTypes.INTEGER, allowNull: false },
+        local_id: { type: DataTypes.INTEGER, allowNull: true },
         start_time: {
           type: DataTypes.DATE,
           allowNull: false,
@@ -245,13 +245,13 @@ function initModels(sequelize) {
     sequelize.define(
       "Sale",
       {
-        // PK REMOTA: sale_id
-        sale_id: {
+        // PK REMOTA: local_id
+        local_id: {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
         },
-        inflow_id: { type: DataTypes.INTEGER, allowNull: false },
+        local_id: { type: DataTypes.INTEGER, allowNull: false },
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
         sale_date: {
           type: DataTypes.DATE,
@@ -270,36 +270,36 @@ function initModels(sequelize) {
 
   // Store <-> Profile
   Store.hasMany(Profile, {
-    foreignKey: "store_id",
+    foreignKey: "local_id",
     as: "profiles",
     onDelete: "CASCADE",
   });
-  Profile.belongsTo(Store, { foreignKey: "store_id", as: "store" });
+  Profile.belongsTo(Store, { foreignKey: "local_id", as: "store" });
 
   // Store <-> Inflow
   Store.hasMany(Inflow, {
-    foreignKey: "store_id",
+    foreignKey: "local_id",
     as: "inflows",
     onDelete: "RESTRICT",
   });
-  Inflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
+  Inflow.belongsTo(Store, { foreignKey: "local_id", as: "store" });
 
   // Profile <-> Inflow
-  Profile.hasMany(Inflow, { foreignKey: "profile_id", as: "sessions" });
+  Profile.hasMany(Inflow, { foreignKey: "local_id", as: "sessions" });
   Inflow.belongsTo(Profile, {
-    foreignKey: "profile_id",
+    foreignKey: "local_id",
     as: "profile",
     onDelete: "SET NULL",
   });
 
   // Inflow <-> Sale
-  // La clave foránea apunta al campo inflow_id/local_id (depende del contexto)
+  // La clave foránea apunta al campo local_id/local_id (depende del contexto)
   Inflow.hasMany(Sale, {
-    foreignKey: "inflow_id",
+    foreignKey: "local_id",
     as: "sales",
     onDelete: "CASCADE",
   });
-  Sale.belongsTo(Inflow, { foreignKey: "inflow_id", as: "inflow" });
+  Sale.belongsTo(Inflow, { foreignKey: "local_id", as: "inflow" });
 }
 
 async function connectWithCredentials(credentials) {
@@ -364,7 +364,7 @@ async function deleteStore(storeId, sequelize) {
     const [affectedCount] = await Store.update(
       { is_active: false, is_synced: false },
       {
-        where: { store_id: storeId },
+        where: { local_id: storeId },
       }
     );
 
@@ -393,14 +393,14 @@ async function deleteStore(storeId, sequelize) {
   }
 }
 
-async function getProfiles(store_id, sequelize) {
+async function getProfiles(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
     const rows = await Profile.findAll({
       where: {
         is_active: true,
-        store_id: store_id,
+        local_id: local_id,
       },
     });
 
@@ -422,14 +422,16 @@ async function createProfile(newProfile, sequelize) {
   const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo
-    // (store_id, username, role, pin, photo)
+    // (local_id, username, role, pin, photo)
     const createdProfile = await Profile.create(newProfile);
 
-    if (createdProfile.profile_id) {
-      console.log(
-        `✅ Nuevo perfil creado con ID: ${createdProfile.profile_id}`
-      );
-      return createdProfile.profile_id;
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_profile(createdProfile.local_id);
+    }
+
+    if (createdProfile.local_id) {
+      console.log(`✅ Nuevo perfil creado con ID: ${createdProfile.local_id}`);
+      return createdProfile.local_id;
     } else {
       throw new Error("Error desconocido al insertar el perfil.");
     }
@@ -439,13 +441,13 @@ async function createProfile(newProfile, sequelize) {
   }
 }
 
-async function getProfile(profile_id, sequelize) {
+async function getProfile(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
     // findByPk (Find By Primary Key)
     // 'include' realiza el JOIN automáticamente gracias a las asociaciones definidas.
-    const profile = await Profile.findByPk(profile_id, {
+    const profile = await Profile.findByPk(local_id, {
       include: {
         model: Store,
         as: "store", // Este 'as' debe coincidir con el definido en la asociación
@@ -462,13 +464,13 @@ async function getProfile(profile_id, sequelize) {
   }
 }
 
-async function getProfileAndDailyInflowData(profile_id, sequelize) {
+async function getProfileAndDailyInflowData(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   const Store = sequelize.models.Store;
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
-    const profileData = await Profile.findByPk(profile_id, {
+    const profileData = await Profile.findByPk(local_id, {
       include: { model: Store, as: "store" },
     });
 
@@ -476,7 +478,7 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
       return null; // Perfil no encontrado
     }
 
-    const storeId = profileData.store_id;
+    const storeId = profileData.local_id;
 
     // --- QUERY 2: Encontrar el último Inflow DE HOY ---
 
@@ -489,7 +491,7 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
 
     const inflow = await Inflow.findOne({
       where: {
-        store_id: storeId,
+        local_id: storeId,
         start_time: {
           [Op.between]: [todayStart, todayEnd], // [Op.gte]: todayStart
         },
@@ -498,18 +500,18 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
       limit: 1,
     });
 
-    let lastInflowId = null;
+    let lastlocal_id = null;
     let salesData = [];
     let totalSalesAmount = 0;
     let salesCount = 0;
     let averageSale = 0;
 
     if (inflow) {
-      lastInflowId = inflow.id;
+      lastlocal_id = inflow.id;
 
       // --- QUERY 3: Obtener todas las ventas de ese Inflow ---
       salesData = await Sale.findAll({
-        where: { inflow_id: lastInflowId },
+        where: { local_id: lastlocal_id },
       });
 
       // Reutilizamos la lógica de agregación de tu código original
@@ -530,7 +532,7 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
     console.log("get inflows");
     let data = {
       profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
-      last_inflow_id: lastInflowId,
+      last_local_id: lastlocal_id,
       sales_summary: {
         total_amount: parseFloat(totalSalesAmount.toFixed(2)),
         count: salesCount,
@@ -551,7 +553,7 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
   }
 }
 
-async function deleteProfile(profile_id, sequelize) {
+async function deleteProfile(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
@@ -559,19 +561,22 @@ async function deleteProfile(profile_id, sequelize) {
     const [affectedCount] = await Profile.update(
       { is_active: false, is_synced: false },
       {
-        where: { profile_id: profile_id },
+        where: { local_id: local_id },
       }
     );
 
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_profile(local_id);
+    }
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
       console.log(
-        `✅ Perfil ${profile_id} desactivado (is_active = FALSE) correctamente.`
+        `✅ Perfil ${local_id} desactivado (is_active = FALSE) correctamente.`
       );
       return true;
     } else {
       console.warn(
-        `⚠️ Intento de desactivar perfil ${profile_id}, pero no se encontró.`
+        `⚠️ Intento de desactivar perfil ${local_id}, pero no se encontró.`
       );
       return false;
     }
@@ -579,7 +584,7 @@ async function deleteProfile(profile_id, sequelize) {
     // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
     // porque el registro no se está eliminando; solo se está modificando un campo.
     console.error(
-      `❌ Error al desactivar el perfil ${profile_id}:`,
+      `❌ Error al desactivar el perfil ${local_id}:`,
       error.message
     );
 
@@ -588,7 +593,7 @@ async function deleteProfile(profile_id, sequelize) {
   }
 }
 
-async function restoreProfile(profile_id, sequelize) {
+async function restoreProfile(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
@@ -596,19 +601,22 @@ async function restoreProfile(profile_id, sequelize) {
     const [affectedCount] = await Profile.update(
       { is_active: true, is_synced: false },
       {
-        where: { profile_id: profile_id },
+        where: { local_id: local_id },
       }
     );
 
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_profile(local_id);
+    }
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
       console.log(
-        `✅ Perfil ${profile_id} restaurado (is_active = FALSE) correctamente.`
+        `✅ Perfil ${local_id} restaurado (is_active = FALSE) correctamente.`
       );
       return true;
     } else {
       console.warn(
-        `⚠️ Intento de restaurar perfil ${profile_id}, pero no se encontró.`
+        `⚠️ Intento de restaurar perfil ${local_id}, pero no se encontró.`
       );
       return false;
     }
@@ -616,7 +624,7 @@ async function restoreProfile(profile_id, sequelize) {
     // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
     // porque el registro no se está eliminando; solo se está modificando un campo.
     console.error(
-      `❌ Error al restaurar el perfil ${profile_id}:`,
+      `❌ Error al restaurar el perfil ${local_id}:`,
       error.message
     );
 
@@ -625,7 +633,7 @@ async function restoreProfile(profile_id, sequelize) {
   }
 }
 
-async function restoreStore(store_id, sequelize) {
+async function restoreStore(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Store = sequelize.models.Store;
   try {
@@ -633,19 +641,19 @@ async function restoreStore(store_id, sequelize) {
     const [affectedCount] = await Store.update(
       { is_active: true, is_synced: false },
       {
-        where: { store_id: store_id },
+        where: { local_id: local_id },
       }
     );
 
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
       console.log(
-        `✅ Tienda ${store_id} restaurado (is_active = FALSE) correctamente.`
+        `✅ Tienda ${local_id} restaurado (is_active = FALSE) correctamente.`
       );
       return true;
     } else {
       console.warn(
-        `⚠️ Intento de restaurar tienda ${store_id}, pero no se encontró.`
+        `⚠️ Intento de restaurar tienda ${local_id}, pero no se encontró.`
       );
       return false;
     }
@@ -653,7 +661,7 @@ async function restoreStore(store_id, sequelize) {
     // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
     // porque el registro no se está eliminando; solo se está modificando un campo.
     console.error(
-      `❌ Error al restaurar el tienda ${store_id}:`,
+      `❌ Error al restaurar el tienda ${local_id}:`,
       error.message
     );
 
@@ -678,24 +686,26 @@ async function updateProfile(newProfile, sequelize) {
     // affectedCount is the number of rows updated (0 or 1 in this case).
     const [affectedCount] = await Profile.update(updateData, {
       where: {
-        profile_id: newProfile.profile_id, // CRITICAL: Use the primary key for the WHERE clause
+        local_id: newProfile.local_id,
       },
     });
 
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_profile(newProfile.local_id);
+    }
+
     if (affectedCount > 0) {
-      console.log(
-        `✅ Profile ID ${newProfile.profile_id} updated successfully.`
-      );
+      console.log(`✅ Profile ID ${newProfile.local_id} updated successfully.`);
       return true; // Or return the updated row count
     } else {
       console.warn(
-        `⚠️ Profile ID ${newProfile.profile_id} not found or no changes were made.`
+        `⚠️ Profile ID ${newProfile.local_id} not found or no changes were made.`
       );
       return false;
     }
   } catch (error) {
     console.error(
-      `❌ Error updating profile ID ${newProfile.profile_id}:`,
+      `❌ Error updating profile ID ${newProfile.local_id}:`,
       error.message
     );
     throw new Error("Error updating the profile in the database.");
@@ -719,22 +729,22 @@ async function updateStore(newStore, sequelize) {
     // affectedCount is the number of rows updated (0 or 1).
     const [affectedCount] = await Store.update(updateData, {
       where: {
-        store_id: newStore.store_id,
+        local_id: newStore.local_id,
       },
     });
 
     if (affectedCount > 0) {
-      console.log(`✅ Store ID ${newStore.store_id} updated successfully.`);
+      console.log(`✅ Store ID ${newStore.local_id} updated successfully.`);
       return true;
     } else {
       console.warn(
-        `⚠️ Store ID ${newStore.store_id} not found or no changes were submitted.`
+        `⚠️ Store ID ${newStore.local_id} not found or no changes were submitted.`
       );
       return false;
     }
   } catch (error) {
     console.error(
-      `❌ Error updating store ID ${newStore.store_id}:`,
+      `❌ Error updating store ID ${newStore.local_id}:`,
       error.message
     );
     // Note: You might want to handle unique constraint errors (e.g., duplicate 'name') here.
@@ -747,18 +757,21 @@ async function createInflow(newInflow, sequelize) {
 
   // Datos de la sesión de caja principal
   const inflowData = {
-    store_id: newInflow.store_id,
+    local_id: newInflow.local_id,
     starting_cash: newInflow.starting_cash,
   };
 
   let localInflowRecord;
-  let remoteInflowId = null; // PK de MariaDB
+  let remotelocal_id = null; // PK de MariaDB
 
   try {
     localInflowRecord = await Inflow.create(inflowData);
-    const localInflowId = localInflowRecord.inflow_id;
+    const local_id = localInflowRecord.local_id;
 
-    console.log(`✅ Sesión de caja local (Inflow ID ${localInflowId}) creada.`);
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_inflow(local_id);
+    }
+    console.log(`✅ Sesión de caja local (Inflow ID ${local_id}) creada.`);
   } catch (error) {
     console.error(
       "❌ FATAL: Error al crear el Inflow localmente.",
@@ -770,8 +783,8 @@ async function createInflow(newInflow, sequelize) {
   // --- 3. RETORNO FINAL ---
   return {
     success: true,
-    localId: localInflowRecord.inflow_id,
-    remoteId: remoteInflowId, // Null si falla/offline
+    localId: local_id,
+    remoteId: remotelocal_id, // Null si falla/offline
   };
 }
 
@@ -806,6 +819,10 @@ async function closeInflow(local_id, sequelize) {
         },
       }
     );
+
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_inflow(local_id);
+    }
 
     if (affectedCount > 0) {
       console.log(`✅ Inflow Local ID ${local_id} closed.`);
@@ -857,6 +874,9 @@ async function openInflow(local_id, sequelize) {
         },
       }
     );
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_inflow(local_id);
+    }
 
     if (affectedCount > 0) {
       console.log(
@@ -878,7 +898,7 @@ async function openInflow(local_id, sequelize) {
   }
 }
 
-async function createSale(local_inflow_id, newSale, sequelize) {
+async function createSale(local_id, newSale, sequelize) {
   if (!sequelize) {
     throw new Error(
       "Local database connection (sequelize) is not initialized."
@@ -894,11 +914,9 @@ async function createSale(local_inflow_id, newSale, sequelize) {
     );
   }
 
-  // Assume newSale looks like { total_amount: 500.00, ...other_fields }
   const saleData = {
-    inflow_id: local_inflow_id,
+    local_id: local_id,
     total_amount: newSale.total_amount,
-    // Add other necessary fields (like payment method, items, etc.)
 
     remote_id: null,
   };
@@ -909,8 +927,11 @@ async function createSale(local_inflow_id, newSale, sequelize) {
     localSaleRecord = await SaleModel.create(saleData);
     const localSaleId = localSaleRecord.local_id;
 
+    if (sequelize.dialect === "sqlite") {
+      unsync_cascade_up_from_sale(localSaleId);
+    }
     console.log(
-      `✅ Sale ID ${localSaleId} created locally for Inflow ${local_inflow_id}.`
+      `✅ Sale ID ${localSaleId} created locally for Inflow ${local_local_id}.`
     );
 
     return {
@@ -924,7 +945,7 @@ async function createSale(local_inflow_id, newSale, sequelize) {
   }
 }
 
-async function readSales(local_inflow_id, sequelize) {
+async function readSales(local_id, sequelize) {
   if (!sequelize) {
     throw new Error(
       "Local database connection (sequelize) is not initialized."
@@ -946,7 +967,7 @@ async function readSales(local_inflow_id, sequelize) {
     const sales = await SaleModel.findAll({
       where: {
         // We query the sales table using the local foreign key
-        inflow_id: local_inflow_id,
+        local_id: local_id,
       },
       // Order by sale date or local ID to see them sequentially
       order: [["sale_date", "ASC"]],
@@ -956,18 +977,24 @@ async function readSales(local_inflow_id, sequelize) {
     const plainSales = sales.map((sale) => sale.toJSON());
 
     console.log(
-      `✅ Read ${plainSales.length} sales for Inflow ID ${local_inflow_id}.`
+      `✅ Read ${plainSales.length} sales for Inflow ID ${local_local_id}.`
     );
 
     return plainSales;
   } catch (error) {
     console.error(
-      `❌ Error reading sales for Inflow ID ${local_inflow_id}:`,
+      `❌ Error reading sales for Inflow ID ${local_local_id}:`,
       error.message
     );
     throw new Error("Error retrieving sale data from the local database.");
   }
 }
+
+function unsync_cascade_up_from_sale(id_sale) {}
+
+function unsync_cascade_up_from_inflow(id_inflow) {}
+
+function unsync_cascade_up_from_profile(id_profile) {}
 module.exports = {
   connectWithCredentials,
   getStores,
