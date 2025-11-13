@@ -493,18 +493,17 @@ async function deleteStore(storeId, sequelize) {
   }
 }
 
-async function getProfiles(local_id, sequelize) {
+async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-  console.log(local_id);
   const Profile = sequelize.models.Profile;
   try {
-    const rows = await Profile.findAll({
-      where: {
-        is_active: true,
-        local_id: local_id,
-      },
-    });
-
+    console.log("---------------------");
+    const rows = await Profile.findAll(
+      { raw: true, logging: console.log },
+      {
+        where: { store_id: store_id },
+      }
+    );
     console.log(
       `Consulta 'getProfiles' ejecutada, ${rows.length} perfiles encontrados.`
     );
@@ -526,7 +525,7 @@ async function createProfile(newProfile, sequelize) {
     // newProfile debe ser un objeto que coincida con los campos del modelo
     // (local_id, username, role, pin, photo)
     const createdProfile = await Profile.create(newProfile);
-
+    console.log(createdProfile);
     if (sequelize.dialect === "sqlite") {
       unsync_cascade_up_from_profile(createdProfile.local_id, sequelize);
     }
