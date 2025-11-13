@@ -337,7 +337,6 @@ async function connectWithCredentials(credentials) {
   }
 }
 
-//Solo remota
 async function getStores(sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Store = sequelize.models.Store;
@@ -357,14 +356,13 @@ async function getStores(sequelize) {
   }
 }
 
-//Solo remota
 async function deleteStore(storeId, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Store = sequelize.models.Store;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Store.update(
-      { is_active: false },
+      { is_active: false, is_synced: false },
       {
         where: { store_id: storeId },
       }
@@ -395,7 +393,6 @@ async function deleteStore(storeId, sequelize) {
   }
 }
 
-//Solo remota
 async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
@@ -420,7 +417,6 @@ async function getProfiles(store_id, sequelize) {
   }
 }
 
-//Solo remota
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
@@ -443,7 +439,6 @@ async function createProfile(newProfile, sequelize) {
   }
 }
 
-//Solo remota
 async function getProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
@@ -467,7 +462,6 @@ async function getProfile(profile_id, sequelize) {
   }
 }
 
-//Remota y local
 async function getProfileAndDailyInflowData(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
@@ -557,14 +551,13 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
   }
 }
 
-//Solo remota
 async function deleteProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Profile.update(
-      { is_active: false },
+      { is_active: false, is_synced: false },
       {
         where: { profile_id: profile_id },
       }
@@ -595,14 +588,13 @@ async function deleteProfile(profile_id, sequelize) {
   }
 }
 
-//Solo remota
 async function restoreProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Profile.update(
-      { is_active: true },
+      { is_active: true, is_synced: false },
       {
         where: { profile_id: profile_id },
       }
@@ -633,14 +625,13 @@ async function restoreProfile(profile_id, sequelize) {
   }
 }
 
-//Solo remota
 async function restoreStore(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Store = sequelize.models.Store;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Store.update(
-      { is_active: true },
+      { is_active: true, is_synced: false },
       {
         where: { store_id: store_id },
       }
@@ -671,7 +662,6 @@ async function restoreStore(store_id, sequelize) {
   }
 }
 
-//Solo remota
 async function updateProfile(newProfile, sequelize) {
   const Profile = sequelize.models.Profile;
   try {
@@ -680,6 +670,7 @@ async function updateProfile(newProfile, sequelize) {
       username: newProfile.username,
       pin: newProfile.pin,
       photo: newProfile.photo,
+      is_synced: false,
     };
 
     // 2. Execute the update query
@@ -719,7 +710,8 @@ async function updateStore(newStore, sequelize) {
       name: newStore.name,
       location: newStore.location,
       category_id: newStore.category_id,
-      is_active: newStore.is_active, // Include if activation/deactivation is handled here
+      is_active: newStore.is_active,
+      is_synced: false,
     };
 
     // 2. Execute the update query
@@ -750,7 +742,6 @@ async function updateStore(newStore, sequelize) {
   }
 }
 
-//Tiene que ser para remota y local
 async function createInflow(newInflow, sequelize) {
   const Inflow = sequelize.models.Inflow;
 
@@ -763,12 +754,7 @@ async function createInflow(newInflow, sequelize) {
   let localInflowRecord;
   let remoteInflowId = null; // PK de MariaDB
 
-  // --- 1. ESCRITURA LOCAL (Mandatoria) ---
   try {
-    // is_synced se establece en FALSE
-    inflowData.is_synced = false;
-
-    // Creamos el registro de Inflow localmente (no hay ventas asociadas en este paso)
     localInflowRecord = await Inflow.create(inflowData);
     const localInflowId = localInflowRecord.inflow_id;
 
@@ -789,7 +775,6 @@ async function createInflow(newInflow, sequelize) {
   };
 }
 
-//Tiene que ser para remota y local
 async function closeInflow(local_id, sequelize) {
   if (!sequelize) {
     throw new Error("Local database connection is not initialized.");
@@ -840,7 +825,6 @@ async function closeInflow(local_id, sequelize) {
   }
 }
 
-//Tiene que ser para remota y local
 async function openInflow(local_id, sequelize) {
   // El parámetro ahora se llama 'sequelize'
   if (!sequelize) {
@@ -863,13 +847,12 @@ async function openInflow(local_id, sequelize) {
     // 2. Ejecutar la actualización (Reabrir Inflow)
     const [affectedCount] = await InflowModel.update(
       {
-        end_time: null, // Establece el tiempo de cierre como nulo (reabierto)
-        is_synced: false, // CRÍTICO: Indica que el registro fue modificado y debe sincronizarse.
+        end_time: null,
+        is_synced: false,
       },
       {
         where: {
           local_id: local_id,
-          // Usamos el Op.not de la instancia de Sequelize para buscar registros no nulos
           end_time: { [sequelize.Sequelize.Op.not]: null },
         },
       }
@@ -894,7 +877,7 @@ async function openInflow(local_id, sequelize) {
     throw new Error("Error al revertir el cierre de la sesión de caja local.");
   }
 }
-// Tiene que ser para remota y local, primero local
+
 async function createSale(local_inflow_id, newSale, sequelize) {
   if (!sequelize) {
     throw new Error(
@@ -917,16 +900,12 @@ async function createSale(local_inflow_id, newSale, sequelize) {
     total_amount: newSale.total_amount,
     // Add other necessary fields (like payment method, items, etc.)
 
-    // --- Sync Fields ---
     remote_id: null,
-    is_synced: false, // Must be false initially, waiting for remote push
   };
 
   let localSaleRecord;
 
-  // --- 1. LOCAL WRITE (Mandatory) ---
   try {
-    // Create the Sale record locally
     localSaleRecord = await SaleModel.create(saleData);
     const localSaleId = localSaleRecord.local_id;
 
@@ -934,30 +913,15 @@ async function createSale(local_inflow_id, newSale, sequelize) {
       `✅ Sale ID ${localSaleId} created locally for Inflow ${local_inflow_id}.`
     );
 
-    // --- IMPORTANT: Mark the parent Inflow as unsynced ---
-    // Since the Inflow record was modified (it now has new associated sales),
-    // it may need to be flagged for resynchronization if your sync process
-    // tracks changes to related records.
-    // We assume the sync process will check for any related unsynced Sale records.
-
-    // This is a common point to also trigger the background sync job.
-
     return {
       success: true,
       localSaleId: localSaleId,
-      // remoteId remains null until the sync process runs
       remoteId: null,
     };
   } catch (error) {
     console.error("❌ FATAL: Error creating local Sale record.", error.message);
     throw new Error("Failed to save sale data locally.");
   }
-
-  // --- 2. REMOTE WRITE/DUAL-WRITE (Synchronization Attempt) ---
-  // NOTE: In a robust Dual-Write system, the actual remote push for SALES
-  // is often handled by the central SYNC JOB, not instantly in this function,
-  // to keep the user interface fast and handle network failures better.
-  // This function focuses solely on local persistence.
 }
 
 async function readSales(local_inflow_id, sequelize) {
