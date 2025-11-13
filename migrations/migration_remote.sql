@@ -71,9 +71,8 @@ CREATE TABLE IF NOT EXISTS Sales (
 -- SEEDING (DATOS INICIALES)
 
 INSERT INTO Categories (category_id, name) VALUES
-(1, 'Impresiones'),
-(2, 'Kiosko'),
-(3, 'Panadería');
+(1, 'Tienda Principal'),
+(2, 'Tienda Sucursal'),
 
 INSERT INTO Stores (store_id, name, location, category_id) VALUES
 (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1),

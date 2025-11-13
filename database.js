@@ -330,10 +330,68 @@ async function connectWithCredentials(credentials) {
     // Inicializa los modelos
     initModels(sequelize);
 
+    if (sequelize.dialect === "sqlite") {
+      await sequelize.sync({ alter: true });
+      await seedInitialData(sequelize);
+    }
     return sequelize;
   } catch (error) {
     console.error("❌ Error al conectar con la base de datos:", error.message);
     throw error; // Lanza el error para que main.js lo capture
+  }
+}
+
+async function seedInitialData(sequelize) {
+  const categoryCount = await sequelize.models.Store.count();
+
+  if (categoryCount === 0) {
+    console.log("Seeding initial configuration data...");
+    await sequelize.query(
+      `
+            INSERT INTO Categories (local_id, name,remote_id, is_synced) VALUES
+            (1, 'Impresiones', 1, TRUE),
+            (2, 'Kiosko', 2, TRUE);
+        `,
+      { type: sequelize.QueryTypes.INSERT }
+    );
+
+    // IMPORTANT: Because you are manually setting PKs (1, 2),
+    // you MUST reset the SQLite autoincrement counter for safety.
+    await sequelize.query(
+      "UPDATE sqlite_sequence SET seq = 2 WHERE name = 'Categories';"
+    );
+    // Use raw SQL for the initial data insertion
+    await sequelize.query(
+      `
+            INSERT INTO Stores (local_id, name, location, category_id, remote_id, is_synced) VALUES
+            (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, 1, TRUE),
+        `,
+      { type: sequelize.QueryTypes.INSERT }
+    );
+
+    // IMPORTANT: Because you are manually setting PKs (1, 2),
+    // you MUST reset the SQLite autoincrement counter for safety.
+    await sequelize.query(
+      "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Stores';"
+    );
+
+    await sequelize.query(
+      `
+            INSERT INTO Profiles (local_id, store_id, username, role, pin, remote_id, is_synced) VALUES
+            (1, 1, 'Cajero Inicial', 'cajero', '1579', 1, TRUE),
+            (2, 1, 'Admin Inicial', 'administrativo', '1452', 1, TRUE),
+            (3, 1, 'Gerente Inicial', 'gerente', '7587', 1, TRUE),
+        `,
+      { type: sequelize.QueryTypes.INSERT }
+    );
+
+    // IMPORTANT: Because you are manually setting PKs (1, 2),
+    // you MUST reset the SQLite autoincrement counter for safety.
+    await sequelize.query(
+      "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Profiles';"
+    );
+
+    console.log("Initial seeding complete.");
   }
 }
 
