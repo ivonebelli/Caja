@@ -79,7 +79,7 @@ function startDaemon(local_instance, remote_instance) {
 //STORES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:get-stores", async (event) => {
   try {
-    const stores = await db.getStores(mariadb_instance);
+    const stores = await db.getStores(sqlite_instance);
     return { success: true, data: stores.map((store) => store.toJSON()) };
   } catch (error) {
     console.error(error.message);
@@ -91,7 +91,7 @@ ipcMain.handle("db:get-stores", async (event) => {
 //DELETE ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:delete-store", async (event, id) => {
   try {
-    const stores = await db.deleteStore(id);
+    const stores = await db.deleteStore(id, sqlite_instance);
     return { success: true, data: stores };
   } catch (error) {
     console.error(error.message);
@@ -103,7 +103,7 @@ ipcMain.handle("db:delete-store", async (event, id) => {
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:get-profiles", async (event, store_id) => {
   try {
-    const profiles = await db.getProfiles(store_id, mariadb_instance);
+    const profiles = await db.getProfiles(store_id, sqlite_instance);
     return { success: true, data: profiles.map((profile) => profile.toJSON()) };
   } catch (error) {
     console.error(error.message);
@@ -115,7 +115,7 @@ ipcMain.handle("db:get-profiles", async (event, store_id) => {
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:get-profile", async (event, profile_id) => {
   try {
-    const profile = await db.getProfile(profile_id, mariadb_instance);
+    const profile = await db.getProfile(profile_id, sqlite_instance);
     return { success: true, data: profile.map((profile) => profile.toJSON()) };
   } catch (error) {
     console.error(error.message);
@@ -127,7 +127,7 @@ ipcMain.handle("db:get-profile", async (event, profile_id) => {
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:create-profile", async (event, newProfile) => {
   try {
-    const insert_id = await db.createProfile(newProfile, mariadb_instance);
+    const insert_id = await db.createProfile(newProfile, sqlite_instance);
     return { success: true, insert_id: insert_id };
   } catch (error) {
     console.error(error.message);
@@ -143,7 +143,7 @@ ipcMain.handle(
     try {
       const res = await db.getProfileAndDailyInflowData(
         profile_id,
-        mariadb_instance
+        sqlite_instance
       );
       return { success: true, data: res };
     } catch (error) {
