@@ -1,8 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const daemon = require("./sync-daemon");
+const sync_daemon = require("./sync-sync_daemon");
 const db = require("./database");
-const { start } = require("repl");
+const purge_daemon = require("./purge-daemon");
 const userDataPath = app.getPath("userData");
 const SQLITE_FILE_PATH = path.join(userDataPath, "local_sales_data.sqlite");
 let mainWindow;
@@ -42,6 +42,7 @@ app.whenReady().then(async () => {
     storage: SQLITE_FILE_PATH,
   });
   createWindow();
+  purge_daemon.startPurgeDaemon();
 });
 
 app.on("window-all-closed", () => {
@@ -62,7 +63,7 @@ ipcMain.handle("db:connect", async (event, credentials) => {
 
     // Si la conexión es exitosa, devuelve éxito
     mariadb_credentials = credentials;
-    startDaemon();
+    startsync_daemon();
     return { success: true, message: "Conexión exitosa." };
   } catch (error) {
     // Si dbService lanza un error (ej. contraseña incorrecta), lo capturamos
@@ -71,9 +72,9 @@ ipcMain.handle("db:connect", async (event, credentials) => {
   }
 });
 
-function startDaemon(local_instance, remote_instance) {
-  daemon.setConnections(sqlite_instance, mariadb_instance);
-  daemon.startDaemon();
+function startsync_daemon(local_instance, remote_instance) {
+  sync_daemon.setConnections(sqlite_instance, mariadb_instance);
+  sync_daemon.startsync_daemon();
 }
 
 //STORES ES SOLO REMOTO NO LOCAL
