@@ -286,47 +286,24 @@
         { id: "credito", name: "Crédito", icon: "💳" },
         { id: "transferencia", name: "Transferencia", icon: "🏦" },
       ];
+      let inflow_id = null;
+      let profile_id = null;
 
       async function init() {
         const urlParams = new URLSearchParams(window.location.search);
-        const inflow_id = urlParams.get("inflow_id");
-        console.log(inflow_id);
-        await checkCashStatus();
+        inflow_id = urlParams.get("inflow_id");
+        profile_id = urlParams.get("profile_id");
+        if (inflow_id === undefined) {
+          inflow_id = null;
+        }
+        console.log(profile_id);
+        await checkCashStatus(inflow_id);
       }
 
-      async function checkCashStatus() {
+      async function checkCashStatus(inflow_id) {
         try {
-          console.log("🔍 Verificando estado de caja...");
-
-          const cashData = await readData("cash_register.json");
-
-          if (!cashData || !cashData.sessions) {
-            console.error("❌ Datos de caja no válidos");
-            showClosedStatus();
-            return;
-          }
-
-          const today = getCurrentDate();
-          console.log("📅 Fecha actual:", today);
-          console.log("👤 Cajero:", currentUser.profile.name);
-
-          currentSession = cashData.sessions.find((s) => {
-            const match =
-              s.cashier === currentUser.profile.name &&
-              s.date === today &&
-              s.status === "open";
-
-            console.log("Sesión encontrada:", {
-              cajero: s.cashier,
-              fecha: s.date,
-              estado: s.status,
-              coincide: match,
-            });
-
-            return match;
-          });
-
-          if (currentSession) {
+          console.log(inflow_id + " !!!!");
+          if (inflow_id !== null) {
             console.log("✅ Caja abierta encontrada");
             showOpenStatus();
             await loadSalesData();
@@ -873,7 +850,7 @@
       }
 
       function goBack() {
-        window.location.href = "index.html";
+        window.location.href = `index.html?profile_id=${profile_id}`;
       }
 
       // DELEGACIÓN DE EVENTOS para inputs de cierre

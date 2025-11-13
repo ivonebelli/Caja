@@ -437,7 +437,7 @@
       }
 
       function goToCaja() {
-        window.location.href = `./caja.html?inflow_id${currentProfile.last_local_id}`;
+        window.location.href = `./caja.html?inflow_id=${currentProfile.last_local_id}&profile_id=${profileId}`;
       }
 
       function goToOrdenes() {
