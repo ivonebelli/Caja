@@ -1,32 +1,43 @@
 -- ==============================================================================
--- UP MIGRATION: CREACIÓN DEL ESQUEMA Y TABLAS
+-- UP MIGRATION: CREACIÓN DEL ESQUEMA Y TABLAS (PARA DB LOCAL/SQLITE)
+-- TODAS LAS TABLAS TIENEN CAMPOS DE SINCRONIZACIÓN
 -- ==============================================================================
 
-
-CREATE TABLE IF NOT EXISTS dev_db.Categories (
-    category_id INT AUTO_INCREMENT PRIMARY KEY,
+-- 1. Tabla Categories (ID de configuración con sincronización)
+CREATE TABLE IF NOT EXISTS Categories (
+    local_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    
+    -- Campos de Sincronización
+    remote_id INT NULL, 
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE 
 );
 
--- 2. Tabla Stores (Tiendas)    
-CREATE TABLE IF NOT EXISTS dev_db.Stores (
-    store_id INT AUTO_INCREMENT PRIMARY KEY,
-    category_id INT NULL,
+-- 2. Tabla Stores (Tiendas)    
+CREATE TABLE IF NOT EXISTS Stores (
+    local_id INT AUTO_INCREMENT PRIMARY KEY,
+    -- FK que apunta al ID local de Categories
+    category_id INT NULL, 
     name VARCHAR(100) NOT NULL UNIQUE,
     location VARCHAR(255),
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (category_id) REFERENCES Categories(category_id)
+    -- Campos de Sincronización
+    remote_id INT NULL, 
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE, 
+
+    -- FKs ahora apuntan a local_id
+    FOREIGN KEY (category_id) REFERENCES Categories(local_id)
         ON DELETE SET NULL
 );
 
 -- 3. Tabla Profiles (Perfiles de Usuarios/Cajeros)
--- Relación: 1 Store tiene muchos Profiles
-CREATE TABLE IF NOT EXISTS dev_db.Profiles (
-    profile_id INT AUTO_INCREMENT PRIMARY KEY,
-    store_id INT NOT NULL,
+CREATE TABLE IF NOT EXISTS Profiles (
+    local_id INT AUTO_INCREMENT PRIMARY KEY,
+    -- FK que apunta al ID local de Stores
+    store_id INT NOT NULL, 
     username VARCHAR(50) NOT NULL UNIQUE,
     role ENUM('cajero', 'administrativo', 'subgerencia','gerente') NOT NULL,
     pin VARCHAR(4) NOT NULL DEFAULT '1234',
@@ -34,68 +45,75 @@ CREATE TABLE IF NOT EXISTS dev_db.Profiles (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- Clave Foránea: store_id referencia a Stores.store_id
-    -- Permite que Store tenga 0 Profiles (NULL es NOT NULL, pero la relación es 1 a M)
-    FOREIGN KEY (store_id) REFERENCES Stores(store_id)
-        ON DELETE CASCADE -- Si se elimina la Store, se eliminan los Profiles asociados.
+    -- Campos de Sincronización
+    remote_id INT NULL, 
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE, 
+
+    -- Clave Foránea a Stores(local_id)
+    FOREIGN KEY (store_id) REFERENCES Stores(local_id)
+        ON DELETE CASCADE
 );
 
 -- 4. Tabla Inflows (Ingresos / Sesiones de Caja)
--- Relación: 1 Store tiene muchos Inflows
-CREATE TABLE IF NOT EXISTS dev_db.Inflows (
-    -- 1. CLAVE PRIMARIA LOCAL
-    local_id INT AUTO_INCREMENT PRIMARY KEY, -- Renombrado para Claridad Local
+CREATE TABLE IF NOT EXISTS Inflows (
+    local_id INT AUTO_INCREMENT PRIMARY KEY,
     
-    -- Campos de la Aplicación
+    -- FKs que apuntan a IDs locales
     store_id INT NOT NULL, 
+    profile_id INT, 
+    
     start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP NULL,
     starting_cash DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     
-    -- 2. CAMPOS DE SINCRONIZACIÓN
-    remote_id INT NULL, -- ID asignado por el servidor MariaDB si la sincronización fue exitosa.
-    is_synced BOOLEAN NOT NULL DEFAULT FALSE, -- FALSE indica que está pendiente de enviar al servidor remoto.
+    -- CAMPOS DE SINCRONIZACIÓN
+    remote_id INT NULL, 
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE, 
     
-    -- 3. CLAVES FORÁNEAS (usan el ID de la tabla Stores/Profiles, que debe ser el mismo en ambas DBs)
-    FOREIGN KEY (store_id) REFERENCES Stores(store_id)
+    -- Claves Foráneas
+    FOREIGN KEY (store_id) REFERENCES Stores(local_id)
         ON DELETE RESTRICT,
-
+        
+    FOREIGN KEY (profile_id) REFERENCES Profiles(local_id) -- Ahora apunta al local_id del perfil
+        ON DELETE SET NULL 
 );
 
 -- 5. Tabla Sales (Ventas / Órdenes)
--- Relación: 1 Inflow tiene muchas Sales (pero el Inflow puede tener 0 sales)
-CREATE TABLE IF NOT EXISTS dev_db.Sales (
-    -- 1. CLAVE PRIMARIA LOCAL
-    local_id INT AUTO_INCREMENT PRIMARY KEY, -- Nuevo PK para seguimiento local
+CREATE TABLE IF NOT EXISTS Sales (
+    local_id INT AUTO_INCREMENT PRIMARY KEY,
     
-    -- Campos de la Aplicación
-    inflow_id INT NOT NULL, -- Ahora referencia a Inflows.local_id (o inflow_id si no se renombra)
+    -- FK que apunta al ID local de Inflows
+    inflow_id INT NOT NULL, 
     total_amount DECIMAL(10, 2) NOT NULL,
     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    -- 2. CAMPOS DE SINCRONIZACIÓN
-    remote_id INT NULL, -- ID asignado por el servidor MariaDB para este registro de venta.
-    is_synced BOOLEAN NOT NULL DEFAULT FALSE, -- FALSE indica que está pendiente de enviar a MariaDB.
+    -- CAMPOS DE SINCRONIZACIÓN
+    remote_id INT NULL, 
+    is_synced BOOLEAN NOT NULL DEFAULT FALSE, 
     
-    -- 3. CLAVE FORÁNEA
-    -- NOTA: En la BD local, esta FK DEBERÍA apuntar a Inflows.local_id
+    -- Clave Foránea
     FOREIGN KEY (inflow_id) REFERENCES Inflows(local_id) 
-        ON DELETE CASCADE -- Si la sesión de caja (Inflow) se anula, se anulan sus ventas.
+        ON DELETE CASCADE
 );
 
+-- ==============================================================================
 -- SEEDING (DATOS INICIALES)
+-- ==============================================================================
 
-INSERT INTO Categories (category_id, name) VALUES
-(1, 'Impresiones'),
-(2, 'Kiosko'),
-(3, 'Panadería');
+-- IMPORTANTE: Los datos de SEEDING ahora DEBEN incluir valores para los nuevos PK (local_id) 
+-- y para los FKs que usan local_id. En este caso, asumimos que los IDs coinciden 1:1.
 
-INSERT INTO Stores (store_id, name, location, category_id) VALUES
-(1, 'Boulevard Marítimo', 'Av. Costanera 123', 1),
-(2, 'PhotoStation', 'Calle Imagen 456', 2);
+INSERT INTO Categories (local_id, name, remote_id, is_synced) VALUES
+(1, 'Impresiones', 1, TRUE),
+(2, 'Kiosko', 2, TRUE),
+(3, 'Panadería', 3, TRUE);
 
-INSERT INTO Profiles (profile_id, store_id, username, role, pin) VALUES
-(1, 1, 'Juan Gonzalez', 'cajero', 1234),
-(2, 1, 'John Smith', 'cajero', 1234),
-(3, 2, 'Ricardo Haliburton', 'cajero', 1234),
-(4, 2, 'Pablo Smith', 'cajero', 1234);
+INSERT INTO Stores (local_id, name, location, category_id, remote_id, is_synced) VALUES
+(1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, 1, TRUE),
+(2, 'PhotoStation', 'Calle Imagen 456', 2, 2, TRUE);
+
+INSERT INTO Profiles (local_id, store_id, username, role, pin, remote_id, is_synced) VALUES
+(1, 1, 'Juan Gonzalez', 'cajero', '1234', 1, TRUE),
+(2, 1, 'John Smith', 'cajero', '1234', 2, TRUE),
+(3, 2, 'Ricardo Haliburton', 'cajero', '1234', 3, TRUE),
+(4, 2, 'Pablo Smith', 'cajero', '1234', 4, TRUE);
