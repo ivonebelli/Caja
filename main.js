@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const sync_daemon = require("./sync-sync_daemon");
+const sync_daemon = require("./sync-daemon");
 const db = require("./database");
 const purge_daemon = require("./purge-daemon");
 const userDataPath = app.getPath("userData");

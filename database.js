@@ -51,7 +51,7 @@ function initModels(sequelize) {
           field: "local_id", // Mapea el atributo JS 'local_id' al campo DB 'local_id'
         },
         // NOTA: local_id ahora referencia a Store.local_id
-        local_id: { type: DataTypes.INTEGER, allowNull: false },
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
 
         username: {
           type: DataTypes.STRING(50),
@@ -100,8 +100,7 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         }, // Mapeo de nombre
-        local_id: { type: DataTypes.INTEGER, allowNull: false },
-        local_id: { type: DataTypes.INTEGER, allowNull: true }, // Se asume local_id es un campo
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
         start_time: {
           type: DataTypes.DATE,
           allowNull: false,
@@ -135,7 +134,7 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         }, // Mapeo de nombre
-        local_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Inflows.local_id
+        inflow_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Inflows.local_id
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
         sale_date: {
           type: DataTypes.DATE,
@@ -186,7 +185,7 @@ function initModels(sequelize) {
           primaryKey: true,
           autoIncrement: true,
         },
-        local_id: { type: DataTypes.INTEGER, allowNull: false },
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
         username: {
           type: DataTypes.STRING(50),
           allowNull: false,
@@ -225,8 +224,7 @@ function initModels(sequelize) {
           primaryKey: true,
           autoIncrement: true,
         },
-        local_id: { type: DataTypes.INTEGER, allowNull: false },
-        local_id: { type: DataTypes.INTEGER, allowNull: true },
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
         start_time: {
           type: DataTypes.DATE,
           allowNull: false,
@@ -251,7 +249,7 @@ function initModels(sequelize) {
           primaryKey: true,
           autoIncrement: true,
         },
-        local_id: { type: DataTypes.INTEGER, allowNull: false },
+        inflow_id: { type: DataTypes.INTEGER, allowNull: false },
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
         sale_date: {
           type: DataTypes.DATE,
@@ -270,36 +268,28 @@ function initModels(sequelize) {
 
   // Store <-> Profile
   Store.hasMany(Profile, {
-    foreignKey: "local_id",
+    foreignKey: "store_id",
     as: "profiles",
     onDelete: "CASCADE",
   });
-  Profile.belongsTo(Store, { foreignKey: "local_id", as: "store" });
+  Profile.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
   // Store <-> Inflow
   Store.hasMany(Inflow, {
-    foreignKey: "local_id",
+    foreignKey: "store_id",
     as: "inflows",
     onDelete: "RESTRICT",
   });
-  Inflow.belongsTo(Store, { foreignKey: "local_id", as: "store" });
-
-  // Profile <-> Inflow
-  Profile.hasMany(Inflow, { foreignKey: "local_id", as: "sessions" });
-  Inflow.belongsTo(Profile, {
-    foreignKey: "local_id",
-    as: "profile",
-    onDelete: "SET NULL",
-  });
+  Inflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
   // Inflow <-> Sale
   // La clave foránea apunta al campo local_id/local_id (depende del contexto)
   Inflow.hasMany(Sale, {
-    foreignKey: "local_id",
+    foreignKey: "inflow_id",
     as: "sales",
     onDelete: "CASCADE",
   });
-  Sale.belongsTo(Inflow, { foreignKey: "local_id", as: "inflow" });
+  Sale.belongsTo(Inflow, { foreignKey: "inflow_id", as: "inflow" });
 }
 
 async function connectWithCredentials(credentials) {
