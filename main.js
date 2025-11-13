@@ -17,8 +17,8 @@ let sqlite_instance = null;
 // Crear ventana principal
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1400,
-    height: 900,
+    width: 700,
+    height: 800,
     icon: path.join(__dirname, "build", "icon.ico"),
     webPreferences: {
       nodeIntegration: true,
@@ -124,7 +124,7 @@ ipcMain.handle("db:get-profile", async (event, profile_id) => {
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:create-profile", async (event, newProfile) => {
   try {
-    const insert_id = await db.createProfile(newProfile);
+    const insert_id = await db.createProfile(newProfile, mariadb_instance);
     return { success: true, insert_id: insert_id };
   } catch (error) {
     console.error(error.message);
