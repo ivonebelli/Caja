@@ -274,35 +274,39 @@ async function getStores(sequelize) {
 /**
  * (Refactorizado) Elimina una tienda.
  */
-async function deleteStore(storeId) {
+async function deleteStore(storeId, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
 
   try {
-    const result = await Store.destroy({
-      where: { store_id: storeId },
-    });
+    // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
+    const [affectedCount] = await Store.update(
+      { is_active: false },
+      {
+        where: { store_id: storeId },
+      }
+    );
 
-    if (result > 0) {
-      console.log(`✅ Tienda ${storeId} eliminada correctamente.`);
+    // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
+    if (affectedCount > 0) {
+      console.log(
+        `✅ Tienda ${storeId} desactivada (is_active = FALSE) correctamente.`
+      );
       return true;
     } else {
       console.warn(
-        `⚠️ Intento de eliminar tienda ${storeId}, pero no se encontró.`
+        `⚠️ Intento de desactivar tienda ${storeId}, pero no se encontró.`
       );
       return false;
     }
   } catch (error) {
-    console.error(`❌ Error al eliminar la tienda ${storeId}:`, error.message);
+    // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
+    // porque el registro no se está eliminando; solo se está modificando un campo.
+    console.error(
+      `❌ Error al desactivar la tienda ${storeId}:`,
+      error.message
+    );
 
-    // --- MANEJO DE ERROR CRÍTICO (Agnóstico al dialecto) ---
-    // 'SequelizeForeignKeyConstraintError' es el error de Sequelize
-    // cuando una clave foránea (FOREIGN KEY) previene la eliminación.
-    if (error instanceof SequelizeForeignKeyConstraintError) {
-      throw new Error(
-        "No se puede eliminar la tienda porque tiene cajas o perfiles asociados."
-      );
-    }
-
+    // Lanzar un error genérico si el problema persiste (ej. conexión)
     throw new Error("Error al consultar la base de datos.");
   }
 }
@@ -475,7 +479,44 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
   }
 }
 
-// Exporta las funciones refactorizadas
+async function deleteProfile(profile_id, sequelize) {
+  if (!sequelize) throw new Error("La base de datos no está inicializada.");
+
+  try {
+    // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
+    const [affectedCount] = await Profile.update(
+      { is_active: false },
+      {
+        where: { profile_id: profile_id },
+      }
+    );
+
+    // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
+    if (affectedCount > 0) {
+      console.log(
+        `✅ Perfil ${profile_id} desactivado (is_active = FALSE) correctamente.`
+      );
+      return true;
+    } else {
+      console.warn(
+        `⚠️ Intento de desactivar perfil ${profile_id}, pero no se encontró.`
+      );
+      return false;
+    }
+  } catch (error) {
+    // En la desactivación (UPDATE), el error de clave foránea ya NO es relevante,
+    // porque el registro no se está eliminando; solo se está modificando un campo.
+    console.error(
+      `❌ Error al desactivar el perfil ${profile_id}:`,
+      error.message
+    );
+
+    // Lanzar un error genérico si el problema persiste (ej. conexión)
+    throw new Error("Error al consultar la base de datos.");
+  }
+}
+
+// Falta: RestoreProfile, RestoreStore, UpdateProfile, UpdateStore,
 module.exports = {
   connectWithCredentials,
   getStores,
@@ -484,4 +525,5 @@ module.exports = {
   createProfile,
   getProfile,
   getProfileAndDailyInflowData,
+  deleteProfile,
 };
