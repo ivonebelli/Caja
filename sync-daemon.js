@@ -1,3 +1,5 @@
+// purge-daemon.js
+const { Op } = require("sequelize");
 // Global variables to be injected by main.js
 let sequelizeLocal; // SQLite instance
 let dbRemote; // Remote connection pool/instance (MariaDB)

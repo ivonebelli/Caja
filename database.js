@@ -7,8 +7,32 @@ function initModels(sequelize) {
   // Obtenemos el dialecto de la instancia de conexión actual (lectura instantánea)
   const dialect = sequelize.options.dialect;
 
+  let Store, Profile, Inflow, Sale;
+
   if (dialect === "sqlite") {
-    sequelize.define(
+    Category = sequelize.define(
+      "Category",
+      {
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "local_id",
+        },
+        name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+
+        // CAMPOS DE SINCRONIZACIÓN
+        remote_id: { type: DataTypes.INTEGER, allowNull: true },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+      },
+      { timestamps: false, tableName: "Categories" }
+    );
+    Store = sequelize.define(
       "Store",
       {
         // CAMBIO CRÍTICO: La PK local es 'local_id'
@@ -40,7 +64,7 @@ function initModels(sequelize) {
     );
 
     // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
-    sequelize.define(
+    Profile = sequelize.define(
       "Profile",
       {
         // CAMBIO CRÍTICO: La PK local es 'local_id'
@@ -90,7 +114,7 @@ function initModels(sequelize) {
       },
       { timestamps: false, tableName: "Profiles" }
     );
-    sequelize.define(
+    Inflow = sequelize.define(
       "Inflow",
       {
         // PK LOCAL: local_id
@@ -124,7 +148,7 @@ function initModels(sequelize) {
       { timestamps: false, tableName: "Inflows" }
     );
 
-    sequelize.define(
+    Sale = sequelize.define(
       "Sale",
       {
         // PK LOCAL: local_id
@@ -141,7 +165,11 @@ function initModels(sequelize) {
           allowNull: false,
           defaultValue: Sequelize.NOW,
         },
-
+        sale_date: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
         // CAMPOS DE SINCRONIZACIÓN
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
         is_synced: {
@@ -155,7 +183,20 @@ function initModels(sequelize) {
 
     // 2. Lógica para MariaDB/MySQL (DB Remota): Usa PK/FK estándar y sin seguimiento
   } else {
-    sequelize.define(
+    Category = sequelize.define(
+      "Category",
+      {
+        category_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+      },
+      { timestamps: false, tableName: "Categories" }
+    );
+    Store = sequelize.define(
       "Store",
       {
         local_id: {
@@ -177,7 +218,7 @@ function initModels(sequelize) {
     );
 
     // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
-    sequelize.define(
+    Profile = sequelize.define(
       "Profile",
       {
         local_id: {
@@ -215,7 +256,7 @@ function initModels(sequelize) {
       },
       { timestamps: false, tableName: "Profiles" }
     );
-    sequelize.define(
+    Inflow = sequelize.define(
       "Inflow",
       {
         // PK REMOTA: local_id
@@ -240,7 +281,7 @@ function initModels(sequelize) {
       { timestamps: false, tableName: "Inflows" }
     );
 
-    sequelize.define(
+    Sale = sequelize.define(
       "Sale",
       {
         // PK REMOTA: local_id
@@ -261,11 +302,12 @@ function initModels(sequelize) {
     );
   }
 
-  // ====================================================================
-  // C. ASOCIACIONES (DEBEN DEFINIRSE DESPUÉS DE AMBOS BLOQUES IF/ELSE)
-  //    Las asociaciones usan los modelos recién definidos (Inflow y Sale)
-  // ====================================================================
-
+  Category.hasMany(Store, {
+    foreignKey: "category_id", // Columna FK en la tabla Stores
+    as: "stores",
+    onDelete: "SET NULL", // Coincide con la migración SQL
+  });
+  Store.belongsTo(Category, { foreignKey: "category_id", as: "category" });
   // Store <-> Profile
   Store.hasMany(Profile, {
     foreignKey: "store_id",
@@ -320,8 +362,18 @@ async function connectWithCredentials(credentials) {
     // Inicializa los modelos
     initModels(sequelize);
 
-    if (sequelize.dialect === "sqlite") {
-      await sequelize.sync({ alter: true });
+    if (dialect === "sqlite") {
+      await sequelize.sync({ force: true });
+      const [tables] = await sequelize.query(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'SequelizeMeta';"
+      );
+
+      // 'tables' is an array of objects like: [{ name: 'Stores' }, { name: 'Profiles' }]
+      const tableNames = tables.map((t) => t.name);
+
+      console.log("--- SQLITE SCHEMA CHECK ---");
+      console.log("Tablas creadas y encontradas:", tableNames);
+      console.log("---------------------------");
       await seedInitialData(sequelize);
     }
     return sequelize;
@@ -353,8 +405,8 @@ async function seedInitialData(sequelize) {
     // Use raw SQL for the initial data insertion
     await sequelize.query(
       `
-            INSERT INTO Stores (local_id, name, location, category_id, remote_id, is_synced) VALUES
-            (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, 1, TRUE),
+            INSERT INTO Stores (local_id, name, location, category_id, created_at, remote_id, is_synced) VALUES
+            (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, DATETIME('now'), 1, TRUE);
         `,
       { type: sequelize.QueryTypes.INSERT }
     );
@@ -367,10 +419,10 @@ async function seedInitialData(sequelize) {
 
     await sequelize.query(
       `
-            INSERT INTO Profiles (local_id, store_id, username, role, pin, remote_id, is_synced) VALUES
-            (1, 1, 'Cajero Inicial', 'cajero', '1579', 1, TRUE),
-            (2, 1, 'Admin Inicial', 'administrativo', '1452', 1, TRUE),
-            (3, 1, 'Gerente Inicial', 'gerente', '7587', 1, TRUE),
+            INSERT INTO Profiles (local_id, store_id, username, role, pin, created_at, remote_id, is_synced) VALUES
+            (1, 1, 'Cajero Inicial', 'cajero', '1579', DATETIME('now'), 1, TRUE),
+            (2, 1, 'Admin Inicial', 'administrativo', '1452', DATETIME('now'),1, TRUE),
+            (3, 1, 'Gerente Inicial', 'gerente', '7587', 1, DATETIME('now'), TRUE);
         `,
       { type: sequelize.QueryTypes.INSERT }
     );

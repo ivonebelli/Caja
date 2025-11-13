@@ -74,7 +74,7 @@ ipcMain.handle("db:connect", async (event, credentials) => {
 
 function startsync_daemon(local_instance, remote_instance) {
   sync_daemon.setConnections(sqlite_instance, mariadb_instance);
-  sync_daemon.startsync_daemon();
+  sync_daemon.startDaemon();
 }
 
 //STORES ES SOLO REMOTO NO LOCAL
