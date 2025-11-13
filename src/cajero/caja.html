@@ -296,7 +296,7 @@
         if (inflow_id === undefined) {
           inflow_id = null;
         }
-        console.log(profile_id);
+
         await checkCashStatus(inflow_id);
       }
 
@@ -480,25 +480,7 @@
           document.getElementById("initialAmount").value
         );
         const notes = document.getElementById("openNotes").value;
-
-        console.log("💰 Abriendo caja con monto inicial:", initialAmount);
-
-        const newSession = {
-          id: generateId(),
-          cashier: currentUser.profile.name,
-          date: getCurrentDate(),
-          initialAmount: initialAmount,
-          openedAt: new Date().toISOString(),
-          status: "open",
-          notes: notes,
-        };
-
         try {
-          const cashData = await readData("cash_register.json");
-          cashData.sessions.push(newSession);
-
-          const saved = await writeData("cash_register.json", cashData);
-
           if (saved) {
             console.log("✅ Caja abierta correctamente");
             showNotification("Caja abierta correctamente", "success");

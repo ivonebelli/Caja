@@ -151,7 +151,8 @@ function initModels(sequelize) {
           field: "local_id",
         },
         store_id: { type: DataTypes.INTEGER, allowNull: false },
-        // profile_id ELIMINADO
+        opening_description: { type: DataTypes.STRING(255), allowNull: true },
+        closing_description: { type: DataTypes.STRING(255), allowNull: true },
         start_time: {
           type: DataTypes.DATE,
           allowNull: false,
@@ -323,6 +324,9 @@ function initModels(sequelize) {
           autoIncrement: true,
         },
         store_id: { type: DataTypes.INTEGER, allowNull: false },
+
+        opening_description: { type: DataTypes.STRING(255), allowNull: true },
+        closing_description: { type: DataTypes.STRING(255), allowNull: true },
         // profile_id ELIMINADO
         start_time: {
           type: DataTypes.DATE,

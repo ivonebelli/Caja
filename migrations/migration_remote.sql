@@ -49,6 +49,8 @@ CREATE TABLE IF NOT EXISTS Products (
 CREATE TABLE IF NOT EXISTS Inflows (
     inflow_id INT AUTO_INCREMENT PRIMARY KEY, 
     store_id INT NOT NULL, 
+    opening_description VARCHAR(255) NULL, 
+    closing_description VARCHAR(255) NULL,
     start_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP NULL,
     starting_cash DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
