@@ -1,25 +1,13 @@
-const {
-  Sequelize,
-  DataTypes,
-  Model,
-  Op,
-  SequelizeForeignKeyConstraintError,
-} = require("sequelize");
-
-// Variables globales para la instancia de Sequelize y los modelos
-// Se inicializarán en connectWithCredentials
-let Store;
-let Profile;
-let Inflow;
-let Sale;
-
+const { Sequelize, DataTypes, Op } = require("sequelize");
 /**
  * Define todos los modelos y sus asociaciones (relaciones).
  * Esta función se llama después de que se establece la conexión.
  */
 function initModels(sequelize) {
-  // --- 1. Definición del Modelo: Store (Tiendas) ---
-  Store = sequelize.define(
+  // Obtenemos el dialecto de la instancia de conexión actual (lectura instantánea)
+  const dialect = sequelize.options.dialect;
+
+  sequelize.define(
     "Store",
     {
       store_id: {
@@ -27,27 +15,11 @@ function initModels(sequelize) {
         primaryKey: true,
         autoIncrement: true,
       },
-      category_id: {
-        // Agregado para coincidir con SQL
-        type: DataTypes.INTEGER,
-        allowNull: true,
-      },
-      name: {
-        type: DataTypes.STRING(100), // STRING(100) para UNIQUE
-        allowNull: false,
-        unique: true,
-      },
-      location: {
-        // Agregado para coincidir con SQL
-        type: DataTypes.STRING(255),
-        allowNull: true,
-      },
-      is_active: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true,
-      },
+      category_id: { type: DataTypes.INTEGER, allowNull: true },
+      name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+      location: { type: DataTypes.STRING(255), allowNull: true },
+      is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
       created_at: {
-        // Agregado para coincidir con SQL
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
@@ -57,7 +29,7 @@ function initModels(sequelize) {
   );
 
   // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
-  Profile = sequelize.define(
+  sequelize.define(
     "Profile",
     {
       profile_id: {
@@ -65,18 +37,9 @@ function initModels(sequelize) {
         primaryKey: true,
         autoIncrement: true,
       },
-      store_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      username: {
-        type: DataTypes.STRING(50), // STRING(50) para UNIQUE
-        allowNull: false,
-        unique: true,
-      },
+      store_id: { type: DataTypes.INTEGER, allowNull: false },
+      username: { type: DataTypes.STRING(50), allowNull: false, unique: true },
       role: {
-        // Mapeo del ENUM de SQL a STRING de Sequelize.
-        // Sequelize lo convertirá a ENUM en MySQL/MariaDB.
         type: DataTypes.ENUM(
           "cajero",
           "administrativo",
@@ -86,20 +49,13 @@ function initModels(sequelize) {
         allowNull: false,
       },
       pin: {
-        type: DataTypes.STRING(4), // VARCHAR(4)
+        type: DataTypes.STRING(4),
         allowNull: false,
         defaultValue: "1234",
       },
-      photo: {
-        type: DataTypes.TEXT("long"), // Uso de LONGTEXT para fotos (DataURL grande)
-        allowNull: true,
-      },
-      is_active: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true,
-      },
+      photo: { type: DataTypes.TEXT("long"), allowNull: true },
+      is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
       created_at: {
-        // Agregado para coincidir con SQL
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
@@ -108,75 +64,138 @@ function initModels(sequelize) {
     { timestamps: false, tableName: "Profiles" }
   );
 
-  // --- 3. Definición del Modelo: Inflow (Sesiones de Caja) ---
-  Inflow = sequelize.define(
-    "Inflow",
-    {
-      inflow_id: {
-        // Renombrado a 'inflow_id' para coincidir con el PK de SQL
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-      },
-      store_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      start_time: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-      end_time: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
-      starting_cash: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-        defaultValue: 0.0,
-      },
-    },
-    { timestamps: false, tableName: "Inflows" }
-  );
+  // ====================================================================
+  // B. MODELOS DE TRANSACCIÓN (CONDICIONALES)
+  // ====================================================================
 
-  // --- 4. Definición del Modelo: Sale (Ventas) ---
-  Sale = sequelize.define(
-    "Sale",
-    {
-      sale_id: {
-        // Renombrado a 'sale_id' para coincidir con el PK de SQL
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-      },
-      inflow_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
-      total_amount: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-      },
-      sale_date: {
-        // Renombrado de 'sale_date' a 'sale_date' y tipo DATE
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-      // ... otros campos de venta
-    },
-    { timestamps: false, tableName: "Sales" }
-  );
+  // --- LÓGICA CONDICIONAL DE INFLOW y SALE ---
 
-  // --- Definición de Asociaciones (Relaciones) ---
+  // 1. Lógica para SQLite (DB Local): Necesita campos de sincronización
+  if (dialect === "sqlite") {
+    sequelize.define(
+      "Inflow",
+      {
+        // PK LOCAL: local_id
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "inflow_id",
+        }, // Mapeo de nombre
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
+        profile_id: { type: DataTypes.INTEGER, allowNull: true }, // Se asume profile_id es un campo
+        start_time: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+        end_time: { type: DataTypes.DATE, allowNull: true },
+        starting_cash: {
+          type: DataTypes.DECIMAL(10, 2),
+          allowNull: false,
+          defaultValue: 0.0,
+        },
+
+        // CAMPOS DE SINCRONIZACIÓN
+        remote_id: { type: DataTypes.INTEGER, allowNull: true },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+      },
+      { timestamps: false, tableName: "Inflows" }
+    );
+
+    sequelize.define(
+      "Sale",
+      {
+        // PK LOCAL: local_id
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "sale_id",
+        }, // Mapeo de nombre
+        inflow_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Inflows.local_id
+        total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        sale_date: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+
+        // CAMPOS DE SINCRONIZACIÓN
+        remote_id: { type: DataTypes.INTEGER, allowNull: true },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+      },
+      { timestamps: false, tableName: "Sales" }
+    );
+
+    // 2. Lógica para MariaDB/MySQL (DB Remota): Usa PK/FK estándar y sin seguimiento
+  } else {
+    sequelize.define(
+      "Inflow",
+      {
+        // PK REMOTA: inflow_id
+        inflow_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
+        profile_id: { type: DataTypes.INTEGER, allowNull: true },
+        start_time: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+        end_time: { type: DataTypes.DATE, allowNull: true },
+        starting_cash: {
+          type: DataTypes.DECIMAL(10, 2),
+          allowNull: false,
+          defaultValue: 0.0,
+        },
+      },
+      { timestamps: false, tableName: "Inflows" }
+    );
+
+    sequelize.define(
+      "Sale",
+      {
+        // PK REMOTA: sale_id
+        sale_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        inflow_id: { type: DataTypes.INTEGER, allowNull: false },
+        total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        sale_date: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+      },
+      { timestamps: false, tableName: "Sales" }
+    );
+  }
+
+  // ====================================================================
+  // C. ASOCIACIONES (DEBEN DEFINIRSE DESPUÉS DE AMBOS BLOQUES IF/ELSE)
+  //    Las asociaciones usan los modelos recién definidos (Inflow y Sale)
+  // ====================================================================
 
   // Store <-> Profile
   Store.hasMany(Profile, {
     foreignKey: "store_id",
     as: "profiles",
     onDelete: "CASCADE",
-  }); // onDelete: CASCADE
+  });
   Profile.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
   // Store <-> Inflow
@@ -184,27 +203,25 @@ function initModels(sequelize) {
     foreignKey: "store_id",
     as: "inflows",
     onDelete: "RESTRICT",
-  }); // onDelete: RESTRICT
+  });
   Inflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
-  // Profile <-> Inflow (Agregada para completar la FK)
+  // Profile <-> Inflow
   Profile.hasMany(Inflow, { foreignKey: "profile_id", as: "sessions" });
   Inflow.belongsTo(Profile, {
     foreignKey: "profile_id",
     as: "profile",
     onDelete: "SET NULL",
-  }); // onDelete: SET NULL
+  });
 
   // Inflow <-> Sale
+  // La clave foránea apunta al campo inflow_id/local_id (depende del contexto)
   Inflow.hasMany(Sale, {
     foreignKey: "inflow_id",
     as: "sales",
     onDelete: "CASCADE",
-  }); // onDelete: CASCADE
+  });
   Sale.belongsTo(Inflow, { foreignKey: "inflow_id", as: "inflow" });
-
-  // Devolvemos los modelos inicializados para que el 'setter' del módulo los almacene.
-  return { Store, Profile, Inflow, Sale };
 }
 
 async function connectWithCredentials(credentials) {
@@ -245,7 +262,7 @@ async function connectWithCredentials(credentials) {
 //Solo remota
 async function getStores(sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Store = sequelize.models.Store;
   try {
     const rows = await Store.findAll({
       where: { is_active: true },
@@ -265,7 +282,7 @@ async function getStores(sequelize) {
 //Solo remota
 async function deleteStore(storeId, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Store = sequelize.models.Store;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Store.update(
@@ -303,7 +320,7 @@ async function deleteStore(storeId, sequelize) {
 //Solo remota
 async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Profile = sequelize.models.Profile;
   try {
     const rows = await Profile.findAll({
       where: {
@@ -328,7 +345,7 @@ async function getProfiles(store_id, sequelize) {
 //Solo remota
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo
     // (store_id, username, role, pin, photo)
@@ -351,7 +368,7 @@ async function createProfile(newProfile, sequelize) {
 //Solo remota
 async function getProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Profile = sequelize.models.Profile;
   try {
     // findByPk (Find By Primary Key)
     // 'include' realiza el JOIN automáticamente gracias a las asociaciones definidas.
@@ -375,6 +392,8 @@ async function getProfile(profile_id, sequelize) {
 //Remota y local
 async function getProfileAndDailyInflowData(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
+  const Profile = sequelize.models.Profile;
+  const Store = sequelize.models.Store;
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
     const profileData = await Profile.findByPk(profile_id, {
@@ -463,7 +482,7 @@ async function getProfileAndDailyInflowData(profile_id, sequelize) {
 //Solo remota
 async function deleteProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Profile = sequelize.models.Profile;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Profile.update(
@@ -501,7 +520,7 @@ async function deleteProfile(profile_id, sequelize) {
 //Solo remota
 async function restoreProfile(profile_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Profile = sequelize.models.Profile;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Profile.update(
@@ -539,7 +558,7 @@ async function restoreProfile(profile_id, sequelize) {
 //Solo remota
 async function restoreStore(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  const Store = sequelize.models.Store;
   try {
     // En lugar de Store.destroy, usamos Store.update para cambiar el campo is_active a false.
     const [affectedCount] = await Store.update(
@@ -576,11 +595,7 @@ async function restoreStore(store_id, sequelize) {
 
 //Solo remota
 async function updateProfile(newProfile, sequelize) {
-  // Ensure the model is available
-  if (!ProfileModel) {
-    throw new Error("Profile model must be provided or initialized.");
-  }
-
+  const Profile = sequelize.models.Profile;
   try {
     // 1. Prepare the data to update (excluding the primary key from the data object)
     const updateData = {
@@ -592,7 +607,7 @@ async function updateProfile(newProfile, sequelize) {
     // 2. Execute the update query
     // The result is an array: [affectedCount, affectedRows]
     // affectedCount is the number of rows updated (0 or 1 in this case).
-    const [affectedCount] = await ProfileModel.update(updateData, {
+    const [affectedCount] = await Profile.update(updateData, {
       where: {
         profile_id: newProfile.profile_id, // CRITICAL: Use the primary key for the WHERE clause
       },
@@ -620,11 +635,7 @@ async function updateProfile(newProfile, sequelize) {
 
 //Solo remota
 async function updateStore(newStore, sequelize) {
-  // Ensure the model is available
-  if (!StoreModel) {
-    throw new Error("Store model must be provided or initialized.");
-  }
-
+  const Store = sequelize.models.Store;
   try {
     const updateData = {
       name: newStore.name,
@@ -636,7 +647,7 @@ async function updateStore(newStore, sequelize) {
     // 2. Execute the update query
     // The result is an array: [affectedCount, affectedRows]
     // affectedCount is the number of rows updated (0 or 1).
-    const [affectedCount] = await StoreModel.update(updateData, {
+    const [affectedCount] = await Store.update(updateData, {
       where: {
         store_id: newStore.store_id,
       },
@@ -663,9 +674,7 @@ async function updateStore(newStore, sequelize) {
 
 //Tiene que ser para remota y local
 async function createInflow(newInflow, sequelize) {
-  if (!InflowLocal) {
-    throw new Error("Local Inflow model must be initialized.");
-  }
+  const Inflow = sequelize.models.Inflow;
 
   // Datos de la sesión de caja principal
   const inflowData = {
@@ -682,7 +691,7 @@ async function createInflow(newInflow, sequelize) {
     inflowData.is_synced = false;
 
     // Creamos el registro de Inflow localmente (no hay ventas asociadas en este paso)
-    localInflowRecord = await InflowLocal.create(inflowData);
+    localInflowRecord = await Inflow.create(inflowData);
     const localInflowId = localInflowRecord.inflow_id;
 
     console.log(`✅ Sesión de caja local (Inflow ID ${localInflowId}) creada.`);
@@ -692,34 +701,6 @@ async function createInflow(newInflow, sequelize) {
       error.message
     );
     throw new Error("Fallo al guardar la sesión de caja localmente.");
-  }
-
-  // --- 2. ESCRITURA REMOTA (Sincronización Condicional) ---
-  if (dbRemote && InflowRemote) {
-    try {
-      // Creamos el Inflow remotamente
-      const remoteInflowRecord = await InflowRemote.create(inflowData);
-      remoteInflowId = remoteInflowRecord.inflow_id;
-
-      // Actualizamos el registro local con el ID remoto y el estado sincronizado
-      await localInflowRecord.update({
-        is_synced: true,
-        remote_id: remoteInflowId,
-      });
-
-      console.log(
-        `✅ Inflow ID ${localInflowRecord.inflow_id} sincronizado remotamente.`
-      );
-    } catch (error) {
-      // Si falla la escritura remota, el registro local permanece como is_synced=false
-      console.warn(
-        `⚠️ Sincronización remota fallida para Inflow ID ${localInflowRecord.inflow_id}: ${error.message}`
-      );
-    }
-  } else {
-    console.log(
-      "🟡 Operando sin conexión. Inflow queda pendiente de sincronización."
-    );
   }
 
   // --- 3. RETORNO FINAL ---

@@ -1,14 +1,11 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const fs = require("fs").promises;
+const daemon = require("./sync-daemon");
 const db = require("./database");
+const { start } = require("repl");
 const userDataPath = app.getPath("userData");
 const SQLITE_FILE_PATH = path.join(userDataPath, "local_sales_data.sqlite");
 let mainWindow;
-
-// Rutas de datos
-const DATA_DIR = path.join(__dirname, "data");
-const REPORTES_DIR = path.join(__dirname, "reportes");
 
 let mariadb_credentials = null;
 let mariadb_instance = null;
@@ -65,6 +62,7 @@ ipcMain.handle("db:connect", async (event, credentials) => {
 
     // Si la conexión es exitosa, devuelve éxito
     mariadb_credentials = credentials;
+    startDaemon();
     return { success: true, message: "Conexión exitosa." };
   } catch (error) {
     // Si dbService lanza un error (ej. contraseña incorrecta), lo capturamos
@@ -72,6 +70,11 @@ ipcMain.handle("db:connect", async (event, credentials) => {
     return { success: false, error: error.message };
   }
 });
+
+function startDaemon(local_instance, remote_instance) {
+  daemon.setConnections(sqlite_instance, mariadb_instance);
+  daemon.startDaemon();
+}
 
 //STORES ES SOLO REMOTO NO LOCAL
 ipcMain.handle("db:get-stores", async (event) => {
