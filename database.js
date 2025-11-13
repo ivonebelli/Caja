@@ -7,71 +7,89 @@ function initModels(sequelize) {
   // Obtenemos el dialecto de la instancia de conexión actual (lectura instantánea)
   const dialect = sequelize.options.dialect;
 
-  sequelize.define(
-    "Store",
-    {
-      store_id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-      },
-      category_id: { type: DataTypes.INTEGER, allowNull: true },
-      name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
-      location: { type: DataTypes.STRING(255), allowNull: true },
-      is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-      created_at: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-    },
-    { timestamps: false, tableName: "Stores" }
-  );
-
-  // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
-  sequelize.define(
-    "Profile",
-    {
-      profile_id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-      },
-      store_id: { type: DataTypes.INTEGER, allowNull: false },
-      username: { type: DataTypes.STRING(50), allowNull: false, unique: true },
-      role: {
-        type: DataTypes.ENUM(
-          "cajero",
-          "administrativo",
-          "subgerencia",
-          "gerente"
-        ),
-        allowNull: false,
-      },
-      pin: {
-        type: DataTypes.STRING(4),
-        allowNull: false,
-        defaultValue: "1234",
-      },
-      photo: { type: DataTypes.TEXT("long"), allowNull: true },
-      is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-      created_at: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW,
-      },
-    },
-    { timestamps: false, tableName: "Profiles" }
-  );
-
-  // ====================================================================
-  // B. MODELOS DE TRANSACCIÓN (CONDICIONALES)
-  // ====================================================================
-
-  // --- LÓGICA CONDICIONAL DE INFLOW y SALE ---
-
-  // 1. Lógica para SQLite (DB Local): Necesita campos de sincronización
   if (dialect === "sqlite") {
+    sequelize.define(
+      "Store",
+      {
+        // CAMBIO CRÍTICO: La PK local es 'local_id'
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "store_id", // Mapea el atributo JS 'local_id' al campo DB 'store_id'
+        },
+        category_id: { type: DataTypes.INTEGER, allowNull: true },
+        name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+        location: { type: DataTypes.STRING(255), allowNull: true },
+        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+        created_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+
+        // --- CAMPOS DE SINCRONIZACIÓN ---
+        remote_id: { type: DataTypes.INTEGER, allowNull: true }, // ID del servidor remoto
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        }, // Bandera de estado
+      },
+      { timestamps: false, tableName: "Stores" }
+    );
+
+    // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
+    sequelize.define(
+      "Profile",
+      {
+        // CAMBIO CRÍTICO: La PK local es 'local_id'
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "profile_id", // Mapea el atributo JS 'local_id' al campo DB 'profile_id'
+        },
+        // NOTA: store_id ahora referencia a Store.local_id
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
+
+        username: {
+          type: DataTypes.STRING(50),
+          allowNull: false,
+          unique: true,
+        },
+        role: {
+          type: DataTypes.ENUM(
+            "cajero",
+            "administrativo",
+            "subgerencia",
+            "gerente"
+          ),
+          allowNull: false,
+        },
+        pin: {
+          type: DataTypes.STRING(4),
+          allowNull: false,
+          defaultValue: "1234",
+        },
+        photo: { type: DataTypes.TEXT("long"), allowNull: true },
+        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+        created_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+
+        // --- CAMPOS DE SINCRONIZACIÓN ---
+        remote_id: { type: DataTypes.INTEGER, allowNull: true }, // ID del servidor remoto
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        }, // Bandera de estado
+      },
+      { timestamps: false, tableName: "Profiles" }
+    );
     sequelize.define(
       "Inflow",
       {
@@ -138,6 +156,66 @@ function initModels(sequelize) {
 
     // 2. Lógica para MariaDB/MySQL (DB Remota): Usa PK/FK estándar y sin seguimiento
   } else {
+    sequelize.define(
+      "Store",
+      {
+        store_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        category_id: { type: DataTypes.INTEGER, allowNull: true },
+        name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+        location: { type: DataTypes.STRING(255), allowNull: true },
+        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+        created_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+      },
+      { timestamps: false, tableName: "Stores" }
+    );
+
+    // --- 2. Definición del Modelo: Profile (Perfiles de Usuarios) ---
+    sequelize.define(
+      "Profile",
+      {
+        profile_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+        },
+        store_id: { type: DataTypes.INTEGER, allowNull: false },
+        username: {
+          type: DataTypes.STRING(50),
+          allowNull: false,
+          unique: true,
+        },
+        role: {
+          type: DataTypes.ENUM(
+            "cajero",
+            "administrativo",
+            "subgerencia",
+            "gerente"
+          ),
+          allowNull: false,
+        },
+        pin: {
+          type: DataTypes.STRING(4),
+          allowNull: false,
+          defaultValue: "1234",
+        },
+        photo: { type: DataTypes.TEXT("long"), allowNull: true },
+        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
+        created_at: {
+          type: DataTypes.DATE,
+          allowNull: false,
+          defaultValue: Sequelize.NOW,
+        },
+      },
+      { timestamps: false, tableName: "Profiles" }
+    );
     sequelize.define(
       "Inflow",
       {
