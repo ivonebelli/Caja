@@ -364,13 +364,14 @@
       const urlParams = new URLSearchParams(window.location.search);
       const profileId = urlParams.get("profile_id");
       let currentProfile = null;
-
+      console.log(profileId);
       async function init() {
         const res = await ipcRenderer.invoke(
           "db:get-profile-and-daily-inflow-data",
           profileId
         );
         currentProfile = res.data;
+        console.log(currentProfile);
 
         document.getElementById("cashierName").textContent =
           currentProfile.profile.username;

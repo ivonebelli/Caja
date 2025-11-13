@@ -152,21 +152,11 @@
     <script src="./shared/utils.js"></script>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
-      const mode = urlParams.get("mode"); // 'admin' si viene desde comando oculto
-
-      const isAdminMode =
-        mode === "admin" ||
-        localStorage.getItem("specialAccess") === "administracion";
 
       async function loadLocales() {
         const res = await ipcRenderer.invoke("db:get-stores");
         const locales = res.data;
         const container = document.getElementById("localesContainer");
-
-        if (isAdminMode) {
-          document.getElementById("pageTitle").textContent =
-            "Administración - Selecciona Local";
-        }
 
         if (locales.length === 0) {
           container.innerHTML =
@@ -176,22 +166,13 @@
 
         container.innerHTML = locales
           .map((local) => {
-            const deleteBtn = isAdminMode
-              ? `
-          <button class="btn-danger" onclick="event.stopPropagation(); deleteLocal('${local.store_id}')">
-            🗑️ Eliminar
-          </button>
-        `
-              : "";
-
             return `
-          <div class="local-card" onclick="selectLocal('${local.store_id}')">
+          <div class="local-card" onclick="selectLocal('${local.local_id}')">
             <div class="local-icon">🏢</div>
             <div class="local-info">
               <div class="local-name">${local.name}</div>
               <div class="local-ubicacion">📍 ${local.location}</div>
             </div>
-            ${deleteBtn}
           </div>
         `;
           })
@@ -199,15 +180,8 @@
       }
 
       function selectLocal(localId) {
-        localStorage.setItem("selectedLocal", localId);
-
-        if (isAdminMode) {
-          // En modo admin, ir a profiles con modo admin
-          window.location.href = `./profiles.html?localId=${localId}&mode=admin`;
-        } else {
-          // Modo normal
-          window.location.href = `./profiles.html?localId=${localId}`;
-        }
+        // Modo normal
+        window.location.href = `./profiles.html?localId=${localId}`;
       }
 
       async function deleteLocal(localId) {
@@ -229,10 +203,6 @@
       }
 
       function goBack() {
-        // Limpiar acceso especial
-        if (isAdminMode) {
-          localStorage.removeItem("specialAccess");
-        }
         window.location.href = "./index.html";
       }
 

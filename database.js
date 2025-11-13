@@ -495,6 +495,7 @@ async function deleteStore(storeId, sequelize) {
 
 async function getProfiles(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
+  console.log(local_id);
   const Profile = sequelize.models.Profile;
   try {
     const rows = await Profile.findAll({
@@ -519,6 +520,7 @@ async function getProfiles(local_id, sequelize) {
 
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
+  console.log(newProfile);
   const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo
@@ -544,6 +546,7 @@ async function createProfile(newProfile, sequelize) {
 async function getProfile(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
+  const Store = sequelize.models.Store;
   try {
     // findByPk (Find By Primary Key)
     // 'include' realiza el JOIN automáticamente gracias a las asociaciones definidas.
@@ -568,6 +571,7 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   const Store = sequelize.models.Store;
+  const Inflow = sequelize.models.Inflow;
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
     const profileData = await Profile.findByPk(local_id, {

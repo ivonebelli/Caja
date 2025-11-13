@@ -207,6 +207,7 @@
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const localId = urlParams.get("localId");
+      console.log(localId);
 
       let currentLocal = null;
 
@@ -495,7 +496,7 @@
 
               return `
             <div class="profile-card" onclick="selectProfile('${
-              p.profile_id
+              p.local_id
             }', '${p.role}')">
               <div class="avatar" style="${bgGradient}">${p.username.charAt(
                 0
@@ -630,22 +631,22 @@
           return;
         }
 
-        const data = await readData("profiles.json");
-        const local = data.locales.find((l) => l.id === localId);
+        // const data = await readData("profiles.json");
+        // const local = data.locales.find((l) => l.id === localId);
 
-        if (local) {
-          local.perfiles[role] = local.perfiles[role].filter(
-            (p) => p.id !== profileId
-          );
+        // if (local) {
+        //   local.perfiles[role] = local.perfiles[role].filter(
+        //     (p) => p.id !== profileId
+        //   );
 
-          const success = await writeData("profiles.json", data);
-          if (success) {
-            showNotification("Perfil eliminado correctamente", "success");
-            loadProfiles();
-          } else {
-            showNotification("Error al eliminar el perfil", "error");
-          }
-        }
+        //   const success = await writeData("profiles.json", data);
+        //   if (success) {
+        //     showNotification("Perfil eliminado correctamente", "success");
+        //     loadProfiles();
+        //   } else {
+        //     showNotification("Error al eliminar el perfil", "error");
+        //   }
+        // }
       }
 
       function goBack() {

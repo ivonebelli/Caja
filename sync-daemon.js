@@ -7,6 +7,8 @@ let isSyncing = false; // Flag to prevent multiple simultaneous sync runs
 
 const SYNC_INTERVAL_MS = 30000; // Try every 30 seconds
 
+let remote_credentials = null;
+
 // --- Exported functions ---
 
 async function sendToMariaDB(payload) {
@@ -79,11 +81,12 @@ function setConnections(localSequelize, remoteDB) {
 }
 
 // 2. Starts the background process
-function startDaemon() {
+function startDaemon(credentials) {
   if (!sequelizeLocal) {
     console.error("Daemon cannot start: Local DB not initialized.");
     return;
   }
+  remote_credentials = credentials;
 
   syncLocalToRemote();
   setInterval(syncLocalToRemote, SYNC_INTERVAL_MS);

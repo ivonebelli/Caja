@@ -59,22 +59,25 @@ app.on("activate", () => {
 ipcMain.handle("db:connect", async (event, credentials) => {
   try {
     credentials.dialect = "mariadb";
-    mariadb_instance = await db.connectWithCredentials(credentials); //conexion a mariadb
-
-    // Si la conexión es exitosa, devuelve éxito
     mariadb_credentials = credentials;
-    startsync_daemon();
+    mariadb_instance = await db.connectWithCredentials(credentials); //conexion a mariadb
     return { success: true, message: "Conexión exitosa." };
   } catch (error) {
-    // Si dbService lanza un error (ej. contraseña incorrecta), lo capturamos
+    // Modo offline
     console.error(error.message);
-    return { success: false, error: error.message };
+    return { success: true, error: error.message };
+  } finally {
+    startsync_daemon(sqlite_instance, mariadb_instance, mariadb_credentials);
   }
 });
 
-function startsync_daemon(local_instance, remote_instance) {
-  sync_daemon.setConnections(sqlite_instance, mariadb_instance);
-  sync_daemon.startDaemon();
+function startsync_daemon(
+  local_instance,
+  remote_instance,
+  mariadb_credentials
+) {
+  sync_daemon.setConnections(local_instance, remote_instance);
+  sync_daemon.startDaemon(mariadb_credentials);
 }
 
 //STORES ES SOLO REMOTO NO LOCAL
