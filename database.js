@@ -426,7 +426,7 @@ async function createProfile(newProfile, sequelize) {
     const createdProfile = await Profile.create(newProfile);
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_profile(createdProfile.local_id);
+      unsync_cascade_up_from_profile(createdProfile.local_id, sequelize);
     }
 
     if (createdProfile.local_id) {
@@ -566,7 +566,7 @@ async function deleteProfile(local_id, sequelize) {
     );
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_profile(local_id);
+      unsync_cascade_up_from_profile(local_id, sequelize);
     }
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
@@ -606,7 +606,7 @@ async function restoreProfile(local_id, sequelize) {
     );
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_profile(local_id);
+      unsync_cascade_up_from_profile(local_id, sequelize);
     }
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
@@ -691,7 +691,7 @@ async function updateProfile(newProfile, sequelize) {
     });
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_profile(newProfile.local_id);
+      unsync_cascade_up_from_profile(newProfile.local_id, sequelize);
     }
 
     if (affectedCount > 0) {
@@ -769,7 +769,7 @@ async function createInflow(newInflow, sequelize) {
     const local_id = localInflowRecord.local_id;
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_inflow(local_id);
+      unsync_cascade_up_from_inflow(local_id, sequelize);
     }
     console.log(`✅ Sesión de caja local (Inflow ID ${local_id}) creada.`);
   } catch (error) {
@@ -821,7 +821,7 @@ async function closeInflow(local_id, sequelize) {
     );
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_inflow(local_id);
+      unsync_cascade_up_from_inflow(local_id, sequelize);
     }
 
     if (affectedCount > 0) {
@@ -875,7 +875,7 @@ async function openInflow(local_id, sequelize) {
       }
     );
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_inflow(local_id);
+      unsync_cascade_up_from_inflow(local_id, sequelize);
     }
 
     if (affectedCount > 0) {
@@ -928,7 +928,7 @@ async function createSale(local_id, newSale, sequelize) {
     const localSaleId = localSaleRecord.local_id;
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_sale(localSaleId);
+      unsync_cascade_up_from_sale(localSaleId, sequelize);
     }
     console.log(
       `✅ Sale ID ${localSaleId} created locally for Inflow ${local_local_id}.`
@@ -990,11 +990,187 @@ async function readSales(local_id, sequelize) {
   }
 }
 
-function unsync_cascade_up_from_sale(id_sale) {}
+async function unsync_cascade_up_from_sale(sale_local_id, sequelize) {
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
 
-function unsync_cascade_up_from_inflow(id_inflow) {}
+  // 1. Retrieve Models
+  const SaleModel = sequelize.models.Sale;
+  const InflowModel = sequelize.models.Inflow;
+  const StoreModel = sequelize.models.Store;
 
-function unsync_cascade_up_from_profile(id_profile) {}
+  if (!SaleModel || !InflowModel || !StoreModel) {
+    throw new Error("Required models (Sale, Inflow, Store) are not defined.");
+  }
+
+  // --- A. Fetch Sale and its Inflow Parent ---
+
+  const saleRecord = await SaleModel.findByPk(sale_local_id, {
+    include: [
+      {
+        model: InflowModel,
+        as: "inflow",
+        attributes: ["local_id", "store_id"],
+      },
+    ],
+  });
+
+  if (!saleRecord) {
+    return false;
+  }
+
+  const inflowRecord = saleRecord.inflow;
+
+  if (!inflowRecord) {
+    throw new Error(
+      `Inflow record not found for Sale ID ${sale_local_id}. Data integrity issue.`
+    );
+  }
+
+  const localInflowId = inflowRecord.local_id;
+  const storeId = inflowRecord.store_id;
+
+  // --- B. CASCADE 1: Inflow Parent (Inflow) ---
+  try {
+    await InflowModel.update(
+      { is_synced: false },
+      { where: { local_id: localInflowId } }
+    );
+  } catch (error) {
+    // En un entorno productivo, se podría registrar el error en un sistema centralizado aquí.
+  }
+
+  // --- C. CASCADE 2: Store Parent ---
+  try {
+    await StoreModel.update(
+      { is_synced: false },
+      { where: { store_id: storeId } }
+    );
+  } catch (error) {
+    // En un entorno productivo, se podría registrar el error en un sistema centralizado aquí.
+  }
+
+  return true;
+}
+async function unsync_cascade_up_from_inflow(local_inflow_id, sequelize) {
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
+
+  // 1. Recuperar Modelos
+  const InflowModel = sequelize.models.Inflow;
+  const StoreModel = sequelize.models.Store;
+
+  if (!InflowModel || !StoreModel) {
+    throw new Error("Required models (Inflow, Store) are not defined.");
+  }
+
+  // --- A. Fetch Inflow and its Store Parent ---
+
+  // Fetch the Inflow record to get the store_id (the parent FK)
+  const inflowRecord = await InflowModel.findByPk(local_inflow_id, {
+    attributes: ["local_id", "store_id"], // Solo necesitamos los IDs
+  });
+
+  if (!inflowRecord) {
+    // Si el Inflow no existe, no hay nada que desincronizar.
+    return false;
+  }
+
+  const storeId = inflowRecord.store_id;
+
+  // --- B. CASCADE 1: Unsync the Inflow Record Itself ---
+
+  // La operación que disparó esta función ya debe haber establecido is_synced=false
+  // (ej. openInflow, closeInflow). Aquí aseguramos que el estado quede registrado.
+  try {
+    await InflowModel.update(
+      { is_synced: false },
+      { where: { local_id: local_inflow_id } }
+    );
+  } catch (error) {
+    // Este error es crítico, pero el proceso debe continuar la cascada.
+    throw new Error(
+      `Error updating Inflow ${local_inflow_id} status: ${error.message}`
+    );
+  }
+
+  // --- C. CASCADE 2: Unsync the Store Parent ---
+  try {
+    await StoreModel.update(
+      { is_synced: false }, // Establecer la tienda como pendiente de sincronizar
+      { where: { store_id: storeId } }
+    );
+  } catch (error) {
+    // En este punto, solo lanzamos el error si no se pudo actualizar el Store.
+    throw new Error(`Error updating Store ${storeId} status: ${error.message}`);
+  }
+
+  return true;
+}
+
+async function unsync_cascade_up_from_profile(profile_local_id, sequelize) {
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
+
+  // 1. Recuperar Modelos
+  const ProfileModel = sequelize.models.Profile;
+  const StoreModel = sequelize.models.Store;
+
+  if (!ProfileModel || !StoreModel) {
+    throw new Error("Required models (Profile, Store) are not defined.");
+  }
+
+  // --- A. Fetch Profile and its Store Parent ID ---
+
+  // Fetch the Profile record to get the store_id
+  const profileRecord = await ProfileModel.findByPk(profile_local_id, {
+    attributes: ["local_id", "store_id"], // Solo necesitamos el store_id
+  });
+
+  if (!profileRecord) {
+    // Si el Perfil no existe, detenemos la cascada.
+    return false;
+  }
+
+  const storeId = profileRecord.store_id;
+
+  // --- B. CASCADE 1: Unsync the Profile Record Itself ---
+  // Marcamos el Profile como pendiente de sincronizar (is_synced = FALSE)
+  try {
+    await ProfileModel.update(
+      { is_synced: false },
+      { where: { local_id: profile_local_id } }
+    );
+  } catch (error) {
+    // Si falla la actualización del perfil, lanzamos el error para detener el proceso.
+    throw new Error(
+      `Error updating Profile ${profile_local_id} status: ${error.message}`
+    );
+  }
+
+  // --- C. CASCADE 2: Unsync the Store Parent ---
+  // Propagamos el cambio al Store padre
+  try {
+    await StoreModel.update(
+      { is_synced: false },
+      { where: { local_id: storeId } } // Usamos el local_id de la tienda
+    );
+  } catch (error) {
+    // Si no se pudo actualizar el Store, lanzamos el error.
+    throw new Error(`Error updating Store ${storeId} status: ${error.message}`);
+  }
+
+  return true;
+}
 module.exports = {
   connectWithCredentials,
   getStores,
