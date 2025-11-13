@@ -198,7 +198,7 @@
             />
           </div>
           <div class="form-group">
-            <label class="form-label">Notas (opcional)</label>
+            <label class="form-label">Notas al abrir caja (opcional)</label>
             <textarea
               class="form-textarea"
               id="openNotes"
@@ -472,7 +472,7 @@
           )}</span>`;
         }
       }
-
+      //TODO rehacer bien
       async function openCash(event) {
         event.preventDefault();
 
@@ -497,7 +497,7 @@
           showNotification("Error al abrir la caja", "error");
         }
       }
-
+      //TODO: rehacer bien
       async function closeCash(event) {
         event.preventDefault();
 
