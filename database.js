@@ -82,11 +82,6 @@ function initModels(sequelize) {
         name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
         location: { type: DataTypes.STRING(255), allowNull: true },
         is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-        created_at: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
 
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
         is_synced: {
@@ -456,7 +451,31 @@ function initModels(sequelize) {
   });
   Sale.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
 
-  return { Store, Profile, Netflow, Sale, Category, Product, SaleDetail };
+  Netflow.hasMany(Expense, {
+    foreignKey: "netflow_id",
+    as: "expenses",
+    onDelete: "CASCADE",
+  });
+  Expense.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
+
+  Netflow.hasMany(Inflow, {
+    foreignKey: "netflow_id",
+    as: "inflows",
+    onDelete: "CASCADE",
+  });
+  Inflow.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
+
+  return {
+    Store,
+    Profile,
+    Netflow,
+    Sale,
+    Category,
+    Product,
+    SaleDetail,
+    Inflow,
+    Expense,
+  };
 }
 
 async function connectWithCredentials(credentials) {
@@ -510,11 +529,11 @@ async function seedInitialData(sequelize) {
 
   if (storeCount === 0) {
     // --- 1. CATEGORIES ---
-    // Insertamos created_at y marcamos como ya sincronizado
+    // Insertamos createdAt y marcamos como ya sincronizado
     await sequelize.query(
       `
-            INSERT INTO Categories (local_id, name, remote_id, is_synced) VALUES
-            (1, 'Impresiones', 1, TRUE);
+            INSERT INTO Categories (local_id, name, remote_id, is_synced, createdAt, updatedAt) VALUES
+    (1, 'Impresiones', 1, TRUE, DATETIME('now'), DATETIME('now'));
             `,
       { type: sequelize.QueryTypes.INSERT }
     );
@@ -525,8 +544,8 @@ async function seedInitialData(sequelize) {
     // --- 2. PRODUCTS (NUEVO) ---
     await sequelize.query(
       `
-            INSERT INTO Products (local_id, category_id, name, price, remote_id, is_synced) VALUES
-            (1, 1, 'Cuaderno', 10.50, 1, TRUE);
+            INSERT INTO Products (local_id, category_id, name, price, remote_id, is_synced, createdAt, updatedAt) VALUES
+            (1, 1, 'Cuaderno', 10.50, 1, TRUE, DATETIME('now'), DATETIME('now'));
 
             `,
       { type: sequelize.QueryTypes.INSERT }
@@ -538,9 +557,9 @@ async function seedInitialData(sequelize) {
     // --- 3. STORES (Tiendas - Sin category_id) ---
     await sequelize.query(
       `
-            INSERT INTO Stores (local_id, name, location, created_at, remote_id, is_synced) VALUES
-            (1, 'Boulevard Marítimo', 'Av. Costanera 123', ${NOW_SQL}, 1, TRUE),
-            (2, 'PhotoStation', 'Calle Imagen 456', ${NOW_SQL}, 2, TRUE);
+            INSERT INTO Stores (local_id, name, location,remote_id, is_synced, createdAt, updatedAt) VALUES
+            (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, TRUE, DATETIME('now'), DATETIME('now')),
+            (2, 'PhotoStation', 'Calle Imagen 456',  2, TRUE, DATETIME('now'), DATETIME('now'));
             `,
       { type: sequelize.QueryTypes.INSERT }
     );
@@ -549,15 +568,15 @@ async function seedInitialData(sequelize) {
     );
 
     // --- 4. PROFILES (Perfiles) ---
-    // Corregido: Se añade created_at explícitamente.
+    // Corregido: Se añade createdAt explícitamente.
     // Asumimos que todos pertenecen al store_id: 1, 2, 3 que existe localmente.
     await sequelize.query(
       `
-            INSERT INTO Profiles (local_id, store_id, username, role, pin, created_at, remote_id, is_synced) VALUES
-            (1, 1, 'Juan Gonzalez', 'cajero', '1234', ${NOW_SQL}, 1, TRUE),
-            (2, 1, 'John Smith', 'cajero', '1234', ${NOW_SQL}, 2, TRUE),
-            (3, 2, 'Ricardo Haliburton', 'cajero', '1234', ${NOW_SQL}, 3, TRUE),
-            (4, 2, 'Pablo Smith', 'cajero', '1234', ${NOW_SQL}, 4, TRUE);
+            INSERT INTO Profiles (local_id, store_id, username, role, pin,remote_id, is_synced, createdAt, updatedAt) VALUES
+            (1, 1, 'Juan Gonzalez', 'cajero', '1234', 1, TRUE, DATETIME('now'), DATETIME('now')),
+            (2, 1, 'John Smith', 'cajero', '1234', 2, TRUE, DATETIME('now'), DATETIME('now')),
+            (3, 2, 'Ricardo Haliburton', 'cajero', '1234',  3, TRUE, DATETIME('now'), DATETIME('now')),
+            (4, 2, 'Pablo Smith', 'cajero', '1234', 4, TRUE, DATETIME('now'), DATETIME('now'));
             `,
       { type: sequelize.QueryTypes.INSERT }
     );
@@ -1003,7 +1022,7 @@ async function createNetflow(newNetflow, sequelize) {
     return {
       local_id: local_id,
       initial_amount: newNetflow.starting_cash,
-      created_at: localNetflowRecord.start_time,
+      createdAt: localNetflowRecord.start_time,
     };
   } catch (error) {
     console.log(error);
