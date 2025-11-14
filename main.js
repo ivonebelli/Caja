@@ -139,10 +139,10 @@ ipcMain.handle("db:create-profile", async (event, newProfile) => {
 
 //PROFILES ES SOLO REMOTO NO LOCAL
 ipcMain.handle(
-  "db:get-profile-and-daily-inflow-data",
+  "db:get-profile-and-daily-netflow-data",
   async (event, profile_id) => {
     try {
-      const res = await db.getProfileAndDailyInflowData(
+      const res = await db.getProfileAndDailyNetflowData(
         profile_id,
         sqlite_instance
       );
@@ -153,23 +153,21 @@ ipcMain.handle(
   }
 );
 
-ipcMain.handle("db:create-inflow", async (event, newInflow) => {
+ipcMain.handle("db:create-netflow", async (event, newNetflow) => {
   try {
-    const res = await db.createInflow(newInflow, sqlite_instance);
+    const res = await db.createNetflow(newNetflow, sqlite_instance);
     return {
       success: true,
       local_id: res.local_id,
-      created_at: res.created_at,
-      initial_amount: res.initial_amount,
     };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-ipcMain.handle("db:get-sales", async (event, inflow_id) => {
+ipcMain.handle("db:get-sales", async (event, netflow_id) => {
   try {
-    const res = await db.getSales(inflow_id, sqlite_instance);
+    const res = await db.getSales(netflow_id, sqlite_instance);
     return {
       success: true,
       data: res,

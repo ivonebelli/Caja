@@ -184,7 +184,7 @@
 
       <div id="openForm" class="form-section" style="display: none">
         <h2 class="section-title">🔓 Abrir Caja del Día</h2>
-        <form onsubmit="createInflow(event)">
+        <form onsubmit="createNetflow(event)">
           <div class="form-group">
             <label class="form-label">Monto Inicial de Caja</label>
             <input
@@ -221,12 +221,12 @@
               <div class="summary-value" id="summaryInitial">$0</div>
             </div>
             <div class="summary-item">
-              <div class="summary-label">Total Ventas</div>
-              <div class="summary-value" id="summarySales">$0</div>
+              <div class="summary-label">Total Ingresos</div>
+              <div class="summary-value" id="summaryNetflow">$0</div>
             </div>
             <div class="summary-item">
-              <div class="summary-label">Total Gastos</div>
-              <div class="summary-value" id="summaryExpenses">$0</div>
+              <div class="summary-label">Total Egresos</div>
+              <div class="summary-value" id="summaryOutflow">$0</div>
             </div>
             <div class="summary-item">
               <div class="summary-label">Esperado en Caja</div>
@@ -244,7 +244,7 @@
 
         <div class="form-section">
           <h2 class="section-title">🔒 Cerrar Caja del Día</h2>
-          <form onsubmit="closeInflow(event)">
+          <form onsubmit="closeNetflow(event)">
             <p style="color: var(--text-light); margin-bottom: 20px">
               Ingresa el monto real que hay en caja para cada medio de pago:
             </p>
@@ -279,9 +279,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="../shared/utils.js"></script>
     <script>
-      const cachedProfileAndDailyInflowData = JSON.parse(
-        localStorage.getItem("cachedProfileAndDailyInflowData")
+      let cachedData = JSON.parse(
+        localStorage.getItem("cachedProfileAndDailyNetflowData")
       );
+      console.log(cachedData);
 
       const paymentMethods = [
         { id: "efectivo", name: "Efectivo", icon: "💵" },
@@ -295,15 +296,12 @@
         await checkCashStatus();
       }
 
-      async function getInflowSales() {
-        const res = await ipcRenderer.invoke("db:get-inflow-sales", inflow_id);
-      }
-
       async function checkCashStatus() {
         try {
-          if (inflow_id !== "null") {
+          if (cachedData.netflow_id !== "null") {
+            console.log("hola");
             showOpenStatus();
-            //await loadSalesData();
+            //updateSummary();
           } else {
             showClosedStatus();
           }
@@ -311,20 +309,25 @@
           showClosedStatus();
         }
       }
-      //FIXME deberia cambiar la visual a caja abierta y pasar a poder cerrarla
       function showOpenStatus() {
         const banner = document.getElementById("statusBanner");
+        console.log(cachedData.netflow_data.start_time);
+        console.log(cachedData.netflow_data.starting_cash);
+        console.log(banner);
+        console.log("hola");
         banner.className = "status-banner open";
         banner.innerHTML = `
         <div class="status-icon">✅</div>
         <div class="status-info">
           <h3>Caja Abierta</h3>
-          <p>Inicio: ${formatDateTime(
-            created_at
-          )} | Monto inicial: ${formatCurrency(initial_amount)}</p>
+          
         </div>
       `;
-
+        //FIXME esta mal entonces crashea la funcion y no se cambia a caja abierta
+        // <p>
+        //   Inicio: ${formatDateTime(cachedData.netflow_data.start_time)} | Monto
+        //   inicial: ${formatCurrency(cachedData.netflowData.starting_cash)}
+        // </p>;
         document.getElementById("openForm").style.display = "none";
         document.getElementById("openInfo").style.display = "block";
       }
@@ -344,42 +347,18 @@
         document.getElementById("openInfo").style.display = "none";
       }
 
-      async function loadSalesData() {
-        const res = ipcRenderer.invoke("db:get-sales", inflow_id);
-        console.log(res);
-        //updateSummary();
-      }
-
       function updateSummary() {
-        const totalSales = salesData.reduce((sum, o) => sum + o.total, 0);
-        const expectedTotal = currentSession.initialAmount + totalSales;
+        document.getElementById("summaryInitial").textContent = formatCurrency(
+          cachedData.netflow_data.starting_cash
+        );
+        document.getElementById("summarySales").textContent = formatCurrency(
+          cachedData.sales_summary.total_amount
+        );
 
-        document.getElementById("summaryInitial").textContent =
-          formatCurrency(initialAmount);
-        document.getElementById("summarySales").textContent =
-          formatCurrency(totalSales);
-        document.getElementById("summaryExpenses").textContent =
-          formatCurrency(0);
-        document.getElementById("summaryExpected").textContent =
-          formatCurrency(expectedTotal);
-
-        const paymentTotals = {};
-        paymentMethods.forEach((pm) => {
-          paymentTotals[pm.id] = salesDataj
-            .filter(
-              (o) =>
-                o.paymentMethod === pm.id ||
-                (o.paymentMethod === "mixto" &&
-                  o.paymentDetails &&
-                  o.paymentDetails[pm.id] > 0)
-            )
-            .reduce((sum, o) => {
-              if (o.paymentMethod === "mixto" && o.paymentDetails) {
-                return sum + (o.paymentDetails[pm.id] || 0);
-              }
-              return sum + o.total;
-            }, 0);
-        });
+        document.getElementById("summaryExpected").textContent = formatCurrency(
+          cachedData.sales_summary.total_amount +
+            cachedData.netflow_data.starting_cash
+        );
 
         const breakdownHTML = paymentMethods
           .filter((pm) => paymentTotals[pm.id] > 0)
@@ -456,25 +435,34 @@
           )}</span>`;
         }
       }
-      //TODO rehacer bien
-      async function createInflow(event) {
+
+      async function createNetflow(event) {
         event.preventDefault();
 
         const initialAmount = parseFloat(
           document.getElementById("initialAmount").value
         );
         const notes = document.getElementById("openNotes").value;
-        const res = await ipcRenderer.invoke("db:create-inflow", {
-          store_id: store_id,
+        const res = await ipcRenderer.invoke("db:create-netflow", {
+          store_id: cachedData.profile.store_id,
           starting_cash: initialAmount,
           opening_description: notes,
         });
         if (res.success === true) {
-          console.log(res);
           showNotification("Caja abierta correctamente", "success");
-          inflow_id = res.local_id;
-          created_at = res.created_at;
-          initial_amount = res.initial_amount;
+          netflow_id = res.local_id;
+          const res2 = await ipcRenderer.invoke(
+            "db:get-profile-and-daily-netflow-data",
+            cachedData.profile.local_id
+          );
+          if (res2.success === true) {
+            localStorage.setItem(
+              "cachedProfileAndDailyNetflowData",
+              JSON.stringify(res2.data)
+            );
+            cachedData = res2.data;
+            console.log(cachedData);
+          }
           checkCashStatus();
         } else {
           console.error("❌ Error abriendo caja:", res.error);
@@ -482,7 +470,7 @@
         }
       }
       //TODO: rehacer bien
-      async function closeInflow(event) {
+      async function closeNetflow(event) {
         event.preventDefault();
 
         if (
@@ -710,7 +698,7 @@
 
           doc.setFontSize(11);
           doc.setFont(undefined, "normal");
-          doc.text(`Total Ventas: ${formatCurrency(totalSales)}`, 20, y);
+          doc.text(`Total Ingresos: ${formatCurrency(totalSales)}`, 20, y);
           y += 7;
           doc.text(
             `Caja Inicial: ${formatCurrency(currentSession.initialAmount)}`,

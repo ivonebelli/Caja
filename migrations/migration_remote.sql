@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS Categories (
     name VARCHAR(100) NOT NULL UNIQUE,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
+CREATE TABLE IF NOT EXISTS PaymentMediums (
+    medium_id INT AUTO_INCREMENT PRIMARY KEY,
+    medium_name VARCHAR(50) UNIQUE NOT NULL
+);
 
 -- 2. Tabla Stores (Tiendas) - La FK de categoría HA SIDO ELIMINADA
 CREATE TABLE IF NOT EXISTS Stores (
@@ -45,9 +49,9 @@ CREATE TABLE IF NOT EXISTS Products (
     FOREIGN KEY (category_id) REFERENCES Categories(category_id)
 );
 
--- 5. Tabla Inflows (Ingresos / Sesiones de Caja)
-CREATE TABLE IF NOT EXISTS Inflows (
-    inflow_id INT AUTO_INCREMENT PRIMARY KEY, 
+-- 5. Tabla Netflows (Ingresos / Sesiones de Caja)
+CREATE TABLE IF NOT EXISTS Netflows (
+    netflow_id INT AUTO_INCREMENT PRIMARY KEY, 
     store_id INT NOT NULL, 
     opening_description VARCHAR(255) NULL, 
     closing_description VARCHAR(255) NULL,
@@ -64,12 +68,14 @@ CREATE TABLE IF NOT EXISTS Inflows (
 -- 6. Tabla Sales (Ventas / Órdenes) - Se mantiene el total de la orden
 CREATE TABLE IF NOT EXISTS Sales (
     sale_id INT AUTO_INCREMENT PRIMARY KEY, 
-    inflow_id INT NOT NULL, 
+    netflow_id INT NOT NULL, 
+    medium_id INT NOT NULL, -- Reference to the new lookup table
     total_amount DECIMAL(10, 2) NOT NULL,
     sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    FOREIGN KEY (inflow_id) REFERENCES Inflows(inflow_id) 
-        ON DELETE CASCADE
+
+    FOREIGN KEY (netflow_id) REFERENCES Netflows(netflow_id) 
+        ON DELETE CASCADE,
+    FOREIGN KEY (medium_id) REFERENCES PaymentMediums(medium_id)
 );
 
 -- 7. Tabla SaleDetails (Detalles de Venta / Líneas de Producto)

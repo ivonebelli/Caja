@@ -8,8 +8,15 @@ function initModels(sequelize) {
   const dialect = sequelize.options.dialect;
 
   // Es vital requerir Sequelize y DataTypes si no están en el scope
-  const { DataTypes, Sequelize } = require("sequelize");
-  let Store, Profile, Inflow, Sale, Category, Product, SaleDetail;
+  let Store,
+    Profile,
+    Netflow,
+    Sale,
+    Category,
+    Product,
+    SaleDetail,
+    Inflow,
+    Expense;
 
   const isLocal = dialect === "sqlite";
 
@@ -17,7 +24,6 @@ function initModels(sequelize) {
   // 1. Lógica para SQLite (DB Local): Con campos de sincronización
   // ====================================================================
   if (isLocal) {
-    // --- CATEGORY ---
     Category = sequelize.define(
       "Category",
       {
@@ -36,7 +42,7 @@ function initModels(sequelize) {
           defaultValue: false,
         },
       },
-      { timestamps: false, tableName: "Categories" }
+      { timestamps: true, tableName: "Categories" }
     );
 
     // --- PRODUCT (NUEVO) ---
@@ -60,7 +66,7 @@ function initModels(sequelize) {
           defaultValue: false,
         },
       },
-      { timestamps: false, tableName: "Products" }
+      { timestamps: true, tableName: "Products" }
     );
 
     // --- STORE (Sin category_id) ---
@@ -89,7 +95,7 @@ function initModels(sequelize) {
           defaultValue: false,
         },
       },
-      { timestamps: false, tableName: "Stores" }
+      { timestamps: true, tableName: "Stores" }
     );
 
     // --- PROFILE ---
@@ -124,11 +130,6 @@ function initModels(sequelize) {
         },
         photo: { type: DataTypes.TEXT("long"), allowNull: true },
         is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-        created_at: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
 
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
         is_synced: {
@@ -137,12 +138,12 @@ function initModels(sequelize) {
           defaultValue: false,
         },
       },
-      { timestamps: false, tableName: "Profiles" }
+      { timestamps: true, tableName: "Profiles" }
     );
 
     // --- INFLOW (profile_id ELIMINADO) ---
-    Inflow = sequelize.define(
-      "Inflow",
+    Netflow = sequelize.define(
+      "Netflow",
       {
         local_id: {
           type: DataTypes.INTEGER,
@@ -172,7 +173,7 @@ function initModels(sequelize) {
           defaultValue: false,
         },
       },
-      { timestamps: false, tableName: "Inflows" }
+      { timestamps: true, tableName: "Netflows" }
     );
 
     // --- SALE DETAIL (Tabla de Unión) ---
@@ -189,7 +190,7 @@ function initModels(sequelize) {
         quantity: { type: DataTypes.INTEGER, allowNull: false },
         unit_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
       },
-      { timestamps: false, tableName: "SaleDetails" }
+      { timestamps: true, tableName: "SaleDetails" }
     );
 
     // --- SALE ---
@@ -202,7 +203,7 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         },
-        inflow_id: { type: DataTypes.INTEGER, allowNull: false },
+        netflow_id: { type: DataTypes.INTEGER, allowNull: false },
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
         sale_date: {
           type: DataTypes.DATE,
@@ -217,10 +218,51 @@ function initModels(sequelize) {
           defaultValue: false,
         },
       },
-      { timestamps: false, tableName: "Sales" }
+      { timestamps: true, tableName: "Sales" }
     );
-
-    // 2. Lógica para MariaDB/MySQL (DB Remota): Estándar
+    Inflow = sequelize.define(
+      "Inflow",
+      {
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "local_id",
+        },
+        amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        description: { type: DataTypes.STRING(255), allowNull: true },
+        netflow_id: { type: DataTypes.INTEGER, allowNull: false },
+        remote_id: { type: DataTypes.INTEGER, allowNull: true },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+      },
+      { timestamps: true, tableName: "Inflows" }
+    );
+    Expense = sequelize.define(
+      "Expense",
+      {
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "local_id",
+        },
+        amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        description: { type: DataTypes.STRING(255), allowNull: true },
+        netflow_id: { type: DataTypes.INTEGER, allowNull: false },
+        remote_id: { type: DataTypes.INTEGER, allowNull: true },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+      },
+      { timestamps: true, tableName: "Expenses" }
+    );
+    // FIXME modelos remotos no estan actualizados al nuevo schema
   } else {
     // --- CATEGORY (Estándar) ---
     Category = sequelize.define(
@@ -234,7 +276,7 @@ function initModels(sequelize) {
         name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
         is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
       },
-      { timestamps: false, tableName: "Categories" }
+      { timestamps: true, tableName: "Categories" }
     );
 
     // --- PRODUCT (NUEVO - Estándar) ---
@@ -250,7 +292,7 @@ function initModels(sequelize) {
         name: { type: DataTypes.STRING(100), allowNull: false },
         price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
       },
-      { timestamps: false, tableName: "Products" }
+      { timestamps: true, tableName: "Products" }
     );
 
     // --- STORE (Estándar - Sin category_id) ---
@@ -265,13 +307,8 @@ function initModels(sequelize) {
         name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
         location: { type: DataTypes.STRING(255), allowNull: true },
         is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-        created_at: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
       },
-      { timestamps: false, tableName: "Stores" }
+      { timestamps: true, tableName: "Stores" }
     );
 
     // --- PROFILE ---
@@ -305,18 +342,13 @@ function initModels(sequelize) {
         },
         photo: { type: DataTypes.TEXT("long"), allowNull: true },
         is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-        created_at: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
       },
-      { timestamps: false, tableName: "Profiles" }
+      { timestamps: true, tableName: "Profiles" }
     );
 
     // --- INFLOW (profile_id ELIMINADO) ---
-    Inflow = sequelize.define(
-      "Inflow",
+    Netflow = sequelize.define(
+      "Netflow",
       {
         local_id: {
           type: DataTypes.INTEGER,
@@ -340,7 +372,7 @@ function initModels(sequelize) {
           defaultValue: 0.0,
         },
       },
-      { timestamps: false, tableName: "Inflows" }
+      { timestamps: true, tableName: "Netflows" }
     );
 
     // --- SALE DETAIL (NUEVO - Estándar) ---
@@ -357,7 +389,7 @@ function initModels(sequelize) {
         quantity: { type: DataTypes.INTEGER, allowNull: false },
         unit_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
       },
-      { timestamps: false, tableName: "SaleDetails" }
+      { timestamps: true, tableName: "SaleDetails" }
     );
 
     // --- SALE ---
@@ -369,7 +401,7 @@ function initModels(sequelize) {
           primaryKey: true,
           autoIncrement: true,
         },
-        inflow_id: { type: DataTypes.INTEGER, allowNull: false },
+        netflow_id: { type: DataTypes.INTEGER, allowNull: false },
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
         sale_date: {
           type: DataTypes.DATE,
@@ -377,12 +409,12 @@ function initModels(sequelize) {
           defaultValue: Sequelize.NOW,
         },
       },
-      { timestamps: false, tableName: "Sales" }
+      { timestamps: true, tableName: "Sales" }
     );
   }
 
   // ====================================================================
-  // C. ASOCIACIONES (profile <-> inflow ELIMINADA)
+  // C. ASOCIACIONES (profile <-> netflow ELIMINADA)
   // ====================================================================
 
   // Category <-> Product
@@ -408,23 +440,23 @@ function initModels(sequelize) {
   });
   Profile.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
-  // Store <-> Inflow
-  Store.hasMany(Inflow, {
+  // Store <-> Netflow
+  Store.hasMany(Netflow, {
     foreignKey: "store_id",
-    as: "inflows",
+    as: "netflows",
     onDelete: "RESTRICT",
   });
-  Inflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
+  Netflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
-  // Inflow <-> Sale
-  Inflow.hasMany(Sale, {
-    foreignKey: "inflow_id",
+  // Netflow <-> Sale
+  Netflow.hasMany(Sale, {
+    foreignKey: "netflow_id",
     as: "sales",
     onDelete: "CASCADE",
   });
-  Sale.belongsTo(Inflow, { foreignKey: "inflow_id", as: "inflow" });
+  Sale.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
 
-  return { Store, Profile, Inflow, Sale, Category, Product, SaleDetail };
+  return { Store, Profile, Netflow, Sale, Category, Product, SaleDetail };
 }
 
 async function connectWithCredentials(credentials) {
@@ -533,7 +565,7 @@ async function seedInitialData(sequelize) {
       "UPDATE sqlite_sequence SET seq = 4 WHERE name = 'Profiles';"
     );
 
-    // No hay seeding para Inflows o Sales, ya que se crean en tiempo de ejecución.
+    // No hay seeding para Netflows o Sales, ya que se crean en tiempo de ejecución.
   }
 }
 
@@ -651,11 +683,15 @@ async function getProfile(local_id, sequelize) {
   }
 }
 
-async function getProfileAndDailyInflowData(local_id, sequelize) {
+async function getProfileAndDailyNetflowData(local_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   const Store = sequelize.models.Store;
+  const Netflow = sequelize.models.Netflow;
+  const Sale = sequelize.models.Sale;
+  const Expense = sequelize.models.Expense;
   const Inflow = sequelize.models.Inflow;
+
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
     const profileData = await Profile.findByPk(local_id, {
@@ -666,9 +702,9 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
       return null; // Perfil no encontrado
     }
 
-    const storeId = profileData.local_id;
+    const storeId = profileData.store_id;
 
-    // --- QUERY 2: Encontrar el último Inflow DE HOY ---
+    // --- QUERY 2: Encontrar el último Netflow DE HOY ---
 
     // Lógica de fecha agnóstica al dialecto (MySQL/SQLite)
     const todayStart = new Date();
@@ -677,7 +713,7 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999); // Fin del día
 
-    const inflow = await Inflow.findOne({
+    let netflow = await Netflow.findOne({
       where: {
         local_id: storeId,
         start_time: {
@@ -687,21 +723,37 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
       order: [["start_time", "DESC"]],
       limit: 1,
     });
-
-    let inflow_id = null;
+    let netflow_id = null;
     let salesData = [];
     let totalSalesAmount = 0;
     let salesCount = 0;
     let averageSale = 0;
 
-    if (inflow) {
-      inflow_id = inflow.id;
-
-      // --- QUERY 3: Obtener todas las ventas de ese Inflow ---
+    if (netflow) {
+      netflow_id = netflow.local_id;
+      netflow = netflow.toJSON();
+      // --- QUERY 3: Obtener todas las ventas de ese Netflow ---
       salesData = await Sale.findAll({
-        where: { local_id: inflow_id },
+        where: { netflow_id: netflow_id },
+        include: [
+          {
+            model: SaleDetail, // 1. Include the SaleDetail model
+            as: "SaleDetails", // Use the alias defined in Sale.hasMany(SaleDetail, { as: 'SaleDetails' })
+            include: [
+              {
+                model: Product, // 2. Include the Product model inside SaleDetail
+                as: "Product", // Use the alias defined in SaleDetail.belongsTo(Product, { as: 'Product' })
+              },
+            ],
+          },
+        ],
       });
-
+      expensesData = await Expense.findAll({
+        where: { netflow_id: netflow_id },
+      });
+      inflowsData = await Inflow.findAll({
+        where: { netflow_id: netflow_id },
+      });
       // Reutilizamos la lógica de agregación de tu código original
       salesCount = salesData.length;
 
@@ -719,12 +771,15 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
 
     let data = {
       profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
-      inflow_id: inflow_id,
+      netflow_id: netflow_id,
+      netflow_data: netflow,
       sales_summary: {
         total_amount: parseFloat(totalSalesAmount.toFixed(2)),
         count: salesCount,
         average_sale: parseFloat(averageSale.toFixed(2)),
       },
+      inflows_summary: null,
+      expenses_summary: null,
       sales_list: salesData,
     };
 
@@ -732,7 +787,7 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
     return data;
   } catch (error) {
     console.error(
-      "Error al obtener datos (getProfileAndDailyInflowData):",
+      "Error al obtener datos (getProfileAndDailyNetflowData):",
       error.message
     );
     throw new Error("Error al consultar la base de datos.");
@@ -926,29 +981,29 @@ async function updateStore(newStore, sequelize) {
   }
 }
 
-async function createInflow(newInflow, sequelize) {
-  const Inflow = sequelize.models.Inflow;
+async function createNetflow(newNetflow, sequelize) {
+  const Netflow = sequelize.models.Netflow;
   // Datos de la sesión de caja principal
-  const inflowData = {
-    store_id: newInflow.store_id,
-    starting_cash: newInflow.starting_cash,
-    opening_description: newInflow.opening_description,
+  const netflowData = {
+    store_id: newNetflow.store_id,
+    starting_cash: newNetflow.starting_cash,
+    opening_description: newNetflow.opening_description,
   };
 
-  let localInflowRecord;
+  let localNetflowRecord;
   let remotelocal_id = null; // PK de MariaDB
 
   try {
-    localInflowRecord = await Inflow.create(inflowData);
-    const local_id = localInflowRecord.local_id;
+    localNetflowRecord = await Netflow.create(netflowData);
+    const local_id = localNetflowRecord.local_id;
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_inflow(local_id, sequelize);
+      unsync_cascade_up_from_netflow(local_id, sequelize);
     }
 
     return {
       local_id: local_id,
-      initial_amount: newInflow.starting_cash,
-      created_at: localInflowRecord.start_time,
+      initial_amount: newNetflow.starting_cash,
+      created_at: localNetflowRecord.start_time,
     };
   } catch (error) {
     console.log(error);
@@ -956,18 +1011,18 @@ async function createInflow(newInflow, sequelize) {
   }
 }
 
-async function closeInflow(local_id, sequelize) {
+async function closeNetflow(local_id, sequelize) {
   if (!sequelize) {
     throw new Error("Local database connection is not initialized.");
   }
 
   // 1. Retrieve the specific model from the Sequelize instance
-  // NOTE: 'Inflow' must match the name used in sequelize.define()
-  const InflowModel = sequelize.models.Inflow;
+  // NOTE: 'Netflow' must match the name used in sequelize.define()
+  const NetflowModel = sequelize.models.Netflow;
 
-  if (!InflowModel) {
+  if (!NetflowModel) {
     throw new Error(
-      "Inflow model is not defined on the local Sequelize instance."
+      "Netflow model is not defined on the local Sequelize instance."
     );
   }
 
@@ -975,7 +1030,7 @@ async function closeInflow(local_id, sequelize) {
 
   try {
     // 2. Execute the update using the retrieved model
-    const [affectedCount] = await InflowModel.update(
+    const [affectedCount] = await NetflowModel.update(
       {
         end_time: now,
         is_synced: false,
@@ -989,27 +1044,27 @@ async function closeInflow(local_id, sequelize) {
     );
 
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_inflow(local_id, sequelize);
+      unsync_cascade_up_from_netflow(local_id, sequelize);
     }
 
     if (affectedCount > 0) {
       return true;
     } else {
       console.warn(
-        `⚠️ Inflow Local ID ${local_id} not found or already closed.`
+        `⚠️ Netflow Local ID ${local_id} not found or already closed.`
       );
       return false;
     }
   } catch (error) {
     console.error(
-      `❌ Error closing Inflow Local ID ${local_id}:`,
+      `❌ Error closing Netflow Local ID ${local_id}:`,
       error.message
     );
     throw new Error("Error updating the local cash session.");
   }
 }
 
-async function reopenInflow(local_id, sequelize) {
+async function reopenNetflow(local_id, sequelize) {
   // El parámetro ahora se llama 'sequelize'
   if (!sequelize) {
     throw new Error(
@@ -1017,19 +1072,19 @@ async function reopenInflow(local_id, sequelize) {
     );
   }
 
-  // 1. Obtener el modelo Inflow de la instancia Sequelize
-  // Nota: Asumimos que el modelo fue definido como 'Inflow'
-  const InflowModel = sequelize.models.Inflow;
+  // 1. Obtener el modelo Netflow de la instancia Sequelize
+  // Nota: Asumimos que el modelo fue definido como 'Netflow'
+  const NetflowModel = sequelize.models.Netflow;
 
-  if (!InflowModel) {
+  if (!NetflowModel) {
     throw new Error(
-      "Inflow model is not defined on the local Sequelize instance."
+      "Netflow model is not defined on the local Sequelize instance."
     );
   }
 
   try {
-    // 2. Ejecutar la actualización (Reabrir Inflow)
-    const [affectedCount] = await InflowModel.update(
+    // 2. Ejecutar la actualización (Reabrir Netflow)
+    const [affectedCount] = await NetflowModel.update(
       {
         end_time: null,
         is_synced: false,
@@ -1042,20 +1097,20 @@ async function reopenInflow(local_id, sequelize) {
       }
     );
     if (sequelize.dialect === "sqlite") {
-      unsync_cascade_up_from_inflow(local_id, sequelize);
+      unsync_cascade_up_from_netflow(local_id, sequelize);
     }
 
     if (affectedCount > 0) {
       return true;
     } else {
       console.warn(
-        `⚠️ Inflow Local ID ${local_id} no encontrado o ya estaba abierto.`
+        `⚠️ Netflow Local ID ${local_id} no encontrado o ya estaba abierto.`
       );
       return false;
     }
   } catch (error) {
     console.error(
-      `❌ Error al reabrir Inflow Local ID ${local_id}:`,
+      `❌ Error al reabrir Netflow Local ID ${local_id}:`,
       error.message
     );
     throw new Error("Error al revertir el cierre de la sesión de caja local.");
@@ -1140,7 +1195,7 @@ async function readSales(local_id, sequelize) {
     return plainSales;
   } catch (error) {
     console.error(
-      `❌ Error reading sales for Inflow ID ${local_local_id}:`,
+      `❌ Error reading sales for Netflow ID ${local_local_id}:`,
       error.message
     );
     throw new Error("Error retrieving sale data from the local database.");
@@ -1156,20 +1211,20 @@ async function unsync_cascade_up_from_sale(sale_local_id, sequelize) {
 
   // 1. Retrieve Models
   const SaleModel = sequelize.models.Sale;
-  const InflowModel = sequelize.models.Inflow;
+  const NetflowModel = sequelize.models.Netflow;
   const StoreModel = sequelize.models.Store;
 
-  if (!SaleModel || !InflowModel || !StoreModel) {
-    throw new Error("Required models (Sale, Inflow, Store) are not defined.");
+  if (!SaleModel || !NetflowModel || !StoreModel) {
+    throw new Error("Required models (Sale, Netflow, Store) are not defined.");
   }
 
-  // --- A. Fetch Sale and its Inflow Parent ---
+  // --- A. Fetch Sale and its Netflow Parent ---
 
   const saleRecord = await SaleModel.findByPk(sale_local_id, {
     include: [
       {
-        model: InflowModel,
-        as: "inflow",
+        model: NetflowModel,
+        as: "netflow",
         attributes: ["local_id", "store_id"],
       },
     ],
@@ -1179,22 +1234,22 @@ async function unsync_cascade_up_from_sale(sale_local_id, sequelize) {
     return false;
   }
 
-  const inflowRecord = saleRecord.inflow;
+  const netflowRecord = saleRecord.netflow;
 
-  if (!inflowRecord) {
+  if (!netflowRecord) {
     throw new Error(
-      `Inflow record not found for Sale ID ${sale_local_id}. Data integrity issue.`
+      `Netflow record not found for Sale ID ${sale_local_id}. Data integrity issue.`
     );
   }
 
-  const localInflowId = inflowRecord.local_id;
-  const storeId = inflowRecord.store_id;
+  const localNetflowId = netflowRecord.local_id;
+  const storeId = netflowRecord.store_id;
 
-  // --- B. CASCADE 1: Inflow Parent (Inflow) ---
+  // --- B. CASCADE 1: Netflow Parent (Netflow) ---
   try {
-    await InflowModel.update(
+    await NetflowModel.update(
       { is_synced: false },
-      { where: { local_id: localInflowId } }
+      { where: { local_id: localNetflowId } }
     );
   } catch (error) {
     // En un entorno productivo, se podría registrar el error en un sistema centralizado aquí.
@@ -1212,7 +1267,7 @@ async function unsync_cascade_up_from_sale(sale_local_id, sequelize) {
 
   return true;
 }
-async function unsync_cascade_up_from_inflow(local_inflow_id, sequelize) {
+async function unsync_cascade_up_from_netflow(local_netflow_id, sequelize) {
   if (!sequelize) {
     throw new Error(
       "Local database connection (sequelize) is not initialized."
@@ -1220,40 +1275,40 @@ async function unsync_cascade_up_from_inflow(local_inflow_id, sequelize) {
   }
 
   // 1. Recuperar Modelos
-  const InflowModel = sequelize.models.Inflow;
+  const NetflowModel = sequelize.models.Netflow;
   const StoreModel = sequelize.models.Store;
 
-  if (!InflowModel || !StoreModel) {
-    throw new Error("Required models (Inflow, Store) are not defined.");
+  if (!NetflowModel || !StoreModel) {
+    throw new Error("Required models (Netflow, Store) are not defined.");
   }
 
-  // --- A. Fetch Inflow and its Store Parent ---
+  // --- A. Fetch Netflow and its Store Parent ---
 
-  // Fetch the Inflow record to get the store_id (the parent FK)
-  const inflowRecord = await InflowModel.findByPk(local_inflow_id, {
+  // Fetch the Netflow record to get the store_id (the parent FK)
+  const netflowRecord = await NetflowModel.findByPk(local_netflow_id, {
     attributes: ["local_id", "store_id"], // Solo necesitamos los IDs
   });
 
-  if (!inflowRecord) {
-    // Si el Inflow no existe, no hay nada que desincronizar.
+  if (!netflowRecord) {
+    // Si el Netflow no existe, no hay nada que desincronizar.
     return false;
   }
 
-  const storeId = inflowRecord.store_id;
+  const storeId = netflowRecord.store_id;
 
-  // --- B. CASCADE 1: Unsync the Inflow Record Itself ---
+  // --- B. CASCADE 1: Unsync the Netflow Record Itself ---
 
   // La operación que disparó esta función ya debe haber establecido is_synced=false
-  // (ej. openInflow, closeInflow). Aquí aseguramos que el estado quede registrado.
+  // (ej. openNetflow, closeNetflow). Aquí aseguramos que el estado quede registrado.
   try {
-    await InflowModel.update(
+    await NetflowModel.update(
       { is_synced: false },
-      { where: { local_id: local_inflow_id } }
+      { where: { local_id: local_netflow_id } }
     );
   } catch (error) {
     // Este error es crítico, pero el proceso debe continuar la cascada.
     throw new Error(
-      `Error updating Inflow ${local_inflow_id} status: ${error.message}`
+      `Error updating Netflow ${local_netflow_id} status: ${error.message}`
     );
   }
 
@@ -1271,7 +1326,7 @@ async function unsync_cascade_up_from_inflow(local_inflow_id, sequelize) {
   return true;
 }
 
-async function getSales(inflow_id, sequelize) {
+async function getSales(netflow_id, sequelize) {
   if (!sequelize) {
     throw new Error(
       "Local database connection (sequelize) is not initialized."
@@ -1279,11 +1334,23 @@ async function getSales(inflow_id, sequelize) {
   }
   const Sale = sequelize.models.Sale;
 
-  const salesRes = await Sale.findAll({
-    where: { inflow_id: inflow_id },
+  salesData = await Sale.findAll({
+    where: { netflow_id: netflow_id },
+    include: [
+      {
+        model: SaleDetail, // 1. Include the SaleDetail model
+        as: "SaleDetails", // Use the alias defined in Sale.hasMany(SaleDetail, { as: 'SaleDetails' })
+        include: [
+          {
+            model: Product, // 2. Include the Product model inside SaleDetail
+            as: "Product", // Use the alias defined in SaleDetail.belongsTo(Product, { as: 'Product' })
+          },
+        ],
+      },
+    ],
   });
 
-  return salesRes;
+  return salesData;
 }
 
 async function unsync_cascade_up_from_profile(profile_local_id, sequelize) {
@@ -1344,11 +1411,11 @@ async function unsync_cascade_up_from_profile(profile_local_id, sequelize) {
   return true;
 }
 
-async function getLastInflow(store_id, sequelize) {
-  const Inflow = sequelize.models.Store;
+async function getLastNetflow(store_id, sequelize) {
+  const Netflow = sequelize.models.Store;
 
   try {
-    const lastInflow = await Inflow.findOne({
+    const lastNetflow = await Netflow.findOne({
       // Filter by the specific store ID
       where: {
         store_id: store_id,
@@ -1357,9 +1424,9 @@ async function getLastInflow(store_id, sequelize) {
       limit: 1,
     });
 
-    return lastInflow;
+    return lastNetflow;
   } catch (error) {
-    console.error("Error fetching last inflow for store:", error);
+    console.error("Error fetching last netflow for store:", error);
     throw error;
   }
 }
@@ -1370,17 +1437,17 @@ module.exports = {
   getProfiles,
   createProfile,
   getProfile,
-  getProfileAndDailyInflowData,
+  getProfileAndDailyNetflowData,
   deleteProfile,
   restoreProfile,
   restoreStore,
   updateProfile,
   updateStore,
-  createInflow,
-  closeInflow,
-  reopenInflow,
+  createNetflow,
+  closeNetflow,
+  reopenNetflow,
   createSale,
   readSales,
-  getLastInflow,
+  getLastNetflow,
   getSales,
 };
