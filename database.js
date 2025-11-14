@@ -688,18 +688,18 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
       limit: 1,
     });
 
-    let lastlocal_id = null;
+    let inflow_id = null;
     let salesData = [];
     let totalSalesAmount = 0;
     let salesCount = 0;
     let averageSale = 0;
 
     if (inflow) {
-      lastlocal_id = inflow.id;
+      inflow_id = inflow.id;
 
       // --- QUERY 3: Obtener todas las ventas de ese Inflow ---
       salesData = await Sale.findAll({
-        where: { local_id: lastlocal_id },
+        where: { local_id: inflow_id },
       });
 
       // Reutilizamos la lógica de agregación de tu código original
@@ -719,7 +719,7 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
 
     let data = {
       profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
-      last_local_id: lastlocal_id,
+      inflow_id: inflow_id,
       sales_summary: {
         total_amount: parseFloat(totalSalesAmount.toFixed(2)),
         count: salesCount,
@@ -947,6 +947,8 @@ async function createInflow(newInflow, sequelize) {
 
     return {
       local_id: local_id,
+      initial_amount: newInflow.starting_cash,
+      created_at: localInflowRecord.start_time,
     };
   } catch (error) {
     console.log(error);
@@ -1269,6 +1271,21 @@ async function unsync_cascade_up_from_inflow(local_inflow_id, sequelize) {
   return true;
 }
 
+async function getSales(inflow_id, sequelize) {
+  if (!sequelize) {
+    throw new Error(
+      "Local database connection (sequelize) is not initialized."
+    );
+  }
+  const Sale = sequelize.models.Sale;
+
+  const salesRes = await Sale.findAll({
+    where: { inflow_id: inflow_id },
+  });
+
+  return salesRes;
+}
+
 async function unsync_cascade_up_from_profile(profile_local_id, sequelize) {
   if (!sequelize) {
     throw new Error(
@@ -1326,6 +1343,26 @@ async function unsync_cascade_up_from_profile(profile_local_id, sequelize) {
 
   return true;
 }
+
+async function getLastInflow(store_id, sequelize) {
+  const Inflow = sequelize.models.Store;
+
+  try {
+    const lastInflow = await Inflow.findOne({
+      // Filter by the specific store ID
+      where: {
+        store_id: store_id,
+      },
+      order: [["createdAt", "DESC"]],
+      limit: 1,
+    });
+
+    return lastInflow;
+  } catch (error) {
+    console.error("Error fetching last inflow for store:", error);
+    throw error;
+  }
+}
 module.exports = {
   connectWithCredentials,
   getStores,
@@ -1344,4 +1381,6 @@ module.exports = {
   reopenInflow,
   createSale,
   readSales,
+  getLastInflow,
+  getSales,
 };

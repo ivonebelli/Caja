@@ -371,7 +371,10 @@
           profileId
         );
         currentProfile = res.data;
-        console.log(currentProfile);
+        localStorage.setItem(
+          "cachedProfileAndDailyInflowData",
+          JSON.stringify(currentProfile)
+        );
 
         document.getElementById("cashierName").textContent =
           currentProfile.profile.username;

@@ -156,10 +156,25 @@ ipcMain.handle(
 ipcMain.handle("db:create-inflow", async (event, newInflow) => {
   try {
     const res = await db.createInflow(newInflow, sqlite_instance);
-    return { success: true, data: res.local_id };
+    return {
+      success: true,
+      local_id: res.local_id,
+      created_at: res.created_at,
+      initial_amount: res.initial_amount,
+    };
   } catch (error) {
     return { success: false, error: error.message };
   }
+});
+
+ipcMain.handle("db:get-sales", async (event, inflow_id) => {
+  try {
+    const res = await db.getSales(inflow_id, sqlite_instance);
+    return {
+      success: true,
+      data: res,
+    };
+  } catch (error) {}
 });
 
 // FALTA UPDATE/DELETE PROFILE, CAJA Y VENTAS

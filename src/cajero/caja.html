@@ -279,10 +279,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="../shared/utils.js"></script>
     <script>
-      const urlParams = new URLSearchParams(window.location.search);
-      let inflow_id = urlParams.get("inflow_id");
-      let profile_id = urlParams.get("profile_id");
-      let store_id = urlParams.get("store_id");
+      const cachedProfileAndDailyInflowData = JSON.parse(
+        localStorage.getItem("cachedProfileAndDailyInflowData")
+      );
 
       const paymentMethods = [
         { id: "efectivo", name: "Efectivo", icon: "💵" },
@@ -296,11 +295,15 @@
         await checkCashStatus();
       }
 
+      async function getInflowSales() {
+        const res = await ipcRenderer.invoke("db:get-inflow-sales", inflow_id);
+      }
+
       async function checkCashStatus() {
         try {
           if (inflow_id !== "null") {
             showOpenStatus();
-            await loadSalesData();
+            //await loadSalesData();
           } else {
             showClosedStatus();
           }
@@ -308,7 +311,7 @@
           showClosedStatus();
         }
       }
-
+      //FIXME deberia cambiar la visual a caja abierta y pasar a poder cerrarla
       function showOpenStatus() {
         const banner = document.getElementById("statusBanner");
         banner.className = "status-banner open";
@@ -317,10 +320,8 @@
         <div class="status-info">
           <h3>Caja Abierta</h3>
           <p>Inicio: ${formatDateTime(
-            currentSession.openedAt
-          )} | Monto inicial: ${formatCurrency(
-          currentSession.initialAmount
-        )}</p>
+            created_at
+          )} | Monto inicial: ${formatCurrency(initial_amount)}</p>
         </div>
       `;
 
@@ -344,26 +345,17 @@
       }
 
       async function loadSalesData() {
-        const ordersData = await readData("orders.json");
-        const today = getCurrentDate();
-
-        salesData = ordersData.filter(
-          (o) =>
-            o.cashier === currentUser.profile.name &&
-            o.date === today &&
-            o.status !== "cancelled"
-        );
-
-        updateSummary();
+        const res = ipcRenderer.invoke("db:get-sales", inflow_id);
+        console.log(res);
+        //updateSummary();
       }
 
       function updateSummary() {
         const totalSales = salesData.reduce((sum, o) => sum + o.total, 0);
         const expectedTotal = currentSession.initialAmount + totalSales;
 
-        document.getElementById("summaryInitial").textContent = formatCurrency(
-          currentSession.initialAmount
-        );
+        document.getElementById("summaryInitial").textContent =
+          formatCurrency(initialAmount);
         document.getElementById("summarySales").textContent =
           formatCurrency(totalSales);
         document.getElementById("summaryExpenses").textContent =
@@ -373,7 +365,7 @@
 
         const paymentTotals = {};
         paymentMethods.forEach((pm) => {
-          paymentTotals[pm.id] = salesData
+          paymentTotals[pm.id] = salesDataj
             .filter(
               (o) =>
                 o.paymentMethod === pm.id ||
@@ -478,8 +470,11 @@
           opening_description: notes,
         });
         if (res.success === true) {
+          console.log(res);
           showNotification("Caja abierta correctamente", "success");
-          inflow_id = res.data;
+          inflow_id = res.local_id;
+          created_at = res.created_at;
+          initial_amount = res.initial_amount;
           checkCashStatus();
         } else {
           console.error("❌ Error abriendo caja:", res.error);
