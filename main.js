@@ -3,6 +3,7 @@ const path = require("path");
 const sync_daemon = require("./sync-daemon");
 const db = require("./database");
 const purge_daemon = require("./purge-daemon");
+const { Sequelize } = require("sequelize");
 const userDataPath = app.getPath("userData");
 const SQLITE_FILE_PATH = path.join(userDataPath, "local_sales_data.sqlite");
 let mainWindow;
@@ -61,10 +62,11 @@ ipcMain.handle("db:connect", async (event, credentials) => {
     credentials.dialect = "mariadb";
     mariadb_credentials = credentials;
     mariadb_instance = await db.connectWithCredentials(credentials); //conexion a mariadb
+
     return { success: true, message: "Conexión exitosa." };
   } catch (error) {
     // Modo offline
-    console.error(error.message);
+
     return { success: true, error: error.message };
   } finally {
     startsync_daemon(sqlite_instance, mariadb_instance, mariadb_credentials);
@@ -86,7 +88,6 @@ ipcMain.handle("db:get-stores", async (event) => {
     const stores = await db.getStores(sqlite_instance);
     return { success: true, data: stores.map((store) => store.toJSON()) };
   } catch (error) {
-    console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."
     return { success: false, error: error.message };
   }
@@ -98,7 +99,6 @@ ipcMain.handle("db:delete-store", async (event, id) => {
     const stores = await db.deleteStore(id, sqlite_instance);
     return { success: true, data: stores };
   } catch (error) {
-    console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."
     return { success: false, error: error.message };
   }
@@ -110,7 +110,6 @@ ipcMain.handle("db:get-profiles", async (event, store_id) => {
     const profiles = await db.getProfiles(store_id, sqlite_instance);
     return { success: true, data: profiles };
   } catch (error) {
-    console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."
     return { success: false, error: error.message };
   }
@@ -122,7 +121,6 @@ ipcMain.handle("db:get-profile", async (event, profile_id) => {
     const profile = await db.getProfile(profile_id, sqlite_instance);
     return { success: true, data: profile.map((profile) => profile.toJSON()) };
   } catch (error) {
-    console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."
     return { success: false, error: error.message };
   }
@@ -134,7 +132,6 @@ ipcMain.handle("db:create-profile", async (event, newProfile) => {
     const insert_id = await db.createProfile(newProfile, sqlite_instance);
     return { success: true, insert_id: insert_id };
   } catch (error) {
-    console.error(error.message);
     // Este error ahora puede ser "No hay conexión a la base de datos..."
     return { success: false, error: error.message };
   }
@@ -151,12 +148,19 @@ ipcMain.handle(
       );
       return { success: true, data: res };
     } catch (error) {
-      console.error(error.message);
-      // Este error ahora puede ser "No hay conexión a la base de datos..."
       return { success: false, error: error.message };
     }
   }
 );
+
+ipcMain.handle("db:create-inflow", async (event, newInflow) => {
+  try {
+    const res = await db.createInflow(newInflow, sqlite_instance);
+    return { success: true, data: res.local_id };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
 
 // FALTA UPDATE/DELETE PROFILE, CAJA Y VENTAS
 

@@ -184,7 +184,7 @@
 
       <div id="openForm" class="form-section" style="display: none">
         <h2 class="section-title">🔓 Abrir Caja del Día</h2>
-        <form onsubmit="openCash(event)">
+        <form onsubmit="createInflow(event)">
           <div class="form-group">
             <label class="form-label">Monto Inicial de Caja</label>
             <input
@@ -244,7 +244,7 @@
 
         <div class="form-section">
           <h2 class="section-title">🔒 Cerrar Caja del Día</h2>
-          <form onsubmit="closeCash(event)">
+          <form onsubmit="closeInflow(event)">
             <p style="color: var(--text-light); margin-bottom: 20px">
               Ingresa el monto real que hay en caja para cada medio de pago:
             </p>
@@ -279,6 +279,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="../shared/utils.js"></script>
     <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      let inflow_id = urlParams.get("inflow_id");
+      let profile_id = urlParams.get("profile_id");
+      let store_id = urlParams.get("store_id");
+
       const paymentMethods = [
         { id: "efectivo", name: "Efectivo", icon: "💵" },
         { id: "mercadopago", name: "Mercado Pago", icon: "💳" },
@@ -286,33 +291,20 @@
         { id: "credito", name: "Crédito", icon: "💳" },
         { id: "transferencia", name: "Transferencia", icon: "🏦" },
       ];
-      let inflow_id = null;
-      let profile_id = null;
 
       async function init() {
-        const urlParams = new URLSearchParams(window.location.search);
-        inflow_id = urlParams.get("inflow_id");
-        profile_id = urlParams.get("profile_id");
-        if (inflow_id === undefined) {
-          inflow_id = null;
-        }
-
-        await checkCashStatus(inflow_id);
+        await checkCashStatus();
       }
 
-      async function checkCashStatus(inflow_id) {
+      async function checkCashStatus() {
         try {
-          console.log(inflow_id + " !!!!");
-          if (inflow_id !== null) {
-            console.log("✅ Caja abierta encontrada");
+          if (inflow_id !== "null") {
             showOpenStatus();
             await loadSalesData();
           } else {
-            console.log("❌ No hay caja abierta");
             showClosedStatus();
           }
         } catch (error) {
-          console.error("❌ Error verificando estado de caja:", error);
           showClosedStatus();
         }
       }
@@ -423,10 +415,10 @@
             (pm) => `
         <div class="form-group">
           <label class="form-label">${pm.icon} ${pm.name}</label>
-          <input 
-            type="number" 
-            class="form-input close-input" 
-            id="close_${pm.id}" 
+          <input
+            type="number"
+            class="form-input close-input"
+            id="close_${pm.id}"
             placeholder="Esperado: ${formatCurrency(paymentTotals[pm.id])}"
             step="0.01"
             min="0"
@@ -473,32 +465,29 @@
         }
       }
       //TODO rehacer bien
-      async function openCash(event) {
+      async function createInflow(event) {
         event.preventDefault();
 
         const initialAmount = parseFloat(
           document.getElementById("initialAmount").value
         );
         const notes = document.getElementById("openNotes").value;
-        try {
-          if (saved) {
-            console.log("✅ Caja abierta correctamente");
-            showNotification("Caja abierta correctamente", "success");
-            currentSession = newSession;
-
-            setTimeout(async () => {
-              await checkCashStatus();
-            }, 500);
-          } else {
-            throw new Error("No se pudo guardar la sesión de caja");
-          }
-        } catch (error) {
-          console.error("❌ Error abriendo caja:", error);
+        const res = await ipcRenderer.invoke("db:create-inflow", {
+          store_id: store_id,
+          starting_cash: initialAmount,
+          opening_description: notes,
+        });
+        if (res.success === true) {
+          showNotification("Caja abierta correctamente", "success");
+          inflow_id = res.data;
+          checkCashStatus();
+        } else {
+          console.error("❌ Error abriendo caja:", res.error);
           showNotification("Error al abrir la caja", "error");
         }
       }
       //TODO: rehacer bien
-      async function closeCash(event) {
+      async function closeInflow(event) {
         event.preventDefault();
 
         if (
@@ -509,31 +498,9 @@
           return;
         }
 
-        const closedAmounts = {};
-        paymentMethods.forEach((pm) => {
-          const input = document.getElementById(`close_${pm.id}`);
-          closedAmounts[pm.id] = input ? parseFloat(input.value) || 0 : 0;
-        });
-
-        const notes = document.getElementById("closeNotes").value;
-
-        currentSession.status = "closed";
-        currentSession.closedAt = new Date().toISOString();
-        currentSession.closedAmounts = closedAmounts;
-        currentSession.closeNotes = notes;
-
-        const cashData = await readData("cash_register.json");
-        const index = cashData.sessions.findIndex(
-          (s) => s.id === currentSession.id
-        );
-        cashData.sessions[index] = currentSession;
-        await writeData("cash_register.json", cashData);
-
-        console.log("=== INICIANDO GENERACIÓN DE PDF ===");
-
         try {
           await generatePDFReport();
-          console.log("=== PDF GENERADO EXITOSAMENTE ===");
+
           showNotification(
             "Caja cerrada y PDF generado correctamente",
             "success"
@@ -552,8 +519,6 @@
       }
 
       async function generatePDFReport() {
-        console.log("=== GENERANDO REPORTE PDF ===");
-
         try {
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
@@ -809,15 +774,11 @@
           const cashierName = currentUser.profile.name.replace(/\s+/g, "_");
           const fileName = `Cierre_Caja_${cashierName}_${dateStr}_${timeStr}.pdf`;
 
-          console.log("Nombre del archivo:", fileName);
-
           const pdfBuffer = doc.output("arraybuffer");
           const saved = await saveExcelReport(fileName, pdfBuffer);
 
           if (saved) {
-            console.log("✅ PDF guardado exitosamente");
           } else {
-            console.error("❌ Error al guardar PDF");
             throw new Error("Failed to save PDF file");
           }
         } catch (error) {

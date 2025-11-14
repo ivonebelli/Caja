@@ -450,7 +450,6 @@ async function connectWithCredentials(credentials) {
 
     // Prueba la conexión
     await sequelize.authenticate();
-    console.log(`✅ Conexión a la base de datos (${dialect}) establecida.`);
 
     // Inicializa los modelos
     initModels(sequelize);
@@ -478,8 +477,6 @@ async function seedInitialData(sequelize) {
   const storeCount = await StoreModel.count();
 
   if (storeCount === 0) {
-    console.log("Seeding initial configuration data...");
-
     // --- 1. CATEGORIES ---
     // Insertamos created_at y marcamos como ya sincronizado
     await sequelize.query(
@@ -537,8 +534,6 @@ async function seedInitialData(sequelize) {
     );
 
     // No hay seeding para Inflows o Sales, ya que se crean en tiempo de ejecución.
-
-    console.log("Initial seeding complete.");
   }
 }
 
@@ -550,10 +545,6 @@ async function getStores(sequelize) {
       where: { is_active: true },
     });
 
-    console.log(
-      `Consulta 'getStores' ejecutada, ${rows.length} tiendas encontradas.`
-    );
-    console.log(rows);
     return rows;
   } catch (error) {
     console.error("Error al obtener las tiendas (getStores):", error.message);
@@ -575,14 +566,8 @@ async function deleteStore(storeId, sequelize) {
 
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
-      console.log(
-        `✅ Tienda ${storeId} desactivada (is_active = FALSE) correctamente.`
-      );
       return true;
     } else {
-      console.warn(
-        `⚠️ Intento de desactivar tienda ${storeId}, pero no se encontró.`
-      );
       return false;
     }
   } catch (error) {
@@ -602,7 +587,6 @@ async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   try {
-    console.log("---------------------");
     const rows = await Profile.findAll(
       { raw: true, logging: console.log },
       {
@@ -610,9 +594,6 @@ async function getProfiles(store_id, sequelize) {
       }
     );
 
-    console.log(
-      `Consulta 'getProfiles' ejecutada, ${rows.length} perfiles encontrados.`
-    );
     return rows;
   } catch (error) {
     console.error(
@@ -625,19 +606,18 @@ async function getProfiles(store_id, sequelize) {
 
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-  console.log(newProfile);
+
   const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo
     // (local_id, username, role, pin, photo)
     const createdProfile = await Profile.create(newProfile);
-    console.log(createdProfile);
+
     if (sequelize.dialect === "sqlite") {
       unsync_cascade_up_from_profile(createdProfile.local_id, sequelize);
     }
 
     if (createdProfile.local_id) {
-      console.log(`✅ Nuevo perfil creado con ID: ${createdProfile.local_id}`);
       return createdProfile.local_id;
     } else {
       throw new Error("Error desconocido al insertar el perfil.");
@@ -663,7 +643,6 @@ async function getProfile(local_id, sequelize) {
       },
     });
 
-    console.log(`Consulta 'getProfile' ejecutada.`);
     // Sequelize devuelve un solo objeto (o null) con findByPk
     return profile ? [profile] : []; // Mantenemos el formato de array de tu código original
   } catch (error) {
@@ -737,8 +716,7 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
     }
 
     const profileJSON = profileData.toJSON();
-    console.log("-----------------");
-    console.log("get inflows");
+
     let data = {
       profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
       last_local_id: lastlocal_id,
@@ -749,7 +727,6 @@ async function getProfileAndDailyInflowData(local_id, sequelize) {
       },
       sales_list: salesData,
     };
-    console.log(data);
 
     // Devolvemos la misma estructura de objeto que tu código original
     return data;
@@ -779,9 +756,6 @@ async function deleteProfile(local_id, sequelize) {
     }
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
-      console.log(
-        `✅ Perfil ${local_id} desactivado (is_active = FALSE) correctamente.`
-      );
       return true;
     } else {
       console.warn(
@@ -819,9 +793,6 @@ async function restoreProfile(local_id, sequelize) {
     }
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
-      console.log(
-        `✅ Perfil ${local_id} restaurado (is_active = FALSE) correctamente.`
-      );
       return true;
     } else {
       console.warn(
@@ -856,9 +827,6 @@ async function restoreStore(local_id, sequelize) {
 
     // 'affectedCount' será 1 si se actualizó una fila, o 0 si no se encontró el storeId.
     if (affectedCount > 0) {
-      console.log(
-        `✅ Tienda ${local_id} restaurado (is_active = FALSE) correctamente.`
-      );
       return true;
     } else {
       console.warn(
@@ -904,7 +872,6 @@ async function updateProfile(newProfile, sequelize) {
     }
 
     if (affectedCount > 0) {
-      console.log(`✅ Profile ID ${newProfile.local_id} updated successfully.`);
       return true; // Or return the updated row count
     } else {
       console.warn(
@@ -942,7 +909,6 @@ async function updateStore(newStore, sequelize) {
     });
 
     if (affectedCount > 0) {
-      console.log(`✅ Store ID ${newStore.local_id} updated successfully.`);
       return true;
     } else {
       console.warn(
@@ -962,11 +928,11 @@ async function updateStore(newStore, sequelize) {
 
 async function createInflow(newInflow, sequelize) {
   const Inflow = sequelize.models.Inflow;
-
   // Datos de la sesión de caja principal
   const inflowData = {
-    local_id: newInflow.local_id,
+    store_id: newInflow.store_id,
     starting_cash: newInflow.starting_cash,
+    opening_description: newInflow.opening_description,
   };
 
   let localInflowRecord;
@@ -975,25 +941,17 @@ async function createInflow(newInflow, sequelize) {
   try {
     localInflowRecord = await Inflow.create(inflowData);
     const local_id = localInflowRecord.local_id;
-
     if (sequelize.dialect === "sqlite") {
       unsync_cascade_up_from_inflow(local_id, sequelize);
     }
-    console.log(`✅ Sesión de caja local (Inflow ID ${local_id}) creada.`);
+
+    return {
+      local_id: local_id,
+    };
   } catch (error) {
-    console.error(
-      "❌ FATAL: Error al crear el Inflow localmente.",
-      error.message
-    );
+    console.log(error);
     throw new Error("Fallo al guardar la sesión de caja localmente.");
   }
-
-  // --- 3. RETORNO FINAL ---
-  return {
-    success: true,
-    localId: local_id,
-    remoteId: remotelocal_id, // Null si falla/offline
-  };
 }
 
 async function closeInflow(local_id, sequelize) {
@@ -1033,7 +991,6 @@ async function closeInflow(local_id, sequelize) {
     }
 
     if (affectedCount > 0) {
-      console.log(`✅ Inflow Local ID ${local_id} closed.`);
       return true;
     } else {
       console.warn(
@@ -1050,7 +1007,7 @@ async function closeInflow(local_id, sequelize) {
   }
 }
 
-async function openInflow(local_id, sequelize) {
+async function reopenInflow(local_id, sequelize) {
   // El parámetro ahora se llama 'sequelize'
   if (!sequelize) {
     throw new Error(
@@ -1087,9 +1044,6 @@ async function openInflow(local_id, sequelize) {
     }
 
     if (affectedCount > 0) {
-      console.log(
-        `✅ Inflow Local ID ${local_id} reabierto (end_time = NULL) correctamente.`
-      );
       return true;
     } else {
       console.warn(
@@ -1138,9 +1092,6 @@ async function createSale(local_id, newSale, sequelize) {
     if (sequelize.dialect === "sqlite") {
       unsync_cascade_up_from_sale(localSaleId, sequelize);
     }
-    console.log(
-      `✅ Sale ID ${localSaleId} created locally for Inflow ${local_local_id}.`
-    );
 
     return {
       success: true,
@@ -1183,10 +1134,6 @@ async function readSales(local_id, sequelize) {
 
     // 3. Convert results to plain JavaScript objects for safe return (JSONify)
     const plainSales = sales.map((sale) => sale.toJSON());
-
-    console.log(
-      `✅ Read ${plainSales.length} sales for Inflow ID ${local_local_id}.`
-    );
 
     return plainSales;
   } catch (error) {
@@ -1394,7 +1341,7 @@ module.exports = {
   updateStore,
   createInflow,
   closeInflow,
-  openInflow,
+  reopenInflow,
   createSale,
   readSales,
 };
