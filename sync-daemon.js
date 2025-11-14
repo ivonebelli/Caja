@@ -103,16 +103,12 @@ async function syncLocalToRemote() {
   console.log("--- Starting Sync Cycle ---");
 
   try {
-    // 1. Find UN-SYNCHRONIZED Inflows
-    // We order by local_id to guarantee chronological insertion order on the server.
     const pendingInflows = await InflowLocal.findAll({
       where: {
         is_synced: false,
-
-        end_time: { [Op.not]: null },
       },
       order: [["local_id", "ASC"]],
-      limit: 50, // Limit the batch size
+      limit: 2,
     });
 
     if (pendingInflows.length === 0) {

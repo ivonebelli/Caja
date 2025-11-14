@@ -424,8 +424,11 @@ function initModels(sequelize) {
   });
   SaleDetail.belongsTo(Sale, { foreignKey: "sale_id", as: "sale" });
 
-  Product.hasMany(SaleDetail, { foreignKey: "product_id", as: "sale_details" });
-  SaleDetail.belongsTo(Product, { foreignKey: "product_id", as: "product" });
+  Product.belongsTo(SaleDetail, {
+    foreignKey: "product_id",
+    as: "sale_details",
+  });
+  SaleDetail.hasMany(Product, { foreignKey: "product_id", as: "product" });
 
   // Store <-> Profile
   Store.hasMany(Profile, {
@@ -710,6 +713,8 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
   const Sale = sequelize.models.Sale;
   const Expense = sequelize.models.Expense;
   const Inflow = sequelize.models.Inflow;
+  const SaleDetail = sequelize.models.SaleDetail;
+  const Product = sequelize.models.Product;
 
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
@@ -734,13 +739,42 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
 
     let netflow = await Netflow.findOne({
       where: {
-        local_id: storeId,
+        store_id: storeId,
         start_time: {
-          [Op.between]: [todayStart, todayEnd], // [Op.gte]: todayStart
+          [Op.gte]: todayStart, // Start of today
+          [Op.lt]: todayEnd, // Start of tomorrow
         },
       },
       order: [["start_time", "DESC"]],
       limit: 1,
+      include: [
+        {
+          model: Sale,
+          as: "sales",
+          include: [
+            {
+              model: SaleDetail,
+              as: "details",
+              include: [
+                {
+                  model: Product,
+                  as: "product",
+                },
+              ],
+            },
+          ],
+        },
+
+        {
+          model: Expense,
+          as: "expenses",
+        },
+
+        {
+          model: Inflow,
+          as: "inflows",
+        },
+      ],
     });
     let netflow_id = null;
     let salesData = [];
@@ -750,40 +784,43 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
 
     if (netflow) {
       netflow_id = netflow.local_id;
-      netflow = netflow.toJSON();
-      // --- QUERY 3: Obtener todas las ventas de ese Netflow ---
-      salesData = await Sale.findAll({
-        where: { netflow_id: netflow_id },
-        include: [
-          {
-            model: SaleDetail, // 1. Include the SaleDetail model
-            as: "SaleDetails", // Use the alias defined in Sale.hasMany(SaleDetail, { as: 'SaleDetails' })
-            include: [
-              {
-                model: Product, // 2. Include the Product model inside SaleDetail
-                as: "Product", // Use the alias defined in SaleDetail.belongsTo(Product, { as: 'Product' })
-              },
-            ],
-          },
-        ],
-      });
-      expensesData = await Expense.findAll({
-        where: { netflow_id: netflow_id },
-      });
-      inflowsData = await Inflow.findAll({
-        where: { netflow_id: netflow_id },
-      });
-      // Reutilizamos la lógica de agregación de tu código original
-      salesCount = salesData.length;
+      // Convert to plain object for easier manipulation
+      const netflowData = netflow.toJSON();
 
-      if (salesCount > 0) {
-        totalSalesAmount = salesData.reduce(
-          (sum, sale) => sum + parseFloat(sale.total_amount),
-          0
-        );
-        averageSale = totalSalesAmount / salesCount;
-        salesData = salesData.map((sale) => sale.toJSON());
-      }
+      // --- 1. Sales Aggregation ---
+      const salesList = netflowData.sales || [];
+      const salesCount = salesList.length;
+
+      const totalSalesAmount = salesList.reduce(
+        (sum, sale) => sum + parseFloat(sale.total_amount),
+        0
+      );
+
+      const salesAverage = salesCount > 0 ? totalSalesAmount / salesCount : 0;
+
+      // --- 2. Inflow Aggregation ---
+      const totalInflowAmount = (netflowData.inflows || []).reduce(
+        (sum, inflow) => sum + parseFloat(inflow.amount),
+        0
+      );
+
+      // --- 3. Expense Aggregation ---
+      const totalExpenseAmount = (netflowData.expenses || []).reduce(
+        (sum, expense) => sum + parseFloat(expense.amount),
+        0
+      );
+
+      // --- 4. Attach Summary Data ---
+      netflowData.sales_summary = {
+        count: salesCount,
+        total: parseFloat(totalSalesAmount.toFixed(2)),
+        average: parseFloat(salesAverage.toFixed(2)),
+      };
+
+      netflowData.inflow_total = parseFloat(totalInflowAmount.toFixed(2));
+      netflowData.expense_total = parseFloat(totalExpenseAmount.toFixed(2));
+
+      return netflowData;
     }
 
     const profileJSON = profileData.toJSON();
@@ -797,8 +834,6 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
         count: salesCount,
         average_sale: parseFloat(averageSale.toFixed(2)),
       },
-      inflows_summary: null,
-      expenses_summary: null,
       sales_list: salesData,
     };
 
