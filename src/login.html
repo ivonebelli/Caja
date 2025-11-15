@@ -276,7 +276,7 @@
       };
 
       async function loadProfile() {
-        const res = await ipcRenderer.invoke("db:get-profile", profileId);
+        const res = await window.dbApi.getProfile(profileId);
         currentProfile = res.data[0];
         // Determinar el tipo de perfil y longitud del PIN
         pinLength = 4;

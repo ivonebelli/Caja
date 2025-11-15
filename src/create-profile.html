@@ -451,7 +451,7 @@
         };
 
         console.log(newProfile);
-        const res = await ipcRenderer.invoke("db:create-profile", newProfile);
+        const res = await window.dbApi.createProfile(newProfile);
 
         if (res.success) {
           showNotification("Perfil creado exitosamente", "success");

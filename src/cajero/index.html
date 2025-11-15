@@ -364,10 +364,7 @@
       const profileId = urlParams.get("profile_id");
       let currentProfile = null;
       async function init() {
-        const res = await ipcRenderer.invoke(
-          "db:get-profile-and-daily-netflow-data",
-          profileId
-        );
+        const res = await window.dbApi.getProfileAndDailyNetflowData(profileId);
 
         currentProfile = res.data;
         console.log(currentProfile);
