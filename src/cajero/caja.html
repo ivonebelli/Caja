@@ -296,10 +296,10 @@
           "profileAndNetflowData"
         );
 
-        let cachedData = storedValue;
-        console.log(cachedData);
+        let currentProfile = storedValue;
+        console.log(currentProfile);
         try {
-          if (cachedData.netflow_id !== null) {
+          if (currentProfile.netflow_id !== null) {
             // console.log("abierto");
             await showOpenStatus();
             //await updateSummary();
@@ -314,7 +314,7 @@
         const storedValue = await window.storageApi.getItem(
           "profileAndNetflowData"
         );
-        let cachedData = storedValue;
+        let currentProfile = storedValue;
         const banner = document.getElementById("statusBanner");
 
         banner.className = "status-banner open";
@@ -327,8 +327,8 @@
       `;
         //FIXME esta mal entonces crashea la funcion y no se cambia a caja abierta
         // <p>
-        //   Inicio: ${formatDateTime(cachedData.netflow_data.start_time)} | Monto
-        //   inicial: ${formatCurrency(cachedData.netflowData.starting_cash)}
+        //   Inicio: ${formatDateTime(currentProfile.netflow_data.start_time)} | Monto
+        //   inicial: ${formatCurrency(currentProfile.netflowData.starting_cash)}
         // </p>;
         document.getElementById("openForm").style.display = "none";
         document.getElementById("openInfo").style.display = "block";
@@ -350,20 +350,19 @@
       }
 
       async function updateSummary() {
-        const storedValue = await window.storageApi.getItem(
+        const currentProfile = await window.storageApi.getItem(
           "profileAndNetflowData"
         );
-        let cachedData = storedValue;
         document.getElementById("summaryInitial").textContent = formatCurrency(
-          cachedData.netflow_data.starting_cash
+          currentProfile.netflow_data.starting_cash
         );
         document.getElementById("summarySales").textContent = formatCurrency(
-          cachedData.sales_summary.total_amount
+          currentProfile.sales_summary.total_amount
         );
 
         document.getElementById("summaryExpected").textContent = formatCurrency(
-          cachedData.sales_summary.total_amount +
-            cachedData.netflow_data.starting_cash
+          currentProfile.sales_summary.total_amount +
+            currentProfile.netflow_data.starting_cash
         );
 
         const breakdownHTML = paymentMethods
@@ -452,9 +451,9 @@
         const storedValue = await window.storageApi.getItem(
           "profileAndNetflowData"
         );
-        let cachedData = storedValue;
+        let currentProfile = storedValue;
         const res = await window.dbApi.createNetflow({
-          store_id: cachedData.profile.store_id,
+          store_id: currentProfile.profile.store_id,
           starting_cash: initialAmount,
           opening_description: notes,
         });
@@ -462,13 +461,13 @@
           showNotification("Caja abierta correctamente", "success");
           netflow_id = res.local_id;
           const res2 = await window.dbApi.getProfileAndDailyNetflowData(
-            cachedData.profile.local_id
+            currentProfile.profile.local_id
           );
           if (res2.success === true) {
             window.storageApi.setItem("profileAndNetflowData", res2.data);
-            cachedData = res2.data;
+            currentProfile = res2.data;
           }
-          checkCashStatus();
+          await checkCashStatus();
         } else {
           console.error("❌ Error abriendo caja:", res.error);
           showNotification("Error al abrir la caja", "error");

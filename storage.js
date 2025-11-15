@@ -1,6 +1,7 @@
 const appSessionStore = {};
 function getStoredValue(key) {
-  return JSON.parse(appSessionStore[key]);
+  let value = appSessionStore[key];
+  return value !== undefined ? JSON.parse(value) : value;
 }
 
 function setStoredValue({ key, value }) {

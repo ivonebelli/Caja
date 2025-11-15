@@ -147,15 +147,20 @@ function initModels(sequelize) {
           field: "local_id",
         },
         store_id: { type: DataTypes.INTEGER, allowNull: false },
-        opening_description: { type: DataTypes.STRING(255), allowNull: true },
-        closing_description: { type: DataTypes.STRING(255), allowNull: true },
-        start_time: {
+        initial_description: { type: DataTypes.STRING(255), allowNull: true },
+        final_description: { type: DataTypes.STRING(255), allowNull: true },
+        initial_time: {
           type: DataTypes.DATE,
           allowNull: false,
           defaultValue: Sequelize.NOW,
         },
-        end_time: { type: DataTypes.DATE, allowNull: true },
-        starting_cash: {
+        final_time: { type: DataTypes.DATE, allowNull: true },
+        initial_amount: {
+          type: DataTypes.DECIMAL(10, 2),
+          allowNull: false,
+          defaultValue: 0.0,
+        },
+        final_amount: {
           type: DataTypes.DECIMAL(10, 2),
           allowNull: false,
           defaultValue: 0.0,
@@ -259,153 +264,6 @@ function initModels(sequelize) {
     );
     // FIXME modelos remotos no estan actualizados al nuevo schema
   } else {
-    // --- CATEGORY (Estándar) ---
-    Category = sequelize.define(
-      "Category",
-      {
-        category_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
-        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-      },
-      { timestamps: true, tableName: "Categories" }
-    );
-
-    // --- PRODUCT (NUEVO - Estándar) ---
-    Product = sequelize.define(
-      "Product",
-      {
-        product_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        category_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Category
-        name: { type: DataTypes.STRING(100), allowNull: false },
-        price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-      },
-      { timestamps: true, tableName: "Products" }
-    );
-
-    // --- STORE (Estándar - Sin category_id) ---
-    Store = sequelize.define(
-      "Store",
-      {
-        local_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        name: { type: DataTypes.STRING(100), allowNull: false, unique: true },
-        location: { type: DataTypes.STRING(255), allowNull: true },
-        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-      },
-      { timestamps: true, tableName: "Stores" }
-    );
-
-    // --- PROFILE ---
-    Profile = sequelize.define(
-      "Profile",
-      {
-        local_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        store_id: { type: DataTypes.INTEGER, allowNull: false },
-        username: {
-          type: DataTypes.STRING(50),
-          allowNull: false,
-          unique: true,
-        },
-        role: {
-          type: DataTypes.ENUM(
-            "cajero",
-            "administrativo",
-            "subgerencia",
-            "gerente"
-          ),
-          allowNull: false,
-        },
-        pin: {
-          type: DataTypes.STRING(4),
-          allowNull: false,
-          defaultValue: "1234",
-        },
-        photo: { type: DataTypes.TEXT("long"), allowNull: true },
-        is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-      },
-      { timestamps: true, tableName: "Profiles" }
-    );
-
-    // --- INFLOW (profile_id ELIMINADO) ---
-    Netflow = sequelize.define(
-      "Netflow",
-      {
-        local_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        store_id: { type: DataTypes.INTEGER, allowNull: false },
-
-        opening_description: { type: DataTypes.STRING(255), allowNull: true },
-        closing_description: { type: DataTypes.STRING(255), allowNull: true },
-        // profile_id ELIMINADO
-        start_time: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
-        end_time: { type: DataTypes.DATE, allowNull: true },
-        starting_cash: {
-          type: DataTypes.DECIMAL(10, 2),
-          allowNull: false,
-          defaultValue: 0.0,
-        },
-      },
-      { timestamps: true, tableName: "Netflows" }
-    );
-
-    // --- SALE DETAIL (NUEVO - Estándar) ---
-    SaleDetail = sequelize.define(
-      "SaleDetail",
-      {
-        detail_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        sale_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Sale
-        product_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Product
-        quantity: { type: DataTypes.INTEGER, allowNull: false },
-        unit_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-      },
-      { timestamps: true, tableName: "SaleDetails" }
-    );
-
-    // --- SALE ---
-    Sale = sequelize.define(
-      "Sale",
-      {
-        local_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-        },
-        netflow_id: { type: DataTypes.INTEGER, allowNull: false },
-        total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-        sale_date: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
-      },
-      { timestamps: true, tableName: "Sales" }
-    );
   }
 
   // ====================================================================
@@ -521,74 +379,92 @@ async function connectWithCredentials(credentials) {
 }
 
 async function seedInitialData(sequelize) {
-  // Usamos esta constante para referenciar la hora actual en las inserciones RAW SQL
-  const NOW_SQL = "DATETIME('now')";
+  // database.js - Función de Seeding/Setup
 
-  // Asumimos que los modelos ya están inicializados en sequelize.models
-  const StoreModel = sequelize.models.Store;
+  const GENESIS_DATE = "2000-01-01 00:00:00.000"; // Define la fecha
 
-  // Verificamos si las tiendas existen. Si no, significa que la BD está vacía.
-  const storeCount = await StoreModel.count();
-
-  if (storeCount === 0) {
-    // --- 1. CATEGORIES ---
-    // Insertamos createdAt y marcamos como ya sincronizado
-    await sequelize.query(
-      `
-            INSERT INTO Categories (local_id, name, remote_id, is_synced, createdAt, updatedAt) VALUES
+  // --- PASO 1: Insertar Categorías ---
+  await sequelize.query(
+    `
+    INSERT INTO Categories (local_id, name, remote_id, is_synced, createdAt, updatedAt) VALUES
     (1, 'Impresiones', 1, TRUE, DATETIME('now'), DATETIME('now'));
-            `,
-      { type: sequelize.QueryTypes.INSERT }
-    );
-    await sequelize.query(
-      "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Categories';"
-    );
+    `,
+    { type: sequelize.QueryTypes.INSERT }
+  );
 
-    // --- 2. PRODUCTS (NUEVO) ---
-    await sequelize.query(
-      `
-            INSERT INTO Products (local_id, category_id, name, price, remote_id, is_synced, createdAt, updatedAt) VALUES
-            (1, 1, 'Cuaderno', 10.50, 1, TRUE, DATETIME('now'), DATETIME('now'));
+  // --- PASO 2: Insertar Productos (Depende de Categories) ---
+  await sequelize.query(
+    `
+    INSERT INTO Products (local_id, category_id, name, price, remote_id, is_synced, createdAt, updatedAt) VALUES
+    (1, 1, 'Cuaderno', 10.50, 1, TRUE, DATETIME('now'), DATETIME('now'));
+    `,
+    { type: sequelize.QueryTypes.INSERT }
+  );
 
-            `,
-      { type: sequelize.QueryTypes.INSERT }
-    );
-    await sequelize.query(
-      "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Products';"
-    );
+  // --- PASO 3: Insertar Tiendas (Stores) ---
+  await sequelize.query(
+    `
+    INSERT INTO Stores (local_id, name, location, remote_id, is_synced, createdAt, updatedAt) VALUES
+    (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, TRUE, DATETIME('now'), DATETIME('now'));
+    `,
+    { type: sequelize.QueryTypes.INSERT }
+  );
 
-    // --- 3. STORES (Tiendas - Sin category_id) ---
-    await sequelize.query(
-      `
-            INSERT INTO Stores (local_id, name, location,remote_id, is_synced, createdAt, updatedAt) VALUES
-            (1, 'Boulevard Marítimo', 'Av. Costanera 123', 1, TRUE, DATETIME('now'), DATETIME('now')),
-            (2, 'PhotoStation', 'Calle Imagen 456',  2, TRUE, DATETIME('now'), DATETIME('now'));
-            `,
-      { type: sequelize.QueryTypes.INSERT }
+  await sequelize.query(
+    `
+    INSERT INTO Netflows (
+        store_id, 
+        initial_description, 
+        final_description, 
+        initial_time,        
+        final_time,          
+        initial_amount, 
+        final_amount, 
+        is_synced,     
+        createdAt, 
+        updatedAt
+    ) VALUES (
+        1,
+        'Registro CERO (Genesis)',
+        'Cierre automático del sistema',
+        '${GENESIS_DATE}', 
+        '${GENESIS_DATE}',  
+        0.00, 
+        0.00,
+        TRUE,               
+        DATETIME('now'), 
+        DATETIME('now')
     );
-    await sequelize.query(
-      "UPDATE sqlite_sequence SET seq = 2 WHERE name = 'Stores';"
-    );
+    `,
+    { type: sequelize.QueryTypes.INSERT }
+  );
 
-    // --- 4. PROFILES (Perfiles) ---
-    // Corregido: Se añade createdAt explícitamente.
-    // Asumimos que todos pertenecen al store_id: 1, 2, 3 que existe localmente.
-    await sequelize.query(
-      `
-            INSERT INTO Profiles (local_id, store_id, username, role, pin,remote_id, is_synced, createdAt, updatedAt) VALUES
-            (1, 1, 'Juan Gonzalez', 'cajero', '1234', 1, TRUE, DATETIME('now'), DATETIME('now')),
-            (2, 1, 'John Smith', 'cajero', '1234', 2, TRUE, DATETIME('now'), DATETIME('now')),
-            (3, 2, 'Ricardo Haliburton', 'cajero', '1234',  3, TRUE, DATETIME('now'), DATETIME('now')),
-            (4, 2, 'Pablo Smith', 'cajero', '1234', 4, TRUE, DATETIME('now'), DATETIME('now'));
-            `,
-      { type: sequelize.QueryTypes.INSERT }
-    );
-    await sequelize.query(
-      "UPDATE sqlite_sequence SET seq = 4 WHERE name = 'Profiles';"
-    );
+  // --- PASO 5: Insertar Perfiles (Depende de Stores) ---
+  await sequelize.query(
+    `
+    INSERT INTO Profiles (local_id, store_id, username, role, pin, remote_id, is_synced, createdAt, updatedAt) VALUES
+    (1, 1, 'Juan Gonzalez', 'cajero', '1234', 1, TRUE, DATETIME('now'), DATETIME('now')),
+    (2, 1, 'John Smith', 'cajero', '1234', 2, TRUE, DATETIME('now'), DATETIME('now'));
+    `,
+    { type: sequelize.QueryTypes.INSERT }
+  );
 
-    // No hay seeding para Netflows o Sales, ya que se crean en tiempo de ejecución.
-  }
+  // --- PASO 6: Resetear Secuencias (Opcional, pero recomendado) ---
+  await sequelize.query(
+    "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Categories';"
+  );
+  await sequelize.query(
+    "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Products';"
+  );
+  await sequelize.query(
+    "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Stores';"
+  );
+  await sequelize.query(
+    "UPDATE sqlite_sequence SET seq = 1 WHERE name = 'Netflows';"
+  );
+  await sequelize.query(
+    "UPDATE sqlite_sequence SET seq = 2 WHERE name = 'Profiles';"
+  );
 }
 
 async function getStores(sequelize) {
@@ -598,6 +474,7 @@ async function getStores(sequelize) {
     const rows = await Store.findAll({
       where: { is_active: true },
     });
+    console.log(rows);
 
     return rows;
   } catch (error) {
@@ -649,7 +526,6 @@ async function getProfiles(store_id, sequelize) {
       raw: true,
       logging: console.log,
     });
-    console.log(rows);
     return rows;
   } catch (error) {
     console.error(
@@ -743,12 +619,12 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
     let netflow = await Netflow.findOne({
       where: {
         store_id: storeId,
-        start_time: {
+        initial_time: {
           [Op.gte]: todayStart, // Start of today
           [Op.lt]: todayEnd, // Start of tomorrow
         },
       },
-      order: [["start_time", "DESC"]],
+      order: [["initial_time", "DESC"]],
       limit: 1,
       include: [
         {
@@ -1035,13 +911,23 @@ async function createNetflow(newNetflow, sequelize) {
   // Datos de la sesión de caja principal
   const netflowData = {
     store_id: newNetflow.store_id,
-    starting_cash: newNetflow.starting_cash,
-    opening_description: newNetflow.opening_description,
+    initial_amount: newNetflow.initial_amount,
+    initial_description: newNetflow.opening_description,
   };
 
   let localNetflowRecord;
-  let remotelocal_id = null; // PK de MariaDB
 
+  const lastNetflow = await Netflow.findOne({
+    where: {
+      store_id: storeId,
+      // Filtro CRÍTICO: Excluir todos los Netflows que aún están abiertos (final_time IS NULL)
+      final_time: { [Op.ne]: null },
+    },
+    // Ordenar por el momento de cierre, del más reciente al más antiguo
+    order: [["final_time", "DESC"]],
+    limit: 1,
+    raw: true, // Para obtener un objeto JSON simple
+  });
   try {
     localNetflowRecord = await Netflow.create(netflowData);
     const local_id = localNetflowRecord.local_id;
@@ -1051,8 +937,8 @@ async function createNetflow(newNetflow, sequelize) {
 
     return {
       local_id: local_id,
-      initial_amount: newNetflow.starting_cash,
-      createdAt: localNetflowRecord.start_time,
+      initial_amount: parseFloat(lastNetflow.final_amount),
+      createdAt: localNetflowRecord.initial_time,
     };
   } catch (error) {
     // console.log(error);
@@ -1081,13 +967,13 @@ async function closeNetflow(local_id, sequelize) {
     // 2. Execute the update using the retrieved model
     const [affectedCount] = await NetflowModel.update(
       {
-        end_time: now,
+        final_time: now,
         is_synced: false,
       },
       {
         where: {
           local_id: local_id,
-          end_time: null,
+          final_time: null,
         },
       }
     );
