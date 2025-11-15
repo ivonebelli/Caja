@@ -1,572 +1,625 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Productos</title>
-  <link rel="stylesheet" href="../shared/styles.css">
-  <style>
-    .tabs-container {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 25px;
-      border-bottom: 2px solid var(--border);
-    }
-
-    .tab-btn {
-      padding: 12px 30px;
-      background: none;
-      border: none;
-      color: var(--text-light);
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s ease;
-    }
-
-    .tab-btn:hover {
-      color: var(--text);
-    }
-
-    .tab-btn.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .productos-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-    }
-
-    .productos-table-container {
-      background: white;
-      border-radius: 16px;
-      padding: 30px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      overflow-x: auto;
-    }
-
-    .table th {
-      background: var(--primary);
-      color: white;
-      padding: 16px;
-      text-align: left;
-      font-weight: 600;
-      font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .table td {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .table tbody tr:hover {
-      background: #f9fafb;
-    }
-
-    .product-icon-cell {
-      font-size: 32px;
-      text-align: center;
-    }
-
-    .product-name-cell {
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    .product-price-cell {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--success);
-    }
-
-    .action-btns {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn-icon {
-      padding: 8px 12px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 16px;
-    }
-
-    .btn-edit {
-      background: #3b82f6;
-      color: white;
-    }
-
-    .btn-edit:hover {
-      background: #2563eb;
-      transform: translateY(-2px);
-    }
-
-    .btn-delete {
-      background: #ef4444;
-      color: white;
-    }
-
-    .btn-delete:hover {
-      background: #dc2626;
-      transform: translateY(-2px);
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      z-index: 1000;
-      align-items: center;
-      justify-content: center;
-      backdrop-filter: blur(5px);
-    }
-
-    .modal-content {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      max-width: 600px;
-      width: 90%;
-      max-height: 90vh;
-      overflow-y: auto;
-      animation: fadeInUp 0.4s ease-out;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 25px;
-    }
-
-    .modal-title {
-      font-size: 28px;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .close-modal {
-      background: none;
-      border: none;
-      font-size: 32px;
-      color: var(--text-light);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px;
-    }
-
-    .close-modal:hover {
-      background: #f3f4f6;
-      color: var(--text);
-    }
-
-    .icon-selector {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      gap: 10px;
-      margin-top: 10px;
-      max-height: 200px;
-      overflow-y: auto;
-      padding: 15px;
-      background: #f9fafb;
-      border-radius: 12px;
-    }
-
-    .icon-option {
-      font-size: 32px;
-      padding: 10px;
-      cursor: pointer;
-      text-align: center;
-      border-radius: 8px;
-      transition: all 0.2s ease;
-      border: 2px solid transparent;
-    }
-
-    .icon-option:hover {
-      background: white;
-      transform: scale(1.1);
-    }
-
-    .icon-option.selected {
-      background: var(--primary);
-      border-color: var(--primary-dark);
-      transform: scale(1.15);
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text-light);
-    }
-
-    .empty-icon {
-      font-size: 72px;
-      margin-bottom: 20px;
-      opacity: 0.5;
-    }
-
-    .search-filter-bar {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    .search-input-wrapper {
-      flex: 1;
-      position: relative;
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 15px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 18px;
-      color: var(--text-light);
-    }
-
-    .search-input-wrapper input {
-      padding-left: 45px;
-    }
-
-    .category-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      background: var(--primary);
-      color: white;
-      border-radius: 12px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .categories-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
-      margin-top: 20px;
-    }
-
-    .category-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 25px;
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-    .category-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    }
-
-    .category-name {
-      font-size: 20px;
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .category-count {
-      font-size: 14px;
-      opacity: 0.9;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestión de Productos</title>
+    <link rel="stylesheet" href="../shared/styles.css" />
+    <style>
+      .tabs-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        border-bottom: 2px solid var(--border);
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+
+      .tab-btn {
+        padding: 12px 30px;
+        background: none;
+        border: none;
+        color: var(--text-light);
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>📦 Gestión de Productos</h1>
-      <button class="back-button" onclick="goBack()">Volver</button>
-    </div>
 
-    <div class="tabs-container">
-      <button class="tab-btn active" onclick="switchTab('productos')">Productos</button>
-      <button class="tab-btn" onclick="switchTab('categorias')">Categorías</button>
-    </div>
+      .tab-btn:hover {
+        color: var(--text);
+      }
 
-    <div id="productosTab" class="tab-content active">
-      <div class="productos-table-container">
-        <div class="productos-header">
-          <h2 style="font-size: 24px; font-weight: 700; color: var(--text);">
-            Catálogo de Productos
-          </h2>
-          <button class="btn btn-primary" onclick="openProductModal()">
-            + Nuevo Producto
-          </button>
-        </div>
+      .tab-btn.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+      }
 
-        <div class="search-filter-bar">
-          <div class="search-input-wrapper">
-            <span class="search-icon">🔍</span>
-            <input 
-              type="text" 
-              class="form-input" 
-              id="searchInput" 
-              placeholder="Buscar productos..."
-              oninput="filterProducts()"
-            >
+      .tab-content {
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .productos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+
+      .productos-table-container {
+        background: white;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+      }
+
+      .table th {
+        background: var(--primary);
+        color: white;
+        padding: 16px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .table td {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .table tbody tr:hover {
+        background: #f9fafb;
+      }
+
+      .product-icon-cell {
+        font-size: 32px;
+        text-align: center;
+      }
+
+      .product-name-cell {
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .product-price-cell {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--success);
+      }
+
+      .action-btns {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-icon {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 16px;
+      }
+
+      .btn-edit {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .btn-edit:hover {
+        background: #2563eb;
+        transform: translateY(-2px);
+      }
+
+      .btn-delete {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn-delete:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+      }
+
+      .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .modal-content {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: fadeInUp 0.4s ease-out;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+
+      .modal-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .close-modal {
+        background: none;
+        border: none;
+        font-size: 32px;
+        color: var(--text-light);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+      }
+
+      .close-modal:hover {
+        background: #f3f4f6;
+        color: var(--text);
+      }
+
+      .icon-selector {
+        display: grid;
+        grid-template-columns: repeat(8, 1fr);
+        gap: 10px;
+        margin-top: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 15px;
+        background: #f9fafb;
+        border-radius: 12px;
+      }
+
+      .icon-option {
+        font-size: 32px;
+        padding: 10px;
+        cursor: pointer;
+        text-align: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+      }
+
+      .icon-option:hover {
+        background: white;
+        transform: scale(1.1);
+      }
+
+      .icon-option.selected {
+        background: var(--primary);
+        border-color: var(--primary-dark);
+        transform: scale(1.15);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-light);
+      }
+
+      .empty-icon {
+        font-size: 72px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+      }
+
+      .search-filter-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .search-input-wrapper {
+        flex: 1;
+        position: relative;
+      }
+
+      .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 18px;
+        color: var(--text-light);
+      }
+
+      .search-input-wrapper input {
+        padding-left: 45px;
+      }
+
+      .category-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        background: var(--primary);
+        color: white;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .category-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      }
+
+      .category-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .category-count {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📦 Gestión de Productos</h1>
+        <button class="back-button" onclick="goBack()">Volver</button>
+      </div>
+
+      <div class="tabs-container">
+        <button class="tab-btn active" onclick="switchTab('productos')">
+          Productos
+        </button>
+        <button class="tab-btn" onclick="switchTab('categorias')">
+          Categorías
+        </button>
+      </div>
+
+      <div id="productosTab" class="tab-content active">
+        <div class="productos-table-container">
+          <div class="productos-header">
+            <h2 style="font-size: 24px; font-weight: 700; color: var(--text)">
+              Catálogo de Productos
+            </h2>
+            <button class="btn btn-primary" onclick="openProductModal()">
+              + Nuevo Producto
+            </button>
           </div>
-          <select class="form-select" id="categoryFilter" onchange="filterProducts()" style="min-width: 200px;">
-            <option value="">Todas las categorías</option>
-          </select>
-        </div>
 
-        <div id="productosTableContainer"></div>
+          <div class="search-filter-bar">
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input
+                type="text"
+                class="form-input"
+                id="searchInput"
+                placeholder="Buscar productos..."
+                oninput="filterProducts()"
+              />
+            </div>
+            <select
+              class="form-select"
+              id="categoryFilter"
+              onchange="filterProducts()"
+              style="min-width: 200px"
+            >
+              <option value="">Todas las categorías</option>
+            </select>
+          </div>
+
+          <div id="productosTableContainer"></div>
+        </div>
+      </div>
+
+      <div id="categoriasTab" class="tab-content">
+        <div class="productos-table-container">
+          <div class="productos-header">
+            <h2 style="font-size: 24px; font-weight: 700; color: var(--text)">
+              Categorías de Productos
+            </h2>
+            <button class="btn btn-primary" onclick="openCategoryModal()">
+              + Nueva Categoría
+            </button>
+          </div>
+
+          <div class="categories-grid" id="categoriesGrid"></div>
+        </div>
       </div>
     </div>
 
-    <div id="categoriasTab" class="tab-content">
-      <div class="productos-table-container">
-        <div class="productos-header">
-          <h2 style="font-size: 24px; font-weight: 700; color: var(--text);">
-            Categorías de Productos
-          </h2>
-          <button class="btn btn-primary" onclick="openCategoryModal()">
-            + Nueva Categoría
-          </button>
+    <div class="modal" id="productModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="productModalTitle">Nuevo Producto</h2>
+          <button class="close-modal" onclick="closeProductModal()">×</button>
         </div>
 
-        <div class="categories-grid" id="categoriesGrid"></div>
+        <form id="productForm" onsubmit="saveProduct(event)">
+          <div class="form-group">
+            <label class="form-label">Nombre del Producto</label>
+            <input
+              type="text"
+              class="form-input"
+              id="productName"
+              placeholder="Ej: Impresión 10x15"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Categoría</label>
+            <select class="form-select" id="productCategory">
+              <option value="">Sin categoría</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Precio</label>
+            <input
+              type="number"
+              class="form-input"
+              id="productPrice"
+              placeholder="Ej: 1500"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Descripción (opcional)</label>
+            <textarea
+              class="form-textarea"
+              id="productDescription"
+              placeholder="Descripción del producto"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Icono del Producto</label>
+            <input type="hidden" id="productIcon" value="📦" />
+            <div class="icon-selector" id="iconSelector"></div>
+          </div>
+
+          <div style="display: flex; gap: 15px; margin-top: 30px">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="closeProductModal()"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" style="flex: 1">
+              Guardar
+            </button>
+          </div>
+        </form>
       </div>
     </div>
-  </div>
 
-  <div class="modal" id="productModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="productModalTitle">Nuevo Producto</h2>
-        <button class="close-modal" onclick="closeProductModal()">×</button>
+    <div class="modal" id="categoryModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="categoryModalTitle">Nueva Categoría</h2>
+          <button class="close-modal" onclick="closeCategoryModal()">×</button>
+        </div>
+
+        <form id="categoryForm" onsubmit="saveCategory(event)">
+          <div class="form-group">
+            <label class="form-label">Nombre de la Categoría</label>
+            <input
+              type="text"
+              class="form-input"
+              id="categoryName"
+              placeholder="Ej: Impresiones, Marcos, etc."
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Descripción (opcional)</label>
+            <textarea
+              class="form-textarea"
+              id="categoryDescription"
+              placeholder="Descripción de la categoría"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div style="display: flex; gap: 15px; margin-top: 30px">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              onclick="closeCategoryModal()"
+              style="flex: 1"
+            >
+              Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary" style="flex: 1">
+              Guardar
+            </button>
+          </div>
+        </form>
       </div>
-
-      <form id="productForm" onsubmit="saveProduct(event)">
-        <div class="form-group">
-          <label class="form-label">Nombre del Producto</label>
-          <input 
-            type="text" 
-            class="form-input" 
-            id="productName" 
-            placeholder="Ej: Impresión 10x15"
-            required
-          >
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Categoría</label>
-          <select class="form-select" id="productCategory">
-            <option value="">Sin categoría</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Precio</label>
-          <input 
-            type="number" 
-            class="form-input" 
-            id="productPrice" 
-            placeholder="Ej: 1500"
-            step="0.01"
-            min="0"
-            required
-          >
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Descripción (opcional)</label>
-          <textarea 
-            class="form-textarea" 
-            id="productDescription" 
-            placeholder="Descripción del producto"
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Icono del Producto</label>
-          <input type="hidden" id="productIcon" value="📦">
-          <div class="icon-selector" id="iconSelector"></div>
-        </div>
-
-        <div style="display: flex; gap: 15px; margin-top: 30px;">
-          <button type="button" class="btn btn-secondary" onclick="closeProductModal()" style="flex: 1;">
-            Cancelar
-          </button>
-          <button type="submit" class="btn btn-primary" style="flex: 1;">
-            Guardar
-          </button>
-        </div>
-      </form>
     </div>
-  </div>
 
-  <div class="modal" id="categoryModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title" id="categoryModalTitle">Nueva Categoría</h2>
-        <button class="close-modal" onclick="closeCategoryModal()">×</button>
-      </div>
+    <script src="../shared/utils.js"></script>
+    <script>
+      let productos = [];
+      let categorias = [];
+      let editingProductId = null;
+      let editingCategoryId = null;
 
-      <form id="categoryForm" onsubmit="saveCategory(event)">
-        <div class="form-group">
-          <label class="form-label">Nombre de la Categoría</label>
-          <input 
-            type="text" 
-            class="form-input" 
-            id="categoryName" 
-            placeholder="Ej: Impresiones, Marcos, etc."
-            required
-          >
-        </div>
+      const availableIcons = [
+        "📦",
+        "📷",
+        "🖼️",
+        "🎨",
+        "🎭",
+        "🎪",
+        "🎬",
+        "📸",
+        "🖨️",
+        "📄",
+        "📋",
+        "📌",
+        "📎",
+        "🎫",
+        "🎟️",
+        "🎁",
+        "💝",
+        "🛍️",
+        "🎈",
+        "🎉",
+        "🎊",
+        "🎀",
+        "🏆",
+        "🥇",
+        "⭐",
+        "✨",
+        "💫",
+        "🌟",
+        "💎",
+        "👑",
+        "💍",
+        "🎯",
+      ];
 
-        <div class="form-group">
-          <label class="form-label">Descripción (opcional)</label>
-          <textarea 
-            class="form-textarea" 
-            id="categoryDescription" 
-            placeholder="Descripción de la categoría"
-            rows="3"
-          ></textarea>
-        </div>
-
-        <div style="display: flex; gap: 15px; margin-top: 30px;">
-          <button type="button" class="btn btn-secondary" onclick="closeCategoryModal()" style="flex: 1;">
-            Cancelar
-          </button>
-          <button type="submit" class="btn btn-primary" style="flex: 1;">
-            Guardar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <script src="../shared/utils.js"></script>
-  <script>
-    let productos = [];
-    let categorias = [];
-    let editingProductId = null;
-    let editingCategoryId = null;
-
-    const availableIcons = [
-      '📦', '📷', '🖼️', '🎨', '🎭', '🎪', '🎬', '📸',
-      '🖨️', '📄', '📋', '📌', '📎', '🎫', '🎟️', '🎁',
-      '💝', '🛍️', '🎈', '🎉', '🎊', '🎀', '🏆', '🥇',
-      '⭐', '✨', '💫', '🌟', '💎', '👑', '💍', '🎯'
-    ];
-
-    async function init() {
-      clearAppState();
-      await loadProducts();
-      await loadCategories();
-      renderIconSelector();
-    }
-
-    async function loadProducts() {
-      const data = await readData('products.json');
-      productos = data || [];
-      renderProducts();
-      updateCategoryFilter();
-    }
-
-    async function loadCategories() {
-      const data = await readData('categories.json');
-      categorias = data || [];
-      renderCategories();
-      updateProductCategorySelect();
-    }
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-      
-      event.target.classList.add('active');
-      document.getElementById(`${tab}Tab`).classList.add('active');
-    }
-
-    function updateCategoryFilter() {
-      const filter = document.getElementById('categoryFilter');
-      filter.innerHTML = '<option value="">Todas las categorías</option>';
-      
-      categorias.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent = cat.name;
-        filter.appendChild(option);
-      });
-    }
-
-    function updateProductCategorySelect() {
-      const select = document.getElementById('productCategory');
-      select.innerHTML = '<option value="">Sin categoría</option>';
-      
-      categorias.forEach(cat => {
-        const option = document.createElement('option');
-        option.value = cat.id;
-        option.textContent = cat.name;
-        select.appendChild(option);
-      });
-    }
-
-    function renderProducts(filter = '', categoryFilter = '') {
-      const container = document.getElementById('productosTableContainer');
-      
-      let filtered = productos.filter(p => 
-        p.name.toLowerCase().includes(filter.toLowerCase()) ||
-        (p.description && p.description.toLowerCase().includes(filter.toLowerCase()))
-      );
-
-      if (categoryFilter) {
-        filtered = filtered.filter(p => p.categoryId === categoryFilter);
+      async function init() {
+        clearAppState();
+        await loadProducts();
+        await loadCategories();
+        renderIconSelector();
       }
 
-      if (filtered.length === 0) {
-        container.innerHTML = `
+      async function loadProducts() {
+        const data = await readData("products.json");
+        productos = data || [];
+        renderProducts();
+        updateCategoryFilter();
+      }
+
+      async function loadCategories() {
+        const data = await readData("categories.json");
+        categorias = data || [];
+        renderCategories();
+        updateProductCategorySelect();
+      }
+
+      function switchTab(tab) {
+        document
+          .querySelectorAll(".tab-btn")
+          .forEach((btn) => btn.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((content) => content.classList.remove("active"));
+
+        event.target.classList.add("active");
+        document.getElementById(`${tab}Tab`).classList.add("active");
+      }
+
+      function updateCategoryFilter() {
+        const filter = document.getElementById("categoryFilter");
+        filter.innerHTML = '<option value="">Todas las categorías</option>';
+
+        categorias.forEach((cat) => {
+          const option = document.createElement("option");
+          option.value = cat.id;
+          option.textContent = cat.name;
+          filter.appendChild(option);
+        });
+      }
+
+      function updateProductCategorySelect() {
+        const select = document.getElementById("productCategory");
+        select.innerHTML = '<option value="">Sin categoría</option>';
+
+        categorias.forEach((cat) => {
+          const option = document.createElement("option");
+          option.value = cat.id;
+          option.textContent = cat.name;
+          select.appendChild(option);
+        });
+      }
+
+      function renderProducts(filter = "", categoryFilter = "") {
+        const container = document.getElementById("productosTableContainer");
+
+        let filtered = productos.filter(
+          (p) =>
+            p.name.toLowerCase().includes(filter.toLowerCase()) ||
+            (p.description &&
+              p.description.toLowerCase().includes(filter.toLowerCase()))
+        );
+
+        if (categoryFilter) {
+          filtered = filtered.filter((p) => p.categoryId === categoryFilter);
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
           <div class="empty-state">
             <div class="empty-icon">📦</div>
             <h3>No hay productos</h3>
             <p>Comienza agregando tu primer producto al catálogo</p>
           </div>
         `;
-        return;
-      }
+          return;
+        }
 
-      const tableHTML = `
+        const tableHTML = `
         <table class="table">
           <thead>
             <tr>
@@ -579,245 +632,280 @@
             </tr>
           </thead>
           <tbody>
-            ${filtered.map(producto => {
-              const category = categorias.find(c => c.id === producto.categoryId);
-              return `
+            ${filtered
+              .map((producto) => {
+                const category = categorias.find(
+                  (c) => c.id === producto.categoryId
+                );
+                return `
                 <tr>
-                  <td class="product-icon-cell">${producto.icon || '📦'}</td>
+                  <td class="product-icon-cell">${producto.icon || "📦"}</td>
                   <td class="product-name-cell">${producto.name}</td>
-                  <td>${category ? `<span class="category-badge">${category.name}</span>` : '-'}</td>
-                  <td style="color: var(--text-light);">${producto.description || '-'}</td>
-                  <td class="product-price-cell">${formatCurrency(producto.price)}</td>
+                  <td>${
+                    category
+                      ? `<span class="category-badge">${category.name}</span>`
+                      : "-"
+                  }</td>
+                  <td style="color: var(--text-light);">${
+                    producto.description || "-"
+                  }</td>
+                  <td class="product-price-cell">${formatCurrency(
+                    producto.price
+                  )}</td>
                   <td>
                     <div class="action-btns">
-                      <button class="btn-icon btn-edit" onclick="editProduct('${producto.id}')" title="Editar">
+                      <button class="btn-icon btn-edit" onclick="editProduct('${
+                        producto.id
+                      }')" title="Editar">
                         ✏️
                       </button>
-                      <button class="btn-icon btn-delete" onclick="deleteProduct('${producto.id}')" title="Eliminar">
+                      <button class="btn-icon btn-delete" onclick="deleteProduct('${
+                        producto.id
+                      }')" title="Eliminar">
                         🗑️
                       </button>
                     </div>
                   </td>
                 </tr>
               `;
-            }).join('')}
+              })
+              .join("")}
           </tbody>
         </table>
       `;
 
-      container.innerHTML = tableHTML;
-    }
+        container.innerHTML = tableHTML;
+      }
 
-    function renderCategories() {
-      const grid = document.getElementById('categoriesGrid');
-      
-      if (categorias.length === 0) {
-        grid.innerHTML = `
+      function renderCategories() {
+        const grid = document.getElementById("categoriesGrid");
+
+        if (categorias.length === 0) {
+          grid.innerHTML = `
           <div class="empty-state" style="grid-column: 1 / -1;">
             <div class="empty-icon">📁</div>
             <h3>No hay categorías</h3>
             <p>Crea categorías para organizar tus productos</p>
           </div>
         `;
-        return;
-      }
+          return;
+        }
 
-      grid.innerHTML = categorias.map(cat => {
-        const productCount = productos.filter(p => p.categoryId === cat.id).length;
-        return `
+        grid.innerHTML = categorias
+          .map((cat) => {
+            const productCount = productos.filter(
+              (p) => p.categoryId === cat.id
+            ).length;
+            return `
           <div class="category-card" onclick="editCategory('${cat.id}')">
             <div class="category-name">${cat.name}</div>
-            <div class="category-count">${productCount} producto${productCount !== 1 ? 's' : ''}</div>
+            <div class="category-count">${productCount} producto${
+              productCount !== 1 ? "s" : ""
+            }</div>
           </div>
         `;
-      }).join('');
-    }
+          })
+          .join("");
+      }
 
-    function filterProducts() {
-      const search = document.getElementById('searchInput').value;
-      const category = document.getElementById('categoryFilter').value;
-      renderProducts(search, category);
-    }
+      function filterProducts() {
+        const search = document.getElementById("searchInput").value;
+        const category = document.getElementById("categoryFilter").value;
+        renderProducts(search, category);
+      }
 
-    function renderIconSelector() {
-      const selector = document.getElementById('iconSelector');
-      selector.innerHTML = availableIcons.map(icon => `
+      function renderIconSelector() {
+        const selector = document.getElementById("iconSelector");
+        selector.innerHTML = availableIcons
+          .map(
+            (icon) => `
         <div class="icon-option" onclick="selectIcon('${icon}')">${icon}</div>
-      `).join('');
-    }
+      `
+          )
+          .join("");
+      }
 
-    function selectIcon(icon) {
-      document.getElementById('productIcon').value = icon;
-      document.querySelectorAll('.icon-option').forEach(el => {
-        el.classList.remove('selected');
-        if (el.textContent === icon) {
-          el.classList.add('selected');
+      function selectIcon(icon) {
+        document.getElementById("productIcon").value = icon;
+        document.querySelectorAll(".icon-option").forEach((el) => {
+          el.classList.remove("selected");
+          if (el.textContent === icon) {
+            el.classList.add("selected");
+          }
+        });
+      }
+
+      function openProductModal(productId = null) {
+        editingProductId = productId;
+        const modal = document.getElementById("productModal");
+        const title = document.getElementById("productModalTitle");
+
+        if (productId) {
+          const producto = productos.find((p) => p.id === productId);
+          title.textContent = "Editar Producto";
+          document.getElementById("productName").value = producto.name;
+          document.getElementById("productPrice").value = producto.price;
+          document.getElementById("productDescription").value =
+            producto.description || "";
+          document.getElementById("productCategory").value =
+            producto.categoryId || "";
+          document.getElementById("productIcon").value = producto.icon || "📦";
+          selectIcon(producto.icon || "📦");
+        } else {
+          title.textContent = "Nuevo Producto";
+          document.getElementById("productForm").reset();
+          document.getElementById("productIcon").value = "📦";
+          selectIcon("📦");
         }
-      });
-    }
 
-    function openProductModal(productId = null) {
-      editingProductId = productId;
-      const modal = document.getElementById('productModal');
-      const title = document.getElementById('productModalTitle');
-      
-      if (productId) {
-        const producto = productos.find(p => p.id === productId);
-        title.textContent = 'Editar Producto';
-        document.getElementById('productName').value = producto.name;
-        document.getElementById('productPrice').value = producto.price;
-        document.getElementById('productDescription').value = producto.description || '';
-        document.getElementById('productCategory').value = producto.categoryId || '';
-        document.getElementById('productIcon').value = producto.icon || '📦';
-        selectIcon(producto.icon || '📦');
-      } else {
-        title.textContent = 'Nuevo Producto';
-        document.getElementById('productForm').reset();
-        document.getElementById('productIcon').value = '📦';
-        selectIcon('📦');
-      }
-      
-      modal.style.display = 'flex';
-    }
-
-    function closeProductModal() {
-      document.getElementById('productModal').style.display = 'none';
-      editingProductId = null;
-    }
-
-    async function saveProduct(event) {
-      event.preventDefault();
-      
-      const name = document.getElementById('productName').value.trim();
-      const price = parseFloat(document.getElementById('productPrice').value);
-      const description = document.getElementById('productDescription').value.trim();
-      const categoryId = document.getElementById('productCategory').value;
-      const icon = document.getElementById('productIcon').value;
-
-      if (editingProductId) {
-        const index = productos.findIndex(p => p.id === editingProductId);
-        productos[index] = {
-          ...productos[index],
-          name,
-          price,
-          description,
-          categoryId,
-          icon,
-          updatedAt: new Date().toISOString()
-        };
-        showNotification('Producto actualizado correctamente', 'success');
-      } else {
-        const newProduct = {
-          id: generateId(),
-          name,
-          price,
-          description,
-          categoryId,
-          icon,
-          createdAt: new Date().toISOString()
-        };
-        productos.push(newProduct);
-        showNotification('Producto creado correctamente', 'success');
+        modal.style.display = "flex";
       }
 
-      await writeData('products.json', productos);
-      await loadProducts();
-      closeProductModal();
-    }
-
-    function editProduct(productId) {
-      openProductModal(productId);
-    }
-
-    async function deleteProduct(productId) {
-      const producto = productos.find(p => p.id === productId);
-      
-      if (!confirm(`¿Estás seguro de eliminar el producto "${producto.name}"?`)) {
-        return;
+      function closeProductModal() {
+        document.getElementById("productModal").style.display = "none";
+        editingProductId = null;
       }
 
-      productos = productos.filter(p => p.id !== productId);
-      await writeData('products.json', productos);
-      await loadProducts();
-      showNotification('Producto eliminado correctamente', 'success');
-    }
+      async function saveProduct(event) {
+        event.preventDefault();
 
-    function openCategoryModal(categoryId = null) {
-      editingCategoryId = categoryId;
-      const modal = document.getElementById('categoryModal');
-      const title = document.getElementById('categoryModalTitle');
-      
-      if (categoryId) {
-        const category = categorias.find(c => c.id === categoryId);
-        title.textContent = 'Editar Categoría';
-        document.getElementById('categoryName').value = category.name;
-        document.getElementById('categoryDescription').value = category.description || '';
-      } else {
-        title.textContent = 'Nueva Categoría';
-        document.getElementById('categoryForm').reset();
-      }
-      
-      modal.style.display = 'flex';
-    }
+        const name = document.getElementById("productName").value.trim();
+        const price = parseFloat(document.getElementById("productPrice").value);
+        const description = document
+          .getElementById("productDescription")
+          .value.trim();
+        const categoryId = document.getElementById("productCategory").value;
+        const icon = document.getElementById("productIcon").value;
 
-    function closeCategoryModal() {
-      document.getElementById('categoryModal').style.display = 'none';
-      editingCategoryId = null;
-    }
+        if (editingProductId) {
+          const index = productos.findIndex((p) => p.id === editingProductId);
+          productos[index] = {
+            ...productos[index],
+            name,
+            price,
+            description,
+            categoryId,
+            icon,
+            updatedAt: new Date().toISOString(),
+          };
+          showNotification("Producto actualizado correctamente", "success");
+        } else {
+          const newProduct = {
+            id: generateId(),
+            name,
+            price,
+            description,
+            categoryId,
+            icon,
+            createdAt: new Date().toISOString(),
+          };
+          productos.push(newProduct);
+          showNotification("Producto creado correctamente", "success");
+        }
 
-    async function saveCategory(event) {
-      event.preventDefault();
-      
-      const name = document.getElementById('categoryName').value.trim();
-      const description = document.getElementById('categoryDescription').value.trim();
-
-      if (editingCategoryId) {
-        const index = categorias.findIndex(c => c.id === editingCategoryId);
-        categorias[index] = {
-          ...categorias[index],
-          name,
-          description,
-          updatedAt: new Date().toISOString()
-        };
-        showNotification('Categoría actualizada correctamente', 'success');
-      } else {
-        const newCategory = {
-          id: generateId(),
-          name,
-          description,
-          createdAt: new Date().toISOString()
-        };
-        categorias.push(newCategory);
-        showNotification('Categoría creada correctamente', 'success');
-      }
-
-      await writeData('categories.json', categorias);
-      await loadCategories();
-      await loadProducts();
-      closeCategoryModal();
-    }
-
-    function editCategory(categoryId) {
-      openCategoryModal(categoryId);
-    }
-
-    function goBack() {
-      clearAppState();
-      window.location.href = 'index.html';
-    }
-
-    window.onclick = function(event) {
-      const productModal = document.getElementById('productModal');
-      const categoryModal = document.getElementById('categoryModal');
-      if (event.target === productModal) {
+        await writeData("products.json", productos);
+        await loadProducts();
         closeProductModal();
       }
-      if (event.target === categoryModal) {
+
+      function editProduct(productId) {
+        openProductModal(productId);
+      }
+
+      async function deleteProduct(productId) {
+        const producto = productos.find((p) => p.id === productId);
+
+        if (
+          !confirm(`¿Estás seguro de eliminar el producto "${producto.name}"?`)
+        ) {
+          return;
+        }
+
+        productos = productos.filter((p) => p.id !== productId);
+        await writeData("products.json", productos);
+        await loadProducts();
+        showNotification("Producto eliminado correctamente", "success");
+      }
+
+      function openCategoryModal(categoryId = null) {
+        editingCategoryId = categoryId;
+        const modal = document.getElementById("categoryModal");
+        const title = document.getElementById("categoryModalTitle");
+
+        if (categoryId) {
+          const category = categorias.find((c) => c.id === categoryId);
+          title.textContent = "Editar Categoría";
+          document.getElementById("categoryName").value = category.name;
+          document.getElementById("categoryDescription").value =
+            category.description || "";
+        } else {
+          title.textContent = "Nueva Categoría";
+          document.getElementById("categoryForm").reset();
+        }
+
+        modal.style.display = "flex";
+      }
+
+      function closeCategoryModal() {
+        document.getElementById("categoryModal").style.display = "none";
+        editingCategoryId = null;
+      }
+
+      async function saveCategory(event) {
+        event.preventDefault();
+
+        const name = document.getElementById("categoryName").value.trim();
+        const description = document
+          .getElementById("categoryDescription")
+          .value.trim();
+
+        if (editingCategoryId) {
+          const index = categorias.findIndex((c) => c.id === editingCategoryId);
+          categorias[index] = {
+            ...categorias[index],
+            name,
+            description,
+            updatedAt: new Date().toISOString(),
+          };
+          showNotification("Categoría actualizada correctamente", "success");
+        } else {
+          const newCategory = {
+            id: generateId(),
+            name,
+            description,
+            createdAt: new Date().toISOString(),
+          };
+          categorias.push(newCategory);
+          showNotification("Categoría creada correctamente", "success");
+        }
+
+        await writeData("categories.json", categorias);
+        await loadCategories();
+        await loadProducts();
         closeCategoryModal();
       }
-    };
 
-    init();
-  </script>
-</body>
+      function editCategory(categoryId) {
+        openCategoryModal(categoryId);
+      }
+
+      function goBack() {
+        clearAppState();
+        window.navApi.navigateTo("index.html");
+      }
+
+      window.onclick = function (event) {
+        const productModal = document.getElementById("productModal");
+        const categoryModal = document.getElementById("categoryModal");
+        if (event.target === productModal) {
+          closeProductModal();
+        }
+        if (event.target === categoryModal) {
+          closeCategoryModal();
+        }
+      };
+
+      init();
+    </script>
+  </body>
 </html>

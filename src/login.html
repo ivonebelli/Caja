@@ -359,7 +359,7 @@
           // Redirigir al dashboard correspondiente
           setTimeout(() => {
             const dashboard = roleDashboards[role];
-            window.location.href = dashboard;
+            window.navApi.navigateTo(dashboard);
           }, 500);
         } else {
           // PIN incorrecto
@@ -393,7 +393,7 @@
       }
 
       function goBack() {
-        window.location.href = `./profiles.html?localId=${localId}`;
+        window.navApi.navigateTo(`./profiles.html?localId=${localId}`);
       }
 
       // Cargar perfil al iniciar

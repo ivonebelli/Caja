@@ -237,12 +237,12 @@
 
     <script src="./shared/utils.js"></script>
     <script>
-      //TODO CHANGE ALL FRONTEND NAVIGATION FROM window.location.href TO window.navApi.navigateTo WHICH GOES THROUGH NODE.JS WHICH WILL HAVE Casbin as role authenticator
-
+      //TODO CHANGE ALL FRONTEND NAVIGATION FROM TO window.navApi.navigateTo WHICH GOES THROUGH NODE.JS WHICH WILL HAVE Casbin as role authenticator
+      //TODO IMPLEMENT CASBIN PRIVILEGE POLICYsewewes
       // --- INICIO: LÓGICA DE CONEXIÓN Y MANEJO DE FORMULARIO ---
       // Navegación
       function goToLocales() {
-        window.location.href = "./locales.html";
+        window.navApi.navigateTo("./locales.html");
       }
 
       // Función para manejar el envío del formulario
@@ -323,14 +323,14 @@
         if (e.shiftKey && e.key === "G") {
           e.preventDefault();
           console.log("🔐 Acceso a Gerencia detectado (Shift+G)");
-          window.location.href = "./gerencia-password.html";
+          window.navApi.navigateTo("./gerencia-password.html");
         }
 
         // Shift + A = Administración (contraseña de 6 dígitos)
         if (e.shiftKey && e.key === "A") {
           e.preventDefault();
           console.log("🔐 Acceso a Administración detectado (Shift+A)");
-          window.location.href = "./admin-password.html";
+          window.navApi.navigateTo("./admin-password.html");
         }
       });
 

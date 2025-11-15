@@ -301,7 +301,7 @@
         // showNotification("Acceso no válido", "error");
         // setTimeout(() => {
         //   localStorage.removeItem("specialAccess");
-        //   window.location.href = "./index.html";
+        //   window.navApi.navigateTo("./index.html");
         // }, 1500);
 
         renderLocalProfiles(data, false);
@@ -438,12 +438,14 @@
 
       function selectAdminProfile(profileId, localId) {
         localStorage.setItem("selectedRole", "administrativo");
-        window.location.href = `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}`;
+        window.navApi.navigateTo(
+          `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}`
+        );
       }
 
       function selectLocalForNewAdmin() {
         // Redirigir a la vista de locales para elegir donde crear el admin
-        window.location.href = "./locales.html?action=create";
+        window.navApi.navigateTo("./locales.html?action=create");
       }
 
       async function deleteAdminProfile(profileId, localId) {
@@ -526,34 +528,40 @@
       }
 
       function createNewProfile() {
-        window.location.href = `./create-profile.html?localId=${localId}`;
+        window.navApi.navigateTo(`./create-profile.html?localId=${localId}`);
       }
 
       function selectProfile(profileId, role) {
         localStorage.setItem("selectedRole", role);
-        window.location.href = `./login.html?profileId=${profileId}&role=${role}&localId=${localId}`;
+        window.navApi.navigateTo(
+          `./login.html?profileId=${profileId}&role=${role}&localId=${localId}`
+        );
       }
 
       function selectGerenciaProfile() {
         localStorage.setItem("selectedRole", "gerencia");
-        window.location.href = `./login.html?role=gerencia`;
+        window.navApi.navigateTo(`./login.html?role=gerencia`);
       }
 
       function selectSubgerenteProfile(localId) {
         localStorage.setItem("selectedRole", "subgerente");
-        window.location.href = `./login.html?role=subgerente&localId=${localId}`;
+        window.navApi.navigateTo(
+          `./login.html?role=subgerente&localId=${localId}`
+        );
       }
 
       function createGerente() {
-        window.location.href = "./create-profile.html?role=gerencia";
+        window.navApi.navigateTo("./create-profile.html?role=gerencia");
       }
 
       function createSubgerente(localId) {
-        window.location.href = `./create-profile.html?role=subgerente&localId=${localId}`;
+        window.navApi.navigateTo(
+          `./create-profile.html?role=subgerente&localId=${localId}`
+        );
       }
 
       function goToManageLocal(localId) {
-        window.location.href = `./profiles.html?localId=${localId}`;
+        window.navApi.navigateTo(`./profiles.html?localId=${localId}`);
       }
 
       async function deleteLocal(localId) {
@@ -651,7 +659,7 @@
 
       function goBack() {
         const specialAccess = localStorage.getItem("specialAccess");
-        window.location.href = "./locales.html";
+        window.navApi.navigateTo("./locales.html");
       }
 
       // Cargar perfiles al iniciar

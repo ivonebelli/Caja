@@ -181,7 +181,7 @@
 
       function selectLocal(localId) {
         // Modo normal
-        window.location.href = `./profiles.html?localId=${localId}`;
+        window.navApi.navigateTo(`./profiles.html?localId=${localId}`);
       }
 
       async function deleteLocal(localId) {
@@ -203,7 +203,7 @@
       }
 
       function goBack() {
-        window.location.href = "./index.html";
+        window.navApi.navigateTo("./index.html");
       }
 
       // Cargar locales al iniciar

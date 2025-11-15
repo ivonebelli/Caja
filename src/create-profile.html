@@ -468,7 +468,7 @@
 
       function goBack() {
         closeCamera();
-        window.location.href = `./profiles.html?localId=${localId}`;
+        window.navApi.navigateTo(`./profiles.html?localId=${localId}`);
       }
 
       // DELEGACIÓN DE EVENTOS para PIN inputs

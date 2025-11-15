@@ -437,15 +437,15 @@
       }
 
       function goToVenta() {
-        window.location.href = "./venta.html";
+        window.navApi.navigateTo("./venta.html");
       }
 
       function goToCaja() {
-        window.location.href = `./caja.html?`;
+        window.navApi.navigateTo(`./caja.html?`);
       }
 
       function goToOrdenes() {
-        window.location.href = "./ordenes.html";
+        window.navApi.navigateTo("./ordenes.html");
       }
 
       function showProfile() {
@@ -460,7 +460,7 @@
             clearCashierSession(currentProfile.localId);
           }
           localStorage.removeItem("currentProfile");
-          window.location.href = "../index.html";
+          window.navApi.navigateTo("./index.html");
         }
       }
 

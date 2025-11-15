@@ -1,213 +1,214 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crear Nuevo Local</title>
-  <link rel="stylesheet" href="./shared/styles.css">
-  <style>
-    body {
-      background: #141414;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      background: rgba(0,0,0,0.7);
-      border-radius: 16px;
-      padding: 60px;
-      max-width: 600px;
-      width: 90%;
-      animation: fadeInUp 0.5s ease-out;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-    }
-
-    h1 {
-      color: white;
-      text-align: center;
-      font-size: 36px;
-      font-weight: 300;
-      margin-bottom: 40px;
-    }
-
-    .form-group {
-      margin-bottom: 25px;
-    }
-
-    .form-label {
-      color: white;
-      font-size: 16px;
-      display: block;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-
-    .form-input {
-      width: 100%;
-      padding: 16px;
-      font-size: 18px;
-      background: rgba(255,255,255,0.1);
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 8px;
-      color: white;
-      transition: all 0.3s ease;
-    }
-
-    .form-input:focus {
-      background: rgba(255,255,255,0.15);
-      border-color: white;
-      outline: none;
-    }
-
-    .form-input::placeholder {
-      color: rgba(255,255,255,0.5);
-    }
-
-    .btn-container {
-      display: flex;
-      gap: 15px;
-      margin-top: 40px;
-    }
-
-    .btn {
-      flex: 1;
-      padding: 16px;
-      font-size: 18px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-weight: 600;
-    }
-
-    .btn-primary {
-      background: white;
-      color: #141414;
-    }
-
-    .btn-primary:hover {
-      background: #e0e0e0;
-      transform: translateY(-2px);
-    }
-
-    .btn-secondary {
-      background: rgba(255,255,255,0.1);
-      color: white;
-      border: 2px solid rgba(255,255,255,0.3);
-    }
-
-    .btn-secondary:hover {
-      background: rgba(255,255,255,0.2);
-      border-color: white;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🏢 Crear Nuevo Local</h1>
-    <form id="createForm" onsubmit="saveLocal(event)">
-      <div class="form-group">
-        <label class="form-label">Nombre del Local</label>
-        <input 
-          type="text" 
-          class="form-input" 
-          id="localNombre" 
-          required 
-          placeholder="Ej: Boulevard Marítimo"
-          autofocus
-        >
-      </div>
-      
-      <div class="form-group">
-        <label class="form-label">Ubicación</label>
-        <input 
-          type="text" 
-          class="form-input" 
-          id="localUbicacion" 
-          required 
-          placeholder="Ej: Av. Costanera 123"
-        >
-      </div>
-      
-      <div class="btn-container">
-        <button type="button" class="btn btn-secondary" onclick="goBack()">
-          ← Cancelar
-        </button>
-        <button type="submit" class="btn btn-primary">
-          Crear Local
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <script src="./shared/utils.js"></script>
-  <script>
-    async function saveLocal(event) {
-      event.preventDefault();
-      
-      const nombre = document.getElementById('localNombre').value.trim();
-      const ubicacion = document.getElementById('localUbicacion').value.trim();
-      
-      if (!nombre || !ubicacion) {
-        showNotification('Completa todos los campos', 'error');
-        return;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crear Nuevo Local</title>
+    <link rel="stylesheet" href="./shared/styles.css" />
+    <style>
+      body {
+        background: #141414;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
       }
 
-      // Generar ID único en minúsculas sin espacios
-      const id = nombre.toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '')
-        .replace(/^-+|-+$/g, '');
-
-      if (!id) {
-        showNotification('El nombre del local no es válido', 'error');
-        return;
+      .container {
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 16px;
+        padding: 60px;
+        max-width: 600px;
+        width: 90%;
+        animation: fadeInUp 0.5s ease-out;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
       }
 
-      const data = await readData('profiles.json');
-      
-      // Verificar si ya existe un local con ese ID
-      const existing = data.locales.find(l => l.id === id);
-      if (existing) {
-        showNotification('Ya existe un local con ese nombre', 'error');
-        return;
+      h1 {
+        color: white;
+        text-align: center;
+        font-size: 36px;
+        font-weight: 300;
+        margin-bottom: 40px;
       }
 
-      // Crear el nuevo local
-      data.locales.push({
-        id,
-        nombre,
-        ubicacion,
-        perfiles: {
-          cajero: [],
-          administrativo: []
+      .form-group {
+        margin-bottom: 25px;
+      }
+
+      .form-label {
+        color: white;
+        font-size: 16px;
+        display: block;
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 16px;
+        font-size: 18px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 8px;
+        color: white;
+        transition: all 0.3s ease;
+      }
+
+      .form-input:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: white;
+        outline: none;
+      }
+
+      .form-input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .btn-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 40px;
+      }
+
+      .btn {
+        flex: 1;
+        padding: 16px;
+        font-size: 18px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+
+      .btn-primary {
+        background: white;
+        color: #141414;
+      }
+
+      .btn-primary:hover {
+        background: #e0e0e0;
+        transform: translateY(-2px);
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: white;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
         }
-      });
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🏢 Crear Nuevo Local</h1>
+      <form id="createForm" onsubmit="saveLocal(event)">
+        <div class="form-group">
+          <label class="form-label">Nombre del Local</label>
+          <input
+            type="text"
+            class="form-input"
+            id="localNombre"
+            required
+            placeholder="Ej: Boulevard Marítimo"
+            autofocus
+          />
+        </div>
 
-      await writeData('profiles.json', data);
-      showNotification('Local creado correctamente', 'success');
-      
-      setTimeout(() => {
-        window.location.href = './profiles.html';
-      }, 1500);
-    }
+        <div class="form-group">
+          <label class="form-label">Ubicación</label>
+          <input
+            type="text"
+            class="form-input"
+            id="localUbicacion"
+            required
+            placeholder="Ej: Av. Costanera 123"
+          />
+        </div>
 
-    function goBack() {
-      window.location.href = './profiles.html';
-    }
-  </script>
-</body>
+        <div class="btn-container">
+          <button type="button" class="btn btn-secondary" onclick="goBack()">
+            ← Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">Crear Local</button>
+        </div>
+      </form>
+    </div>
+
+    <script src="./shared/utils.js"></script>
+    <script>
+      async function saveLocal(event) {
+        event.preventDefault();
+
+        const nombre = document.getElementById("localNombre").value.trim();
+        const ubicacion = document
+          .getElementById("localUbicacion")
+          .value.trim();
+
+        if (!nombre || !ubicacion) {
+          showNotification("Completa todos los campos", "error");
+          return;
+        }
+
+        // Generar ID único en minúsculas sin espacios
+        const id = nombre
+          .toLowerCase()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "")
+          .replace(/^-+|-+$/g, "");
+
+        if (!id) {
+          showNotification("El nombre del local no es válido", "error");
+          return;
+        }
+
+        const data = await readData("profiles.json");
+
+        // Verificar si ya existe un local con ese ID
+        const existing = data.locales.find((l) => l.id === id);
+        if (existing) {
+          showNotification("Ya existe un local con ese nombre", "error");
+          return;
+        }
+
+        // Crear el nuevo local
+        data.locales.push({
+          id,
+          nombre,
+          ubicacion,
+          perfiles: {
+            cajero: [],
+            administrativo: [],
+          },
+        });
+
+        await writeData("profiles.json", data);
+        showNotification("Local creado correctamente", "success");
+
+        setTimeout(() => {
+          window.navApi.navigateTo("./profiles.html");
+        }, 1500);
+      }
+
+      function goBack() {
+        window.navApi.navigateTo("./profiles.html");
+      }
+    </script>
+  </body>
 </html>
