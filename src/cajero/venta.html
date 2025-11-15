@@ -927,7 +927,7 @@
         if (!session) {
           showNotification("No hay caja abierta. Redirigiendo...", "warning");
           setTimeout(() => {
-            window.navApi.navigateTo("caja.html");
+            window.navApi.navigateTo("/cajero/caja.html");
           }, 2000);
           return;
         }

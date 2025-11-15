@@ -337,13 +337,6 @@
       let filteredOrders = [];
 
       async function init() {
-        const userStr = localStorage.getItem("currentUser");
-        if (!userStr) {
-          window.navApi.navigateTo("../index.html");
-          return;
-        }
-
-        currentUser = JSON.parse(userStr);
         await loadOrders();
       }
 
@@ -540,7 +533,7 @@
       }
 
       function goBack() {
-        window.navApi.navigateTo("index.html");
+        window.navApi.navigateTo("/cajero/index.html");
       }
 
       window.onclick = function (event) {

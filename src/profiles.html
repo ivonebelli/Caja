@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Seleccionar Perfil</title>
-    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="/shared/styles.css" />
     <style>
       body {
         background: linear-gradient(
@@ -203,7 +203,7 @@
       </div>
     </div>
 
-    <script src="./shared/utils.js"></script>
+    <script src="/shared/utils.js"></script>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const localId = urlParams.get("localId");
@@ -301,7 +301,7 @@
         // showNotification("Acceso no válido", "error");
         // setTimeout(() => {
         //   localStorage.removeItem("specialAccess");
-        //   window.navApi.navigateTo("./index.html");
+        //   window.navApi.navigateTo("/index.html");
         // }, 1500);
 
         renderLocalProfiles(data, false);
@@ -445,7 +445,7 @@
 
       function selectLocalForNewAdmin() {
         // Redirigir a la vista de locales para elegir donde crear el admin
-        window.navApi.navigateTo("./locales.html?action=create");
+        window.navApi.navigateTo("/locales.html?action=create");
       }
 
       async function deleteAdminProfile(profileId, localId) {
@@ -551,7 +551,7 @@
       }
 
       function createGerente() {
-        window.navApi.navigateTo("./create-profile.html?role=gerencia");
+        window.navApi.navigateTo("/create-profile.html?role=gerencia");
       }
 
       function createSubgerente(localId) {
@@ -659,7 +659,7 @@
 
       function goBack() {
         const specialAccess = localStorage.getItem("specialAccess");
-        window.navApi.navigateTo("./locales.html");
+        window.navApi.navigateTo("/locales.html");
       }
 
       // Cargar perfiles al iniciar

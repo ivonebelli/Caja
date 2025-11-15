@@ -2,8 +2,8 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const sync_daemon = require("./sync-daemon");
 const db = require("./database");
+const storage = require("./storage");
 const purge_daemon = require("./purge-daemon");
-const { Sequelize } = require("sequelize");
 const userDataPath = app.getPath("userData");
 const SQLITE_FILE_PATH = path.join(userDataPath, "local_sales_data.sqlite");
 let mainWindow;
@@ -12,20 +12,34 @@ let mariadb_credentials = null;
 let mariadb_instance = null;
 let sqlite_instance = null;
 
+let previous_path = path.join(__dirname, "src", "index.html");
+let current_path = path.join(__dirname, "src", "index.html");
+const PAGES_ROOT = path.join(__dirname, "src");
+
+let activeProfile = {
+  role: "cajero",
+};
+
+function setLoggedInUser(profile) {
+  activeProfile = profile;
+}
+
 // Crear ventana principal
 function createWindow() {
+  console.log(path.join(__dirname, "preload.js"));
   mainWindow = new BrowserWindow({
     width: 700,
     height: 800,
     icon: path.join(__dirname, "build", "icon.ico"),
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
       enableRemoteModule: true,
     },
   });
 
-  mainWindow.loadFile(path.join(__dirname, "src", "index.html"));
+  mainWindow.loadFile(path.join(PAGES_ROOT, "index.html"));
 
   if (process.env.NODE_ENV === "development") {
     mainWindow.webContents.openDevTools();
@@ -173,6 +187,38 @@ ipcMain.handle("db:get-sales", async (event, netflow_id) => {
       data: res,
     };
   } catch (error) {}
+});
+
+ipcMain.on("storage-set-item", (event, { key, value }) => {
+  storage.setStoredValue({ key, value });
+});
+
+ipcMain.handle("storage-get-item", (event, key) => {
+  return storage.getStoredValue(key);
+});
+
+ipcMain.handle("navigate-to", async (event, pageName) => {
+  const role = activeProfile.role;
+  const absolutePath = path.join(PAGES_ROOT, pageName);
+  console.log(absolutePath);
+  mainWindow.loadFile(absolutePath).catch((error) => {
+    console.error(`Failed to load file: ${absolutePath}`, error);
+  });
+
+  return true;
+  // 1. The Casbin Check: This is the actual enforcement step!
+  // const hasPermission = await enforcer.enforce(role, pageName, "load");
+
+  // if (hasPermission) {
+  //   // 2. If permitted, the Main Process loads the file securely.
+  //   const window = BrowserWindow.fromWebContents(event.sender);
+  //   window.loadFile(`path/to/pages/${pageName}`);
+  //   return true;
+  // } else {
+  //   // 3. If denied, access is blocked and redirected.
+  //   // ... load 'access_denied.html' instead ...
+  //   return false;
+  // }
 });
 
 // FALTA UPDATE/DELETE PROFILE, CAJA Y VENTAS

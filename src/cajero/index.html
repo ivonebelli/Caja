@@ -437,15 +437,15 @@
       }
 
       function goToVenta() {
-        window.navApi.navigateTo("./venta.html");
+        window.navApi.navigateTo("/cajero/cajero/venta.html");
       }
 
       function goToCaja() {
-        window.navApi.navigateTo(`./caja.html?`);
+        window.navApi.navigateTo(`/cajero/caja.html?`);
       }
 
       function goToOrdenes() {
-        window.navApi.navigateTo("./ordenes.html");
+        window.navApi.navigateTo("/cajero/cajero/ordenes.html");
       }
 
       function showProfile() {
@@ -460,7 +460,7 @@
             clearCashierSession(currentProfile.localId);
           }
           localStorage.removeItem("currentProfile");
-          window.navApi.navigateTo("./index.html");
+          window.navApi.navigateTo("index.html");
         }
       }
 

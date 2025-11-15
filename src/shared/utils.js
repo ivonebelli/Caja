@@ -1,11 +1,3 @@
-// ============================================
-// UTILIDADES GLOBALES - MODO LOCAL (SIN SERVIDOR)
-// ============================================
-
-const { ipcRenderer } = require("electron");
-
-// MODO LOCAL: Deshabilitado temporalmente el servidor
-// Se reactivarÃ¡ cuando configuremos la red entre mÃºltiples PC
 console.log("ðŸ“ Modo Local Activo - Trabajando sin servidor");
 
 let isOnline = false; // Siempre false en modo local
@@ -28,23 +20,7 @@ function getServerURL() {
 // ============================================
 
 async function saveExcelReport(filename, arrayBuffer) {
-  try {
-    console.log("Intentando guardar reporte:", filename);
-    const localResult = await ipcRenderer.invoke(
-      "save-excel-report",
-      filename,
-      arrayBuffer
-    );
-
-    if (localResult.success) {
-      console.log("âœ… Reporte guardado localmente en:", localResult.path);
-    }
-
-    return localResult.success;
-  } catch (error) {
-    console.error("âŒ Error guardando reporte:", error);
-    return false;
-  }
+  return false;
 }
 
 // ============================================
@@ -307,44 +283,11 @@ function clearAppState() {
 // ============================================
 
 async function getPrinters() {
-  try {
-    const printers = await ipcRenderer.invoke("get-printers");
-    return printers;
-  } catch (error) {
-    console.error("Error obteniendo impresoras:", error);
-    return [];
-  }
+  return false;
 }
 
 async function printTicket(orderData) {
-  try {
-    const ticketData = {
-      storeName: "MI NEGOCIO",
-      orderNumber: orderData.orderNumber,
-      date: orderData.date,
-      time: orderData.time,
-      cashier: orderData.cashier,
-      items: orderData.items,
-      total: orderData.total,
-      paymentMethod: getPaymentMethodName(orderData.paymentMethod),
-      pin: orderData.pin,
-      qrCode: orderData.qrCode,
-    };
-
-    const result = await ipcRenderer.invoke("print-ticket", ticketData);
-
-    if (result.success) {
-      showNotification("Ticket impreso correctamente", "success");
-      return true;
-    } else {
-      showNotification("Error al imprimir: " + result.error, "error");
-      return false;
-    }
-  } catch (error) {
-    console.error("Error imprimiendo ticket:", error);
-    showNotification("Error al imprimir ticket", "error");
-    return false;
-  }
+  return false;
 }
 
 function getPaymentMethodName(method) {

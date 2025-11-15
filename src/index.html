@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bienvenido - Sistema de Caja</title>
-    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="/shared/styles.css" />
     <style>
       body {
         background: linear-gradient(
@@ -235,14 +235,14 @@
       <div class="version-info">v1.0.0 - Modo Local</div>
     </div>
 
-    <script src="./shared/utils.js"></script>
+    <script src="/shared/utils.js"></script>
     <script>
       //TODO CHANGE ALL FRONTEND NAVIGATION FROM TO window.navApi.navigateTo WHICH GOES THROUGH NODE.JS WHICH WILL HAVE Casbin as role authenticator
       //TODO IMPLEMENT CASBIN PRIVILEGE POLICYsewewes
       // --- INICIO: LÓGICA DE CONEXIÓN Y MANEJO DE FORMULARIO ---
       // Navegación
       function goToLocales() {
-        window.navApi.navigateTo("./locales.html");
+        window.navApi.navigateTo("/locales.html");
       }
 
       // Función para manejar el envío del formulario
@@ -268,7 +268,7 @@
 
         try {
           // 4. Enviar credenciales al backend (main.js)
-          const response = await ipcRenderer.invoke("db:connect", credentials);
+          const response = await window.utilsApi.connect();
 
           if (response.success) {
             // 5. ÉXITO: Ocultar formulario y mostrar botón de selección
@@ -323,14 +323,14 @@
         if (e.shiftKey && e.key === "G") {
           e.preventDefault();
           console.log("🔐 Acceso a Gerencia detectado (Shift+G)");
-          window.navApi.navigateTo("./gerencia-password.html");
+          window.navApi.navigateTo("/gerencia-password.html");
         }
 
         // Shift + A = Administración (contraseña de 6 dígitos)
         if (e.shiftKey && e.key === "A") {
           e.preventDefault();
           console.log("🔐 Acceso a Administración detectado (Shift+A)");
-          window.navApi.navigateTo("./admin-password.html");
+          window.navApi.navigateTo("/admin-password.html");
         }
       });
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Selecciona tu Local</title>
-    <link rel="stylesheet" href="./shared/styles.css" />
+    <link rel="stylesheet" href="/shared/styles.css" />
     <style>
       body {
         background: linear-gradient(
@@ -149,7 +149,7 @@
       <button class="btn-back" onclick="goBack()">← Volver</button>
     </div>
 
-    <script src="./shared/utils.js"></script>
+    <script src="/shared/utils.js"></script>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
 
@@ -203,7 +203,7 @@
       }
 
       function goBack() {
-        window.navApi.navigateTo("./index.html");
+        window.navApi.navigateTo("/index.html");
       }
 
       // Cargar locales al iniciar
