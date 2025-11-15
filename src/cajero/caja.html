@@ -191,10 +191,10 @@
               type="number"
               class="form-input"
               id="initialAmount"
-              placeholder="Ej: 5000"
               step="0.01"
               min="0"
               required
+              disabled
             />
           </div>
           <div class="form-group">
@@ -432,9 +432,6 @@
       async function createNetflow(event) {
         event.preventDefault();
 
-        const initialAmount = parseFloat(
-          document.getElementById("initialAmount").value
-        );
         const initialNotes = document.getElementById("openNotes").value;
         const storedValue = await window.storageApi.getItem(
           "profileAndNetflowData"
@@ -442,7 +439,6 @@
         let currentProfile = storedValue;
         const res = await window.dbApi.createNetflow({
           store_id: currentProfile.profile.store_id,
-          starting_cash: initialAmount,
           opening_description: initialNotes,
         });
         if (res.success === true) {

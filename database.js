@@ -57,7 +57,7 @@ function initModels(sequelize) {
         },
         category_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Category
         name: { type: DataTypes.STRING(100), allowNull: false },
-        price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        price: { type: DataTypes.INTEGER, allowNull: false },
 
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
         is_synced: {
@@ -156,12 +156,12 @@ function initModels(sequelize) {
         },
         final_time: { type: DataTypes.DATE, allowNull: true },
         initial_amount: {
-          type: DataTypes.DECIMAL(10, 2),
+          type: DataTypes.INTEGER,
           allowNull: false,
           defaultValue: 0.0,
         },
         final_amount: {
-          type: DataTypes.DECIMAL(10, 2),
+          type: DataTypes.INTEGER,
           allowNull: false,
           defaultValue: 0.0,
         },
@@ -221,7 +221,7 @@ function initModels(sequelize) {
           allowNull: false,
         },
         netflow_id: { type: DataTypes.INTEGER, allowNull: false },
-        total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        total_amount: { type: DataTypes.INTEGER, allowNull: false },
 
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
         is_synced: {
@@ -241,7 +241,7 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         },
-        amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        amount: { type: DataTypes.INTEGER, allowNull: false },
         description: { type: DataTypes.STRING(255), allowNull: true },
         netflow_id: { type: DataTypes.INTEGER, allowNull: false },
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
@@ -262,7 +262,7 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         },
-        amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        amount: { type: DataTypes.INTEGER, allowNull: false },
         description: { type: DataTypes.STRING(255), allowNull: true },
         netflow_id: { type: DataTypes.INTEGER, allowNull: false },
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
@@ -601,6 +601,18 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
   const SaleDetail = sequelize.models.SaleDetail;
   const Product = sequelize.models.Product;
 
+  const lastNetflow = await Netflow.findOne({
+    where: {
+      store_id: storeId,
+
+      final_time: { [Op.ne]: null },
+    },
+
+    order: [["final_time", "DESC"]],
+    limit: 1,
+    raw: true,
+  });
+
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
     const profileData = await Profile.findByPk(local_id, {
@@ -674,7 +686,7 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
       const salesCount = salesList.length;
 
       const totalSalesAmount = salesList.reduce(
-        (sum, sale) => sum + parseFloat(sale.total_amount),
+        (sum, sale) => sum + sale.total_amount,
         0
       );
 
@@ -682,25 +694,25 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
 
       // --- 2. Inflow Aggregation ---
       const totalInflowAmount = (netflow.inflows || []).reduce(
-        (sum, inflow) => sum + parseFloat(inflow.amount),
+        (sum, inflow) => sum + inflow.amount,
         0
       );
 
       // --- 3. Expense Aggregation ---
       const totalExpenseAmount = (netflow.expenses || []).reduce(
-        (sum, expense) => sum + parseFloat(expense.amount),
+        (sum, expense) => sum + expense.amount,
         0
       );
 
       // --- 4. Attach Summary Data ---
       netflow.sales_summary = {
         count: salesCount,
-        total: parseFloat(totalSalesAmount.toFixed(2)),
-        average: parseFloat(salesAverage.toFixed(2)),
+        total: totalSalesAmount,
+        average: salesAverage,
       };
 
-      netflow.inflow_total = parseFloat(totalInflowAmount.toFixed(2));
-      netflow.expense_total = parseFloat(totalExpenseAmount.toFixed(2));
+      netflow.inflow_total = totalInflowAmount.toFixed;
+      netflow.expense_total = totalExpenseAmount;
 
       console.log("netflow con datos");
       console.log(netflow);
@@ -712,6 +724,7 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
       profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
       netflow_id: netflow_id,
       netflow_data: netflow,
+      last_netflow_final_amount: lastNetflow.final_amount,
     };
 
     // Devolvemos la misma estructura de objeto que tu código original
@@ -926,13 +939,13 @@ async function createNetflow(newNetflow, sequelize) {
   const lastNetflow = await Netflow.findOne({
     where: {
       store_id: storeId,
-      // Filtro CRÍTICO: Excluir todos los Netflows que aún están abiertos (final_time IS NULL)
+
       final_time: { [Op.ne]: null },
     },
-    // Ordenar por el momento de cierre, del más reciente al más antiguo
+
     order: [["final_time", "DESC"]],
     limit: 1,
-    raw: true, // Para obtener un objeto JSON simple
+    raw: true,
   });
   try {
     localNetflowRecord = await Netflow.create(netflowData);
@@ -943,7 +956,7 @@ async function createNetflow(newNetflow, sequelize) {
 
     return {
       local_id: local_id,
-      initial_amount: parseFloat(lastNetflow.final_amount),
+      initial_amount: lastNetflow.final_amount,
       createdAt: localNetflowRecord.initial_time,
     };
   } catch (error) {

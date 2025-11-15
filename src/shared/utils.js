@@ -57,6 +57,14 @@ function formatDateTime(dateString) {
     second: "2-digit",
   }).format(date);
 }
+
+const PAYMENT_METHOD = Object.freeze({
+  EFECTIVO: "Efectivo",
+  TRANSFERENCIA: "Transferencia",
+  CREDITO: "Credito",
+  DEBITO: "Debito",
+  OTROS: "Otros",
+});
 if (typeof window !== "undefined") {
   window.showNotification = showNotification;
   window.formatCurrency = formatCurrency;
