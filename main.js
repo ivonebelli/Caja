@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const sync_daemon = require("./sync-daemon");
 const db = require("./database");
+const url = require("url");
 const storage = require("./storage");
 const purge_daemon = require("./purge-daemon");
 const userDataPath = app.getPath("userData");
@@ -201,7 +202,7 @@ ipcMain.handle("navigate-to", async (event, pageName) => {
   const role = activeProfile.role;
   const absolutePath = path.join(PAGES_ROOT, pageName);
   console.log(absolutePath);
-  mainWindow.loadFile(absolutePath).catch((error) => {
+  mainWindow.loadURL(absolutePath).catch((error) => {
     console.error(`Failed to load file: ${absolutePath}`, error);
   });
 

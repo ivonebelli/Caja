@@ -660,7 +660,7 @@ async function getProfiles(store_id, sequelize) {
 
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-
+  console.log(newProfile);
   const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo

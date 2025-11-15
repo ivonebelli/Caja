@@ -180,7 +180,7 @@
 
       function selectLocal(localId) {
         // Modo normal
-        window.navApi.navigateTo(`./profiles.html?localId=${localId}`);
+        window.navApi.navigateTo(`/profiles.html?localId=${localId}`);
       }
 
       async function deleteLocal(localId) {
@@ -208,5 +208,6 @@
       // Cargar locales al iniciar
       loadLocales();
     </script>
+    <script src="shared/utils.js"></script>
   </body>
 </html>
