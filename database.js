@@ -480,7 +480,6 @@ async function getStores(sequelize) {
     const rows = await Store.findAll({
       where: { is_active: true },
     });
-    console.log(rows);
 
     return rows;
   } catch (error) {
@@ -523,14 +522,13 @@ async function deleteStore(storeId, sequelize) {
 async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
-  console.log(store_id + "!!!!!!!!");
+
   try {
     const rows = await Profile.findAll({
       where: {
         store_id: store_id,
       },
       raw: true,
-      logging: console.log,
     });
     return rows;
   } catch (error) {
@@ -544,7 +542,7 @@ async function getProfiles(store_id, sequelize) {
 
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-  // console.log(newProfile);
+
   const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo
@@ -590,7 +588,6 @@ async function getProfile(local_id, sequelize) {
 }
 
 async function getProfileAndDailyNetflowData(local_id, sequelize) {
-  //FIXME  netflow_data y netflow_id se mantienen null
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   const Store = sequelize.models.Store;
@@ -600,18 +597,6 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
   const Inflow = sequelize.models.Inflow;
   const SaleDetail = sequelize.models.SaleDetail;
   const Product = sequelize.models.Product;
-
-  const lastNetflow = await Netflow.findOne({
-    where: {
-      store_id: storeId,
-
-      final_time: { [Op.ne]: null },
-    },
-
-    order: [["final_time", "DESC"]],
-    limit: 1,
-    raw: true,
-  });
 
   try {
     // --- QUERY 1: Obtener Perfil y Tienda (JOIN) ---
@@ -624,6 +609,18 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
     }
 
     const storeId = profileData.store_id;
+
+    const lastNetflow = await Netflow.findOne({
+      where: {
+        store_id: storeId,
+
+        final_time: { [Op.ne]: null },
+      },
+
+      order: [["final_time", "DESC"]],
+      limit: 1,
+      raw: true,
+    });
 
     // --- QUERY 2: Encontrar el último Netflow DE HOY ---
 
@@ -675,7 +672,6 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
     });
     let netflow_id = null;
 
-    console.log(netflow);
     if (netflow) {
       // Convert to plain object for easier manipulation
       netflow = netflow.toJSON();
@@ -711,17 +707,14 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
         average: salesAverage,
       };
 
-      netflow.inflow_total = totalInflowAmount.toFixed;
+      netflow.inflow_total = totalInflowAmount;
       netflow.expense_total = totalExpenseAmount;
-
-      console.log("netflow con datos");
-      console.log(netflow);
     }
 
     const profileJSON = profileData.toJSON();
 
     let data = {
-      profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
+      profile: profileJSON,
       netflow_id: netflow_id,
       netflow_data: netflow,
       last_netflow_final_amount: lastNetflow.final_amount,
@@ -938,7 +931,7 @@ async function createNetflow(newNetflow, sequelize) {
 
   const lastNetflow = await Netflow.findOne({
     where: {
-      store_id: storeId,
+      store_id: newNetflow.store_id,
 
       final_time: { [Op.ne]: null },
     },
@@ -960,7 +953,6 @@ async function createNetflow(newNetflow, sequelize) {
       createdAt: localNetflowRecord.initial_time,
     };
   } catch (error) {
-    // console.log(error);
     throw new Error("Fallo al guardar la sesión de caja localmente.");
   }
 }

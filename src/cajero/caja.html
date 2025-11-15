@@ -291,12 +291,67 @@
 
         <div class="form-section">
           <h2 class="section-title">🔒 Cerrar Caja del Día</h2>
+
           <form onsubmit="closeNetflow(event)">
             <p style="color: var(--text-light); margin-bottom: 20px">
               Ingresa el monto real que hay en caja para cada medio de pago:
             </p>
 
-            <div class="close-input-group" id="closeInputs"></div>
+            <div class="close-input-group" id="closeInputs">
+              <!-- Placeholder para Efectivo -->
+              <div class="form-group">
+                <label class="form-label"
+                  >💵 Efectivo (Esperado:
+                  <span id="expected-efectivo">$0</span>)</label
+                >
+                <input
+                  type="number"
+                  class="form-input close-input"
+                  data-method-id="efectivo"
+                  data-expected="0"
+                  placeholder="Monto contado"
+                  step="0.01"
+                  required
+                />
+                <small
+                  id="diff-efectivo"
+                  style="
+                    display: block;
+                    margin-top: 5px;
+                    font-weight: 600;
+                    color: #6b7280;
+                  "
+                  >Balance: $0.00</small
+                >
+              </div>
+
+              <!-- Placeholder para Digital -->
+              <div class="form-group">
+                <label class="form-label"
+                  >💳 Mercado Pago (Esperado:
+                  <span id="expected-mercadopago">$0</span>)</label
+                >
+                <input
+                  type="number"
+                  class="form-input close-input"
+                  data-method-id="mercadopago"
+                  data-expected="0"
+                  placeholder="Monto reportado"
+                  step="0.01"
+                  required
+                />
+                <small
+                  id="diff-mercadopago"
+                  style="
+                    display: block;
+                    margin-top: 5px;
+                    font-weight: 600;
+                    color: #6b7280;
+                  "
+                  >Balance: $0.00</small
+                >
+              </div>
+            </div>
 
             <div class="form-group">
               <label class="form-label">Notas de Cierre (opcional)</label>
@@ -308,7 +363,12 @@
               ></textarea>
             </div>
 
-            <div id="differenceAlert"></div>
+            <div id="differenceAlert">
+              <div class="difference-alert neutral">
+                <span>⚖️</span>
+                <span>Diferencia Total: En espera de conteo.</span>
+              </div>
+            </div>
 
             <button
               type="submit"
@@ -345,6 +405,9 @@
 
         let currentProfile = storedValue;
         console.log(currentProfile);
+        const initialAmount = document.getElementById("initialAmount");
+
+        initialAmount.value = currentProfile.last_netflow_final_amount;
         try {
           if (currentProfile.netflow_id !== null) {
             await showOpenStatus();
@@ -369,8 +432,8 @@
         <div class="status-info">
           <h3>Caja Abierta</h3>
            <p>
-          Inicio: ${formatDateTime(currentProfile.netflow_data.initial_time)} 
-         
+          Inicio: ${formatDateTime(currentProfile.netflow_data.initial_time)}
+
         </p>
 
         </div>`;
