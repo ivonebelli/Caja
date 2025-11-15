@@ -8,8 +8,7 @@ function initModels(sequelize) {
   const dialect = sequelize.options.dialect;
 
   // Es vital requerir Sequelize y DataTypes si no están en el scope
-  let PaymentMethod,
-    Store,
+  let Store,
     Profile,
     Netflow,
     Sale,
@@ -25,36 +24,6 @@ function initModels(sequelize) {
   // 1. Lógica para SQLite (DB Local): Con campos de sincronización
   // ====================================================================
   if (isLocal) {
-    PaymentMethod = sequelize.define(
-      "PaymentMethod",
-      {
-        local_id: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
-          autoIncrement: true,
-          field: "local_id",
-        },
-        name: {
-          type: DataTypes.STRING(100),
-          allowNull: false,
-          unique: true,
-        },
-        is_active: {
-          type: DataTypes.BOOLEAN,
-          defaultValue: true,
-        },
-        remote_id: {
-          type: DataTypes.INTEGER,
-          allowNull: true,
-        },
-        is_synced: {
-          type: DataTypes.BOOLEAN,
-          allowNull: false,
-          defaultValue: false,
-        },
-      },
-      { timestamps: true, tableName: "PaymentMethods" }
-    );
     Category = sequelize.define(
       "Category",
       {
@@ -241,7 +210,16 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         },
-        payment_method_id: { type: DataTypes.INTEGER, allowNull: false },
+        payment_method: {
+          type: DataTypes.ENUM(
+            "Efectivo",
+            "Credito",
+            "Debito",
+            "Transferencia",
+            "Otros"
+          ),
+          allowNull: false,
+        },
         netflow_id: { type: DataTypes.INTEGER, allowNull: false },
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
 
@@ -308,14 +286,6 @@ function initModels(sequelize) {
   Category.hasMany(Product, { foreignKey: "category_id", as: "products" });
   Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });
 
-  PaymentMethod.hasMany(Sale, {
-    foreignKey: "payment_method_id",
-    as: "sales",
-  });
-  Sale.belongsTo(PaymentMethod, {
-    foreignKey: "payment_method_id",
-    as: "payment_method",
-  });
   // Sale <-> Product (Via SaleDetail - Mucho a Muchos)
   Sale.hasMany(SaleDetail, {
     foreignKey: "sale_id",
