@@ -38,6 +38,14 @@ function showNotification(message, type = "info") {
   }, 3000);
 }
 
+function formatCurrency(amount) {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
 if (typeof window !== "undefined") {
   window.showNotification = showNotification;
+  window.formatCurrency = formatCurrency;
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gestión de Caja</title>
-    <link rel="stylesheet" href="..shared/styles.css" />
+    <link rel="stylesheet" href="../shared/styles.css" />
     <style>
       .caja-container {
         max-width: 900px;
@@ -277,13 +277,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="shared/utils.js"></script>
+    <script src="../shared/utils.js"></script>
     <script>
-      let cachedData = JSON.parse(
-        localStorage.getItem("cachedProfileAndDailyNetflowData")
-      );
-      console.log(cachedData);
-
       const paymentMethods = [
         { id: "efectivo", name: "Efectivo", icon: "💵" },
         { id: "mercadopago", name: "Mercado Pago", icon: "💳" },
@@ -297,11 +292,17 @@
       }
 
       async function checkCashStatus() {
+        const storedValue = await window.storageApi.getItem(
+          "profileAndNetflowData"
+        );
+
+        let cachedData = storedValue;
+        console.log(cachedData);
         try {
-          if (cachedData.netflow_id !== "null") {
-            console.log("hola");
-            showOpenStatus();
-            //updateSummary();
+          if (cachedData.netflow_id !== null) {
+            // console.log("abierto");
+            await showOpenStatus();
+            //await updateSummary();
           } else {
             showClosedStatus();
           }
@@ -309,18 +310,19 @@
           showClosedStatus();
         }
       }
-      function showOpenStatus() {
+      async function showOpenStatus() {
+        const storedValue = await window.storageApi.getItem(
+          "profileAndNetflowData"
+        );
+        let cachedData = storedValue;
         const banner = document.getElementById("statusBanner");
-        console.log(cachedData.netflow_data.start_time);
-        console.log(cachedData.netflow_data.starting_cash);
-        console.log(banner);
-        console.log("hola");
+
         banner.className = "status-banner open";
         banner.innerHTML = `
         <div class="status-icon">✅</div>
         <div class="status-info">
           <h3>Caja Abierta</h3>
-          
+
         </div>
       `;
         //FIXME esta mal entonces crashea la funcion y no se cambia a caja abierta
@@ -347,7 +349,11 @@
         document.getElementById("openInfo").style.display = "none";
       }
 
-      function updateSummary() {
+      async function updateSummary() {
+        const storedValue = await window.storageApi.getItem(
+          "profileAndNetflowData"
+        );
+        let cachedData = storedValue;
         document.getElementById("summaryInitial").textContent = formatCurrency(
           cachedData.netflow_data.starting_cash
         );
@@ -443,7 +449,11 @@
           document.getElementById("initialAmount").value
         );
         const notes = document.getElementById("openNotes").value;
-        const res = await ipcRenderer.invoke("db:create-netflow", {
+        const storedValue = await window.storageApi.getItem(
+          "profileAndNetflowData"
+        );
+        let cachedData = storedValue;
+        const res = await window.dbApi.createNetflow({
           store_id: cachedData.profile.store_id,
           starting_cash: initialAmount,
           opening_description: notes,
@@ -451,17 +461,12 @@
         if (res.success === true) {
           showNotification("Caja abierta correctamente", "success");
           netflow_id = res.local_id;
-          const res2 = await ipcRenderer.invoke(
-            "db:get-profile-and-daily-netflow-data",
+          const res2 = await window.dbApi.getProfileAndDailyNetflowData(
             cachedData.profile.local_id
           );
           if (res2.success === true) {
-            localStorage.setItem(
-              "cachedProfileAndDailyNetflowData",
-              JSON.stringify(res2.data)
-            );
+            window.storageApi.setItem("profileAndNetflowData", res2.data);
             cachedData = res2.data;
-            console.log(cachedData);
           }
           checkCashStatus();
         } else {
@@ -776,7 +781,7 @@
       }
 
       function goBack() {
-        window.navApi.navigateTo(`/cajero/index.html?profile_id=${profile_id}`);
+        window.navApi.navigateTo(`/cajero/index.html`);
       }
 
       // DELEGACIÓN DE EVENTOS para inputs de cierre

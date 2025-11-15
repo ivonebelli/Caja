@@ -322,14 +322,14 @@
         // Shift + G = Gerencia (contraseña de 6 dígitos)
         if (e.shiftKey && e.key === "G") {
           e.preventDefault();
-          console.log("🔐 Acceso a Gerencia detectado (Shift+G)");
+          // console.log("🔐 Acceso a Gerencia detectado (Shift+G)");
           window.navApi.navigateTo("/gerencia-password.html");
         }
 
         // Shift + A = Administración (contraseña de 6 dígitos)
         if (e.shiftKey && e.key === "A") {
           e.preventDefault();
-          console.log("🔐 Acceso a Administración detectado (Shift+A)");
+          // console.log("🔐 Acceso a Administración detectado (Shift+A)");
           window.navApi.navigateTo("/admin-password.html");
         }
       });
@@ -338,7 +338,6 @@
       window.addEventListener("load", () => {
         createParticles();
         // Limpiar accesos especiales al cargar
-        localStorage.removeItem("specialAccess");
 
         // Asignar el evento de submit al formulario
         const dbLoginForm = document.getElementById("dbLoginForm");

@@ -350,11 +350,6 @@
       let currentUser = null;
 
       async function loadProfile() {
-        const userStr = localStorage.getItem("currentUser");
-        if (userStr) {
-          currentUser = JSON.parse(userStr);
-        }
-
         const data = await readData("profiles.json");
 
         // Buscar el perfil según el rol

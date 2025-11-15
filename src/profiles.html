@@ -207,19 +207,14 @@
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const localId = urlParams.get("localId");
-      console.log(localId);
+      // console.log(localId);
 
       let currentLocal = null;
-
-      console.log(
-        "🔍 specialAccess en localStorage:",
-        localStorage.getItem("specialAccess")
-      );
 
       async function loadProfiles(localId) {
         const res = await window.dbApi.getProfiles(localId);
         const data = res.data;
-        console.log(data);
+        // console.log(data);
         if (!data) {
           showNotification("Error al cargar datos", "error");
           return;
@@ -358,7 +353,7 @@
       }
 
       function selectAdminProfile(profileId, localId) {
-        localStorage.setItem("selectedRole", "administrativo");
+        window.storageApi.setItem("selectedRole", "administrativo");
         window.navApi.navigateTo(
           `./login.html?profileId=${profileId}&role=administrativo&localId=${localId}`
         );
@@ -453,19 +448,19 @@
       }
 
       function selectProfile(profileId, role) {
-        localStorage.setItem("selectedRole", role);
+        window.storageApi.setItem("selectedRole", role);
         window.navApi.navigateTo(
           `./login.html?profileId=${profileId}&role=${role}&localId=${localId}`
         );
       }
 
       function selectGerenciaProfile() {
-        localStorage.setItem("selectedRole", "gerencia");
+        window.storageApi.setItem("selectedRole", "gerencia");
         window.navApi.navigateTo(`./login.html?role=gerencia`);
       }
 
       function selectSubgerenteProfile(localId) {
-        localStorage.setItem("selectedRole", "subgerente");
+        window.storageApi.setItem("selectedRole", "subgerente");
         window.navApi.navigateTo(
           `./login.html?role=subgerente&localId=${localId}`
         );
@@ -579,7 +574,7 @@
       }
 
       function goBack() {
-        const specialAccess = localStorage.getItem("specialAccess");
+        const specialAccess = window.storageApi.getItem("specialAccess");
         window.navApi.navigateTo("/locales.html");
       }
 

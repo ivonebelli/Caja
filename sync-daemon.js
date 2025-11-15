@@ -56,10 +56,6 @@ async function sendToMariaDB(payload) {
     // 4. CONFIRMAR TRANSACCIÓN
     await transaction.commit();
 
-    console.log(
-      `\t[MariaDB] Transacción exitosa. Nuevo Inflow ID: ${remoteInflowId}`
-    );
-
     // 5. DEVOLVER EL ID REMOTO
     return { remoteInflowId: remoteInflowId };
   } catch (error) {
@@ -77,7 +73,7 @@ async function sendToMariaDB(payload) {
 function setConnections(localSequelize, remoteDB) {
   sequelizeLocal = localSequelize;
   dbRemote = remoteDB;
-  console.log("Sync Daemon initialized.");
+  // console.log("Sync Daemon initialized.");
 }
 
 // 2. Starts the background process
@@ -100,7 +96,7 @@ async function syncLocalToRemote() {
 
   const InflowLocal = sequelizeLocal.models.Inflow;
   isSyncing = true;
-  console.log("--- Starting Sync Cycle ---");
+  // console.log("--- Starting Sync Cycle ---");
 
   try {
     const pendingInflows = await InflowLocal.findAll({
@@ -112,7 +108,7 @@ async function syncLocalToRemote() {
     });
 
     if (pendingInflows.length === 0) {
-      console.log("No pending records found.");
+      // console.log("No pending records found.");
       return;
     }
 
@@ -124,7 +120,7 @@ async function syncLocalToRemote() {
     console.error("Sync Cycle Error:", error.message);
   } finally {
     isSyncing = false;
-    console.log("--- Sync Cycle Finished ---");
+    // console.log("--- Sync Cycle Finished ---");
   }
 }
 
@@ -173,18 +169,11 @@ async function processInflowSync(localInflow) {
         { is_synced: true },
         { where: { inflow_id: localId } } // Update all sales belonging to this inflow
       );
-
-      console.log(
-        `\t✅ Inflow ${localId} synced. Remote ID: ${mariaDBResult.remoteInflowId}`
-      );
     } else {
       console.warn(`\t⚠️ Remote rejected Inflow ${localId}. Will re-attempt.`);
     }
   } catch (error) {
     // Connection error or timeout - simply ignore and let the daemon re-try later.
-    console.error(
-      `\t❌ Failed to sync Inflow ${localId}. Reason: ${error.message}`
-    );
   }
 }
 

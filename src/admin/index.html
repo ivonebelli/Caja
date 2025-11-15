@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - Administrativo</title>
-    <link rel="stylesheet" href="..shared/styles.css" />
+    <link rel="stylesheet" href="shared/styles.css" />
     <style>
       body {
         background: #0f172a;
@@ -396,7 +396,7 @@
         </div>
       </div>
     </div>
-    <script src="shared/utils.js"></script>
+    <script src="../shared/utils.js"></script>
     <script>
       let currentUser = null;
       let allOrders = [];
@@ -406,13 +406,6 @@
       async function init() {
         clearAppState();
 
-        const userStr = localStorage.getItem("currentUser");
-        if (!userStr) {
-          window.navApi.navigateTo("../index.html");
-          return;
-        }
-
-        currentUser = JSON.parse(userStr);
         document.getElementById("userName").textContent =
           currentUser.profile.name;
 
@@ -786,7 +779,7 @@
 
       function logout() {
         if (confirm("¿Estás seguro de cerrar sesión?")) {
-          localStorage.removeItem("currentUser");
+          window.storageApi.removeItem("currentUser");
           clearAppState();
           window.navApi.navigateTo("../index.html");
         }

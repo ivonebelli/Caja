@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dashboard - Cajero</title>
-    <link rel="stylesheet" href="..shared/styles.css" />
+    <link rel="stylesheet" href="../shared/styles.css" />
     <style>
       body {
         background: #0f172a;
@@ -296,19 +296,19 @@
         <div class="stat-card">
           <div class="stat-icon">💰</div>
           <div class="stat-value" id="todaySales">$0</div>
-          <div class="stat-label">Ventas de Hoy</div>
+          <div class="stat-label">Ventas totales de día</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-icon">🛒</div>
           <div class="stat-value" id="todayOrders">0</div>
-          <div class="stat-label">Órdenes del Día</div>
+          <div class="stat-label">Cantidad de ventas del Día</div>
         </div>
 
         <div class="stat-card">
           <div class="stat-icon">📈</div>
           <div class="stat-value" id="avgTicket">$0</div>
-          <div class="stat-label">Ticket Promedio</div>
+          <div class="stat-label">Venta Promedio del día</div>
         </div>
 
         <div class="stat-card">
@@ -358,21 +358,18 @@
         </div>
       </div>
     </div>
-    <script src="shared/utils.js"></script>
+    <script src="../shared/utils.js"></script>
     <script>
-      const urlParams = new URLSearchParams(window.location.search);
-      const profileId = urlParams.get("profile_id");
-      let currentProfile = null;
       async function init() {
-        const res = await window.dbApi.getProfileAndDailyNetflowData(profileId);
-
-        currentProfile = res.data;
-        console.log(currentProfile);
-        localStorage.setItem(
-          "cachedProfileAndDailyNetflowData",
-          JSON.stringify(currentProfile)
+        const savedProfile = await window.storageApi.getItem("currentProfile");
+        const profile = savedProfile;
+        const res = await window.dbApi.getProfileAndDailyNetflowData(
+          profile.local_id
         );
 
+        currentProfile = res.data;
+        window.storageApi.setItem("profileAndNetflowData", currentProfile);
+        console.log(currentProfile);
         document.getElementById("cashierName").textContent =
           currentProfile.profile.username;
 
@@ -386,16 +383,27 @@
 
       async function displayAllStats() {
         document.getElementById("todaySales").textContent = formatCurrency(
-          currentProfile.sales_summary.total_amount
+          currentProfile.netflowData != null
+            ? currentProfile.netflowData.sales_summary.total
+            : 0
         );
         document.getElementById("todayOrders").textContent =
-          currentProfile.sales_summary.count;
-        document.getElementById("avgTicket").textContent =
-          currentProfile.sales_summary.average_sale;
+          currentProfile.netflowData != null
+            ? currentProfile.netflowData.sales_summary.count
+            : 0;
+        document.getElementById("avgTicket").textContent = formatCurrency(
+          currentProfile.netflowData != null
+            ? currentProfile.netflowData.sales_summary.average
+            : 0
+        );
 
         const container = document.getElementById("recentSalesContainer");
 
-        if (currentProfile.sales_summary.count === 0) {
+        if (
+          currentProfile.netflowData != null
+            ? currentProfile.netflowData.sales_summary.count
+            : 0 === 0
+        ) {
           container.innerHTML =
             '<p style="color: #94a3b8; text-align: center;">No hay ventas recientes</p>';
           return;
@@ -455,7 +463,7 @@
           if (currentProfile.localId) {
             clearCashierSession(currentProfile.localId);
           }
-          localStorage.removeItem("currentProfile");
+          window.storageApi.removeItem("currentProfile");
           window.navApi.navigateTo("index.html");
         }
       }

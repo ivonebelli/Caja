@@ -248,9 +248,9 @@
       const localId = urlParams.get("localId");
       let currentProfile = null;
 
-      console.log(profileId);
-      console.log(role);
-      console.log(localId);
+      // console.log(profileId);
+      // console.log(role);
+      // console.log(localId);
 
       let pinLength = 4; // Por defecto 4 dígitos
 
@@ -272,11 +272,11 @@
         cajero: `./cajero/index.html?profile_id=${profileId}`,
         administrativo: `./admin/index.html?profile_id=${profileId}`,
         gerencia: `./gerencia/index.html?profile_id=${profileId}`,
-        subgerente: `./gerencia/index.html?profile_id=${profileId}`,
       };
 
       async function loadProfile() {
         const res = await window.dbApi.getProfile(profileId);
+
         currentProfile = res.data[0];
         // Determinar el tipo de perfil y longitud del PIN
         pinLength = 4;
@@ -352,7 +352,7 @@
         // Verificar PIN
         if (pin === currentProfile.pin) {
           // PIN correcto: guardar sesión y redirigir
-
+          window.storageApi.setItem("currentProfile", currentProfile);
           showNotification("¡Bienvenido!", "success");
 
           // Redirigir al dashboard correspondiente

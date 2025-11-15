@@ -7,7 +7,7 @@ const dataPath = path.join(__dirname, "data");
 // Crear carpeta data si no existe
 if (!fs.existsSync(dataPath)) {
   fs.mkdirSync(dataPath, { recursive: true });
-  console.log("✅ Carpeta /data creada");
+  // console.log("✅ Carpeta /data creada");
 }
 
 // Datos de ejemplo
@@ -108,5 +108,5 @@ const exampleData = {
 Object.entries(exampleData).forEach(([filename, data]) => {
   const filePath = path.join(dataPath, filename);
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-  console.log(`✅ ${filename} creado con datos de ejemplo`);
+  // console.log(`✅ ${filename} creado con datos de ejemplo`);
 });

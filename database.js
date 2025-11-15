@@ -660,7 +660,7 @@ async function getProfiles(store_id, sequelize) {
 
 async function createProfile(newProfile, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
-  console.log(newProfile);
+  // console.log(newProfile);
   const Profile = sequelize.models.Profile;
   try {
     // newProfile debe ser un objeto que coincida con los campos del modelo
@@ -706,6 +706,7 @@ async function getProfile(local_id, sequelize) {
 }
 
 async function getProfileAndDailyNetflowData(local_id, sequelize) {
+  //FIXME  netflow_data y netflow_id se mantienen null
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
   const Store = sequelize.models.Store;
@@ -777,18 +778,15 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
       ],
     });
     let netflow_id = null;
-    let salesData = [];
-    let totalSalesAmount = 0;
-    let salesCount = 0;
-    let averageSale = 0;
 
+    console.log(netflow);
     if (netflow) {
-      netflow_id = netflow.local_id;
       // Convert to plain object for easier manipulation
-      const netflowData = netflow.toJSON();
+      netflow = netflow.toJSON();
+      netflow_id = netflow.local_id;
 
       // --- 1. Sales Aggregation ---
-      const salesList = netflowData.sales || [];
+      const salesList = netflow.sales || [];
       const salesCount = salesList.length;
 
       const totalSalesAmount = salesList.reduce(
@@ -799,28 +797,29 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
       const salesAverage = salesCount > 0 ? totalSalesAmount / salesCount : 0;
 
       // --- 2. Inflow Aggregation ---
-      const totalInflowAmount = (netflowData.inflows || []).reduce(
+      const totalInflowAmount = (netflow.inflows || []).reduce(
         (sum, inflow) => sum + parseFloat(inflow.amount),
         0
       );
 
       // --- 3. Expense Aggregation ---
-      const totalExpenseAmount = (netflowData.expenses || []).reduce(
+      const totalExpenseAmount = (netflow.expenses || []).reduce(
         (sum, expense) => sum + parseFloat(expense.amount),
         0
       );
 
       // --- 4. Attach Summary Data ---
-      netflowData.sales_summary = {
+      netflow.sales_summary = {
         count: salesCount,
         total: parseFloat(totalSalesAmount.toFixed(2)),
         average: parseFloat(salesAverage.toFixed(2)),
       };
 
-      netflowData.inflow_total = parseFloat(totalInflowAmount.toFixed(2));
-      netflowData.expense_total = parseFloat(totalExpenseAmount.toFixed(2));
+      netflow.inflow_total = parseFloat(totalInflowAmount.toFixed(2));
+      netflow.expense_total = parseFloat(totalExpenseAmount.toFixed(2));
 
-      return netflowData;
+      console.log("netflow con datos");
+      console.log(netflow);
     }
 
     const profileJSON = profileData.toJSON();
@@ -829,12 +828,6 @@ async function getProfileAndDailyNetflowData(local_id, sequelize) {
       profile: profileJSON, // Objeto Sequelize (puedes usar profileData.toJSON() si es necesario)
       netflow_id: netflow_id,
       netflow_data: netflow,
-      sales_summary: {
-        total_amount: parseFloat(totalSalesAmount.toFixed(2)),
-        count: salesCount,
-        average_sale: parseFloat(averageSale.toFixed(2)),
-      },
-      sales_list: salesData,
     };
 
     // Devolvemos la misma estructura de objeto que tu código original
@@ -1060,7 +1053,7 @@ async function createNetflow(newNetflow, sequelize) {
       createdAt: localNetflowRecord.start_time,
     };
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     throw new Error("Fallo al guardar la sesión de caja localmente.");
   }
 }

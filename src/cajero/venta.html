@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Nueva Venta - Sistema de Caja</title>
-    <link rel="stylesheet" href="..shared/styles.css" />
+    <link rel="stylesheet" href="../shared/styles.css" />
     <style>
       * {
         margin: 0;
@@ -906,7 +906,7 @@
         </div>
       </div>
     </div>
-    <script src="shared/utils.js"></script>
+    <script src="../shared/utils.js"></script>
     <script>
       let currentUser = null;
       let productos = [];
@@ -934,7 +934,7 @@
 
         window.addEventListener("data-sync", async (event) => {
           if (event.detail.filename === "products.json") {
-            console.log("📦 Productos actualizados en tiempo real");
+            // console.log("📦 Productos actualizados en tiempo real");
             await loadProductos();
           }
         });
@@ -1222,7 +1222,7 @@
         await writeData("orders.json", ordersData);
 
         try {
-          console.log("🖨️ Iniciando impresión de ticket...");
+          // console.log("🖨️ Iniciando impresión de ticket...");
 
           const printData = {
             orderNumber: order.orderNumber,
@@ -1239,7 +1239,7 @@
           const printResult = await printTicket(printData);
 
           if (printResult) {
-            console.log("✅ Ticket impreso correctamente");
+            // console.log("✅ Ticket impreso correctamente");
           } else {
             console.warn(
               "⚠️ No se pudo imprimir, pero la venta fue registrada"

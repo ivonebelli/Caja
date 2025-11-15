@@ -13,8 +13,6 @@ let mariadb_credentials = null;
 let mariadb_instance = null;
 let sqlite_instance = null;
 
-let previous_path = path.join(__dirname, "src", "index.html");
-let current_path = path.join(__dirname, "src", "index.html");
 const PAGES_ROOT = path.join(__dirname, "src");
 
 let activeProfile = {
@@ -27,7 +25,7 @@ function setLoggedInUser(profile) {
 
 // Crear ventana principal
 function createWindow() {
-  console.log(path.join(__dirname, "preload.js"));
+  // console.log(path.join(__dirname, "preload.js"));
   mainWindow = new BrowserWindow({
     width: 700,
     height: 800,
@@ -201,7 +199,7 @@ ipcMain.handle("storage-get-item", (event, key) => {
 ipcMain.handle("navigate-to", async (event, pageName) => {
   const role = activeProfile.role;
   const absolutePath = path.join(PAGES_ROOT, pageName);
-  console.log(absolutePath);
+  // console.log(absolutePath);
   mainWindow.loadURL(absolutePath).catch((error) => {
     console.error(`Failed to load file: ${absolutePath}`, error);
   });
