@@ -8,7 +8,8 @@ function initModels(sequelize) {
   const dialect = sequelize.options.dialect;
 
   // Es vital requerir Sequelize y DataTypes si no están en el scope
-  let Store,
+  let PaymentMethod,
+    Store,
     Profile,
     Netflow,
     Sale,
@@ -24,6 +25,36 @@ function initModels(sequelize) {
   // 1. Lógica para SQLite (DB Local): Con campos de sincronización
   // ====================================================================
   if (isLocal) {
+    PaymentMethod = sequelize.define(
+      "PaymentMethod",
+      {
+        local_id: {
+          type: DataTypes.INTEGER,
+          primaryKey: true,
+          autoIncrement: true,
+          field: "local_id",
+        },
+        name: {
+          type: DataTypes.STRING(100),
+          allowNull: false,
+          unique: true,
+        },
+        is_active: {
+          type: DataTypes.BOOLEAN,
+          defaultValue: true,
+        },
+        remote_id: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
+        },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
+      },
+      { timestamps: true, tableName: "PaymentMethods" }
+    );
     Category = sequelize.define(
       "Category",
       {
@@ -180,7 +211,7 @@ function initModels(sequelize) {
     SaleDetail = sequelize.define(
       "SaleDetail",
       {
-        detail_id: {
+        local_id: {
           type: DataTypes.INTEGER,
           primaryKey: true,
           autoIncrement: true,
@@ -188,7 +219,14 @@ function initModels(sequelize) {
         sale_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Sale
         product_id: { type: DataTypes.INTEGER, allowNull: false }, // FK a Product
         quantity: { type: DataTypes.INTEGER, allowNull: false },
-        unit_price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+        price: { type: DataTypes.INTEGER, allowNull: false },
+
+        remote_id: { type: DataTypes.INTEGER, allowNull: true },
+        is_synced: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
+        },
       },
       { timestamps: true, tableName: "SaleDetails" }
     );
@@ -203,13 +241,9 @@ function initModels(sequelize) {
           autoIncrement: true,
           field: "local_id",
         },
+        payment_method_id: { type: DataTypes.INTEGER, allowNull: false },
         netflow_id: { type: DataTypes.INTEGER, allowNull: false },
         total_amount: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-        sale_date: {
-          type: DataTypes.DATE,
-          allowNull: false,
-          defaultValue: Sequelize.NOW,
-        },
 
         remote_id: { type: DataTypes.INTEGER, allowNull: true },
         is_synced: {
@@ -274,25 +308,31 @@ function initModels(sequelize) {
   Category.hasMany(Product, { foreignKey: "category_id", as: "products" });
   Product.belongsTo(Category, { foreignKey: "category_id", as: "category" });
 
+  PaymentMethod.hasMany(Sale, {
+    foreignKey: "payment_method_id",
+    as: "sales",
+  });
+  Sale.belongsTo(PaymentMethod, {
+    foreignKey: "payment_method_id",
+    as: "payment_method",
+  });
   // Sale <-> Product (Via SaleDetail - Mucho a Muchos)
   Sale.hasMany(SaleDetail, {
     foreignKey: "sale_id",
     as: "details",
-    onDelete: "CASCADE",
   });
   SaleDetail.belongsTo(Sale, { foreignKey: "sale_id", as: "sale" });
 
+  SaleDetail.hasMany(Product, { foreignKey: "product_id", as: "product" });
   Product.belongsTo(SaleDetail, {
     foreignKey: "product_id",
     as: "sale_details",
   });
-  SaleDetail.hasMany(Product, { foreignKey: "product_id", as: "product" });
 
   // Store <-> Profile
   Store.hasMany(Profile, {
     foreignKey: "store_id",
     as: "profiles",
-    onDelete: "CASCADE",
   });
   Profile.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
@@ -300,7 +340,6 @@ function initModels(sequelize) {
   Store.hasMany(Netflow, {
     foreignKey: "store_id",
     as: "netflows",
-    onDelete: "RESTRICT",
   });
   Netflow.belongsTo(Store, { foreignKey: "store_id", as: "store" });
 
@@ -308,21 +347,18 @@ function initModels(sequelize) {
   Netflow.hasMany(Sale, {
     foreignKey: "netflow_id",
     as: "sales",
-    onDelete: "CASCADE",
   });
   Sale.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
 
   Netflow.hasMany(Expense, {
     foreignKey: "netflow_id",
     as: "expenses",
-    onDelete: "CASCADE",
   });
   Expense.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
 
   Netflow.hasMany(Inflow, {
     foreignKey: "netflow_id",
     as: "inflows",
-    onDelete: "CASCADE",
   });
   Inflow.belongsTo(Netflow, { foreignKey: "netflow_id", as: "netflow" });
 

@@ -22,6 +22,10 @@ contextBridge.exposeInMainWorld("dbApi", {
     ipcRenderer.invoke("db:get-profile-and-daily-netflow-data", profile_id),
   createNetflow: (newNetflow) =>
     ipcRenderer.invoke("db:create-netflow", newNetflow),
+  closeNetflow: (final_amount, final_description) =>
+    ipcRenderer.invoke("db:close-netflow", final_amount, final_description),
+  reopenNetflow: (netflow_id) =>
+    ipcRenderer.invoke("db:reopen-netflow", netflow_id),
   getSales: (netflow_id) => ipcRenderer.invoke("db:get-sales", netflow_id),
 });
 

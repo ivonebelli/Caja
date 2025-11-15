@@ -218,27 +218,74 @@
           <div class="summary-grid">
             <div class="summary-item">
               <div class="summary-label">Caja Inicial</div>
-              <div class="summary-value" id="summaryInitial">$0</div>
+              <div
+                class="summary-value"
+                id="summaryInitial"
+                style="color: #010001"
+              >
+                $0
+              </div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Total Ventas</div>
+              <div
+                class="summary-value"
+                id="summarySales"
+                style="color: #28965a"
+              >
+                $0
+              </div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Total Otros</div>
+              <div
+                class="summary-value"
+                id="summaryOtherInflows"
+                style="color: #28965a"
+              >
+                $0
+              </div>
             </div>
             <div class="summary-item">
               <div class="summary-label">Total Ingresos</div>
-              <div class="summary-value" id="summaryNetflow">$0</div>
+              <div
+                class="summary-value"
+                id="summaryInflow"
+                style="color: #28965a"
+              >
+                $0
+              </div>
             </div>
             <div class="summary-item">
               <div class="summary-label">Total Egresos</div>
-              <div class="summary-value" id="summaryOutflow">$0</div>
+              <div
+                class="summary-value"
+                id="summaryOutflow"
+                style="color: #7b0828"
+              >
+                $0
+              </div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">Balance Final</div>
+              <div
+                class="summary-value"
+                id="summaryNetflow"
+                style="color: #010001"
+              >
+                $0
+              </div>
             </div>
             <div class="summary-item">
               <div class="summary-label">Esperado en Caja</div>
-              <div class="summary-value" id="summaryExpected">$0</div>
+              <div
+                class="summary-value"
+                id="summaryExpectedFinalAmount"
+                style="color: #010001"
+              >
+                $0
+              </div>
             </div>
-          </div>
-
-          <div class="payment-breakdown">
-            <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 15px">
-              💳 Discriminado por Medio de Pago
-            </h3>
-            <div id="paymentBreakdown"></div>
           </div>
         </div>
 
@@ -268,7 +315,7 @@
               class="btn btn-danger"
               style="width: 100%; margin-top: 20px"
             >
-              🔒 Cerrar Caja y Generar PDF
+              🔒 Cerrar Caja
             </button>
           </form>
         </div>
@@ -300,7 +347,6 @@
         console.log(currentProfile);
         try {
           if (currentProfile.netflow_id !== null) {
-            // console.log("abierto");
             await showOpenStatus();
             //await updateSummary();
           } else {
@@ -322,14 +368,14 @@
         <div class="status-icon">✅</div>
         <div class="status-info">
           <h3>Caja Abierta</h3>
+           <p>
+          Inicio: ${formatDateTime(currentProfile.netflow_data.initial_time)} 
+         
+        </p>
 
-        </div>
-      `;
-        //FIXME esta mal entonces crashea la funcion y no se cambia a caja abierta
-        // <p>
-        //   Inicio: ${formatDateTime(currentProfile.netflow_data.start_time)} | Monto
-        //   inicial: ${formatCurrency(currentProfile.netflowData.starting_cash)}
-        // </p>;
+        </div>`;
+
+        // `;
         document.getElementById("openForm").style.display = "none";
         document.getElementById("openInfo").style.display = "block";
       }
@@ -354,91 +400,33 @@
           "profileAndNetflowData"
         );
         document.getElementById("summaryInitial").textContent = formatCurrency(
-          currentProfile.netflow_data.starting_cash
+          currentProfile.netflow_data.initial_amount
         );
         document.getElementById("summarySales").textContent = formatCurrency(
-          currentProfile.sales_summary.total_amount
+          currentProfile.netflow_data.sales_summary.total
+        );
+        document.getElementById("summaryOtherInflows").textContent =
+          formatCurrency(currentProfile.netflow_data.inflow_total);
+        document.getElementById("sumamaryInflow").textContent = formatCurrency(
+          currentProfile.netflow_data.sales_summary.total +
+            currentProfile.netflow_data.inflow_total
+        );
+        document.getElementById("sumamaryOutflow").textContent = formatCurrency(
+          currentProfile.netflow_data.expense_total
         );
 
-        document.getElementById("summaryExpected").textContent = formatCurrency(
-          currentProfile.sales_summary.total_amount +
-            currentProfile.netflow_data.starting_cash
+        document.getElementById("sumamaryOutflow").textContent = formatCurrency(
+          currentProfile.netflow_data.sales_summary.total +
+            currentProfile.netflow_data.inflow_total -
+            currentProfile.netflow_data.expense_total
         );
-
-        const breakdownHTML = paymentMethods
-          .filter((pm) => paymentTotals[pm.id] > 0)
-          .map(
-            (pm) => `
-          <div class="payment-item">
-            <div class="payment-method">
-              <span>${pm.icon}</span>
-              <span>${pm.name}</span>
-            </div>
-            <div class="payment-amount">${formatCurrency(
-              paymentTotals[pm.id]
-            )}</div>
-          </div>
-        `
-          )
-          .join("");
-
-        document.getElementById("paymentBreakdown").innerHTML =
-          breakdownHTML ||
-          '<p style="color: var(--text-light);">No hay ventas registradas</p>';
-
-        const closeInputsHTML = paymentMethods
-          .map(
-            (pm) => `
-        <div class="form-group">
-          <label class="form-label">${pm.icon} ${pm.name}</label>
-          <input
-            type="number"
-            class="form-input close-input"
-            id="close_${pm.id}"
-            placeholder="Esperado: ${formatCurrency(paymentTotals[pm.id])}"
-            step="0.01"
-            min="0"
-            value="${paymentTotals[pm.id]}"
-          >
-        </div>
-      `
-          )
-          .join("");
-
-        document.getElementById("closeInputs").innerHTML = closeInputsHTML;
-
-        // NO agregamos listeners aquí, la delegación se encarga
-        calculateDifference();
-      }
-
-      function calculateDifference() {
-        const totalSales = salesData.reduce((sum, o) => sum + o.total, 0);
-        const expectedTotal = currentSession.initialAmount + totalSales;
-
-        let actualTotal = 0;
-        paymentMethods.forEach((pm) => {
-          const input = document.getElementById(`close_${pm.id}`);
-          const value = input ? parseFloat(input.value) || 0 : 0;
-          actualTotal += value;
-        });
-
-        const difference = actualTotal - expectedTotal;
-        const alert = document.getElementById("differenceAlert");
-
-        if (Math.abs(difference) < 0.01) {
-          alert.className = "difference-alert neutral";
-          alert.innerHTML = `<span>✅</span> <span>La caja está cuadrada</span>`;
-        } else if (difference > 0) {
-          alert.className = "difference-alert positive";
-          alert.innerHTML = `<span>📈</span> <span>Sobrante: ${formatCurrency(
-            difference
-          )}</span>`;
-        } else {
-          alert.className = "difference-alert negative";
-          alert.innerHTML = `<span>📉</span> <span>Faltante: ${formatCurrency(
-            Math.abs(difference)
-          )}</span>`;
-        }
+        document.getElementById("summaryExpectedFinalAmount").textContent =
+          formatCurrency(
+            currentProfile.netflow_data.initialAmount +
+              currentProfile.netflow_data.sales_summary.total +
+              currentProfile.netflow_data.inflow_total -
+              currentProfile.netflow_data.expense_total
+          );
       }
 
       async function createNetflow(event) {
@@ -447,7 +435,7 @@
         const initialAmount = parseFloat(
           document.getElementById("initialAmount").value
         );
-        const notes = document.getElementById("openNotes").value;
+        const initialNotes = document.getElementById("openNotes").value;
         const storedValue = await window.storageApi.getItem(
           "profileAndNetflowData"
         );
@@ -455,7 +443,7 @@
         const res = await window.dbApi.createNetflow({
           store_id: currentProfile.profile.store_id,
           starting_cash: initialAmount,
-          opening_description: notes,
+          opening_description: initialNotes,
         });
         if (res.success === true) {
           showNotification("Caja abierta correctamente", "success");
@@ -473,305 +461,28 @@
           showNotification("Error al abrir la caja", "error");
         }
       }
-      //TODO: rehacer bien
+
       async function closeNetflow(event) {
         event.preventDefault();
 
-        if (
-          !confirm(
-            "¿Estás seguro de cerrar la caja? Se generará un PDF automáticamente."
-          )
-        ) {
+        if (!confirm("¿Estás seguro de cerrar la caja?")) {
           return;
         }
 
-        try {
-          await generatePDFReport();
+        showNotification("Caja cerrada ", "success");
 
-          showNotification(
-            "Caja cerrada y PDF generado correctamente",
-            "success"
-          );
-        } catch (error) {
-          console.error("=== ERROR EN GENERACIÓN DE PDF ===", error);
-          showNotification(
-            "Caja cerrada pero hubo un error al generar el PDF",
-            "warning"
-          );
-        }
+        const balanceFinal =
+          currentProfile.netflow_data.initialAmount +
+          currentProfile.netflow_data.sales_summary.total +
+          currentProfile.netflow_data.inflow_total -
+          currentProfile.netflow_data.expense_total;
 
+        const finalNotes = document.getElementById("closeNotes").value;
+
+        await window.dbApi.closeNetflow(balanceFinal, finalNotes);
         setTimeout(() => {
           window.navApi.navigateTo("/cajero/index.html");
         }, 2500);
-      }
-
-      async function generatePDFReport() {
-        try {
-          const { jsPDF } = window.jspdf;
-          const doc = new jsPDF();
-
-          doc.setFontSize(18);
-          doc.setFont(undefined, "bold");
-          doc.text("REPORTE DE CIERRE DE CAJA", 105, 20, { align: "center" });
-
-          doc.setFontSize(11);
-          doc.setFont(undefined, "normal");
-          let y = 35;
-
-          doc.text(`Cajero: ${currentUser.profile.name}`, 20, y);
-          y += 7;
-          doc.text(`Fecha: ${currentSession.date}`, 20, y);
-          y += 7;
-          doc.text(
-            `Hora de Apertura: ${formatDateTime(currentSession.openedAt)}`,
-            20,
-            y
-          );
-          y += 7;
-          doc.text(
-            `Hora de Cierre: ${formatDateTime(currentSession.closedAt)}`,
-            20,
-            y
-          );
-          y += 7;
-          doc.text(
-            `Caja Inicial: ${formatCurrency(currentSession.initialAmount)}`,
-            20,
-            y
-          );
-          y += 12;
-
-          doc.setFontSize(14);
-          doc.setFont(undefined, "bold");
-          doc.text("DETALLE DE VENTAS", 20, y);
-          y += 7;
-
-          const totalSales = salesData.reduce((sum, o) => sum + o.total, 0);
-
-          if (salesData.length > 0) {
-            const salesTableData = [];
-
-            salesData.forEach((order) => {
-              const paymentMethodText =
-                order.paymentMethod === "mixto"
-                  ? "Mixto (" +
-                    Object.entries(order.paymentDetails || {})
-                      .filter(([_, val]) => val > 0)
-                      .map(([key, val]) => `${key}: $${val.toFixed(2)}`)
-                      .join(", ") +
-                    ")"
-                  : getPaymentMethodName(order.paymentMethod);
-
-              order.items.forEach((item, itemIndex) => {
-                if (itemIndex === 0) {
-                  salesTableData.push([
-                    order.orderNumber,
-                    order.time,
-                    order.pin,
-                    item.name,
-                    item.quantity,
-                    `$${item.price.toFixed(2)}`,
-                    `$${(item.price * item.quantity).toFixed(2)}`,
-                    `$${order.total.toFixed(2)}`,
-                    paymentMethodText,
-                  ]);
-                } else {
-                  salesTableData.push([
-                    "",
-                    "",
-                    "",
-                    item.name,
-                    item.quantity,
-                    `$${item.price.toFixed(2)}`,
-                    `$${(item.price * item.quantity).toFixed(2)}`,
-                    "",
-                    "",
-                  ]);
-                }
-              });
-            });
-
-            doc.autoTable({
-              startY: y,
-              head: [
-                [
-                  "N° Orden",
-                  "Hora",
-                  "PIN",
-                  "Producto",
-                  "Cant.",
-                  "Precio U.",
-                  "Subtotal",
-                  "Total",
-                  "Pago",
-                ],
-              ],
-              body: salesTableData,
-              theme: "grid",
-              styles: { fontSize: 8, cellPadding: 2 },
-              headStyles: {
-                fillColor: [99, 102, 241],
-                textColor: 255,
-                fontStyle: "bold",
-              },
-              columnStyles: {
-                0: { cellWidth: 18 },
-                1: { cellWidth: 15 },
-                2: { cellWidth: 18 },
-                3: { cellWidth: 35 },
-                4: { cellWidth: 12 },
-                5: { cellWidth: 18 },
-                6: { cellWidth: 18 },
-                7: { cellWidth: 18 },
-                8: { cellWidth: 38 },
-              },
-            });
-
-            y = doc.lastAutoTable.finalY + 10;
-          } else {
-            doc.setFontSize(10);
-            doc.setFont(undefined, "normal");
-            doc.text("No hay ventas registradas", 20, y);
-            y += 15;
-          }
-
-          doc.setFontSize(14);
-          doc.setFont(undefined, "bold");
-          doc.text("RESUMEN POR MEDIO DE PAGO", 20, y);
-          y += 7;
-
-          const paymentTotals = {};
-          paymentMethods.forEach((pm) => {
-            paymentTotals[pm.id] = {
-              expected: salesData
-                .filter(
-                  (o) =>
-                    o.paymentMethod === pm.id ||
-                    (o.paymentMethod === "mixto" &&
-                      o.paymentDetails &&
-                      o.paymentDetails[pm.id] > 0)
-                )
-                .reduce((sum, o) => {
-                  if (o.paymentMethod === "mixto" && o.paymentDetails) {
-                    return sum + (o.paymentDetails[pm.id] || 0);
-                  }
-                  return sum + o.total;
-                }, 0),
-              actual: currentSession.closedAmounts[pm.id] || 0,
-            };
-          });
-
-          const paymentTableData = paymentMethods.map((pm) => {
-            const expected = paymentTotals[pm.id].expected;
-            const actual = paymentTotals[pm.id].actual;
-            const difference = actual - expected;
-
-            return [
-              pm.name,
-              `$${expected.toFixed(2)}`,
-              `$${actual.toFixed(2)}`,
-              `$${difference.toFixed(2)}`,
-            ];
-          });
-
-          doc.autoTable({
-            startY: y,
-            head: [["Medio de Pago", "Esperado", "Real", "Diferencia"]],
-            body: paymentTableData,
-            theme: "grid",
-            styles: { fontSize: 10, cellPadding: 3 },
-            headStyles: {
-              fillColor: [99, 102, 241],
-              textColor: 255,
-              fontStyle: "bold",
-            },
-          });
-
-          y = doc.lastAutoTable.finalY + 10;
-
-          const totalExpected = currentSession.initialAmount + totalSales;
-          const totalActual = Object.values(
-            currentSession.closedAmounts
-          ).reduce((sum, val) => sum + val, 0);
-          const totalDifference = totalActual - totalExpected;
-
-          doc.setFontSize(14);
-          doc.setFont(undefined, "bold");
-          doc.text("TOTALES GENERALES", 20, y);
-          y += 7;
-
-          doc.setFontSize(11);
-          doc.setFont(undefined, "normal");
-          doc.text(`Total Ingresos: ${formatCurrency(totalSales)}`, 20, y);
-          y += 7;
-          doc.text(
-            `Caja Inicial: ${formatCurrency(currentSession.initialAmount)}`,
-            20,
-            y
-          );
-          y += 7;
-          doc.text(`Total Esperado: ${formatCurrency(totalExpected)}`, 20, y);
-          y += 7;
-          doc.text(`Total Real: ${formatCurrency(totalActual)}`, 20, y);
-          y += 7;
-
-          doc.setFont(undefined, "bold");
-          if (totalDifference > 0) {
-            doc.setTextColor(16, 185, 129);
-          } else if (totalDifference < 0) {
-            doc.setTextColor(239, 68, 68);
-          } else {
-            doc.setTextColor(59, 130, 246);
-          }
-          doc.text(`Diferencia: ${formatCurrency(totalDifference)}`, 20, y);
-          doc.setTextColor(0, 0, 0);
-          y += 10;
-
-          doc.setFont(undefined, "normal");
-          doc.text(`Cantidad de Órdenes: ${salesData.length}`, 20, y);
-          y += 10;
-
-          if (currentSession.notes || currentSession.closeNotes) {
-            doc.setFontSize(12);
-            doc.setFont(undefined, "bold");
-            doc.text("NOTAS", 20, y);
-            y += 7;
-
-            doc.setFontSize(10);
-            doc.setFont(undefined, "normal");
-            if (currentSession.notes) {
-              doc.text(`Apertura: ${currentSession.notes}`, 20, y, {
-                maxWidth: 170,
-              });
-              y += 7;
-            }
-            if (currentSession.closeNotes) {
-              doc.text(`Cierre: ${currentSession.closeNotes}`, 20, y, {
-                maxWidth: 170,
-              });
-            }
-          }
-
-          const now = new Date();
-          const dateStr = currentSession.date.replace(/\//g, "-");
-          const timeStr = `${now.getHours().toString().padStart(2, "0")}${now
-            .getMinutes()
-            .toString()
-            .padStart(2, "0")}${now.getSeconds().toString().padStart(2, "0")}`;
-          const cashierName = currentUser.profile.name.replace(/\s+/g, "_");
-          const fileName = `Cierre_Caja_${cashierName}_${dateStr}_${timeStr}.pdf`;
-
-          const pdfBuffer = doc.output("arraybuffer");
-          const saved = await saveExcelReport(fileName, pdfBuffer);
-
-          if (saved) {
-          } else {
-            throw new Error("Failed to save PDF file");
-          }
-        } catch (error) {
-          console.error("❌ Error generando reporte PDF:", error);
-          throw error;
-        }
       }
 
       function getPaymentMethodName(id) {

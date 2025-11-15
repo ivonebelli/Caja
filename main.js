@@ -178,6 +178,35 @@ ipcMain.handle("db:create-netflow", async (event, newNetflow) => {
   }
 });
 
+ipcMain.handle(
+  "db:close-netflow",
+  async (event, final_amount, final_description) => {
+    try {
+      const res = await db.closeNetflow(
+        final_amount,
+        final_description,
+        sqlite_instance
+      );
+      return {
+        success: true,
+      };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+);
+
+ipcMain.handle("db:reopen-netflow", async (event, netflow_id) => {
+  try {
+    const res = await db.reopenNetflow(netflow_id, sqlite_instance);
+    return {
+      success: true,
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle("db:get-sales", async (event, netflow_id) => {
   try {
     const res = await db.getSales(netflow_id, sqlite_instance);
