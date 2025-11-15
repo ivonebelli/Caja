@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bienvenido - Sistema de Caja</title>
-    <link rel="stylesheet" href="/shared/styles.css" />
+    <link rel="stylesheet" href="shared/styles.css" />
     <style>
       body {
         background: linear-gradient(
@@ -235,7 +235,6 @@
       <div class="version-info">v1.0.0 - Modo Local</div>
     </div>
 
-    <script src="/shared/utils.js"></script>
     <script>
       //TODO CHANGE ALL FRONTEND NAVIGATION FROM TO window.navApi.navigateTo WHICH GOES THROUGH NODE.JS WHICH WILL HAVE Casbin as role authenticator
       //TODO IMPLEMENT CASBIN PRIVILEGE POLICYsewewes
@@ -268,7 +267,7 @@
 
         try {
           // 4. Enviar credenciales al backend (main.js)
-          const response = await window.utilsApi.connect();
+          const response = await window.dbApi.connect(credentials);
 
           if (response.success) {
             // 5. ÉXITO: Ocultar formulario y mostrar botón de selección

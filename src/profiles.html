@@ -203,7 +203,6 @@
       </div>
     </div>
 
-    <script src="/shared/utils.js"></script>
     <script>
       const urlParams = new URLSearchParams(window.location.search);
       const localId = urlParams.get("localId");
@@ -217,92 +216,13 @@
       );
 
       async function loadProfiles(localId) {
-        const res = await ipcRenderer.invoke("db:get-profiles", localId);
+        const res = await window.dbApi.getProfiles(localId);
         const data = res.data;
         console.log(data);
         if (!data) {
           showNotification("Error al cargar datos", "error");
           return;
         }
-
-        // Verificar el acceso especial guardado
-        // const specialAccess = localStorage.getItem("specialAccess");
-        // console.log("🔍 specialAccess actual:", specialAccess);
-
-        // // MODO GERENCIA: Solo si mode=gerencia Y specialAccess=gerencia
-        // if (mode === "gerencia" && specialAccess === "gerencia") {
-        //   console.log("✅ Entrando a modo GERENCIA");
-        //   renderGerenciaMode(data);
-        //   return;
-        // }
-
-        // // MODO ADMIN: Solo si mode=admin Y specialAccess=administracion
-        // if (mode === "admin" && specialAccess === "administracion") {
-        //   console.log("✅ Entrando a modo ADMINISTRACIÓN");
-        //   // Si NO hay localId, mostrar todos los administrativos
-        //   if (!localId) {
-        //     document.getElementById("pageTitle").textContent =
-        //       "Administración - Todos los Perfiles";
-        //     renderAdminProfiles(data);
-        //     return;
-        //   }
-        // Si hay localId, mostrar solo ese local
-        // currentLocal = data.locales.find((l) => l.id === localId);
-        // if (!currentLocal) {
-        //   showNotification("Local no encontrado", "error");
-        //   setTimeout(() => goBack(), 1500);
-        //   return;
-        // }
-        // document.getElementById(
-        //   "pageTitle"
-        // ).textContent = `Administración - ${currentLocal.nombre}`;
-        // renderLocalProfiles(data, true); // true = isAdminMode
-        // return;
-        // }
-
-        // // MODO GERENCIA-MANAGE: Gerencia gestionando un local específico
-        // if (
-        //   mode === "gerencia-manage" &&
-        //   specialAccess === "gerencia" &&
-        //   localId
-        // ) {
-        //   console.log("✅ Entrando a modo GERENCIA-MANAGE");
-        //   currentLocal = data.locales.find((l) => l.id === localId);
-        //   if (!currentLocal) {
-        //     showNotification("Local no encontrado", "error");
-        //     setTimeout(() => goBack(), 1500);
-        //     return;
-        //   }
-        //   document.getElementById(
-        //     "pageTitle"
-        //   ).textContent = `Gerencia - Gestión de ${currentLocal.nombre}`;
-        //   renderLocalProfiles(data, true); // true = isGerenciaManage
-        //   return;
-        // }
-
-        // // MODO LOCAL NORMAL: Usuario normal seleccionando perfil
-        // if (localId && !mode) {
-        //   console.log("✅ Entrando a modo LOCAL NORMAL");
-        //   currentLocal = data.locales.find((l) => l.id === localId);
-        //   if (!currentLocal) {
-        //     showNotification("Local no encontrado", "error");
-        //     setTimeout(() => goBack(), 1500);
-        //     return;
-        //   }
-        //   document.getElementById(
-        //     "pageTitle"
-        //   ).textContent = `Perfiles en ${currentLocal.nombre}`;
-        //   renderLocalProfiles(data, false); // false = modo normal
-        //   return;
-        // }
-
-        // // Si llegamos aquí, algo está mal
-        // console.error("❌ Acceso inválido:", { mode, specialAccess, localId });
-        // showNotification("Acceso no válido", "error");
-        // setTimeout(() => {
-        //   localStorage.removeItem("specialAccess");
-        //   window.navApi.navigateTo("/index.html");
-        // }, 1500);
 
         renderLocalProfiles(data, false);
       }
