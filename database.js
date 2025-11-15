@@ -640,14 +640,16 @@ async function deleteStore(storeId, sequelize) {
 async function getProfiles(store_id, sequelize) {
   if (!sequelize) throw new Error("La base de datos no está inicializada.");
   const Profile = sequelize.models.Profile;
+  console.log(store_id + "!!!!!!!!");
   try {
-    const rows = await Profile.findAll(
-      { raw: true, logging: console.log },
-      {
-        where: { store_id: store_id },
-      }
-    );
-
+    const rows = await Profile.findAll({
+      where: {
+        store_id: store_id,
+      },
+      raw: true,
+      logging: console.log,
+    });
+    console.log(rows);
     return rows;
   } catch (error) {
     console.error(

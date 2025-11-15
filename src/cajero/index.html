@@ -322,10 +322,25 @@
       <div class="actions-section">
         <h2 class="section-title">🚀 Acciones Rápidas</h2>
         <div class="actions-grid">
-          <div class="action-card" onclick="goToVenta()">
+          <div
+            class="action-card"
+            onclick="goToIngreso()"
+            id="ingresoCard"
+            style="display: none"
+          >
             <div class="action-icon">🛍️</div>
-            <div class="action-title">Nueva Venta</div>
-            <div class="action-desc">Registrar una nueva venta</div>
+            <div class="action-title">Nuevo Ingreso</div>
+            <div class="action-desc">Registrar un nuevo ingreso</div>
+          </div>
+          <div
+            class="action-card"
+            onclick="goToEgreso()"
+            id="egresoCard"
+            style="display: none"
+          >
+            <div class="action-icon">🛍️</div>
+            <div class="action-title">Nuevo Gasto</div>
+            <div class="action-desc">Registrar un nuevo gasto</div>
           </div>
 
           <div class="action-card" onclick="goToCaja()">
@@ -334,7 +349,11 @@
             <div class="action-desc">Abrir/Cerrar caja del día</div>
           </div>
 
-          <div class="action-card" onclick="goToOrdenes()">
+          <div
+            class="action-card"
+            onclick="goToOrdenes()"
+            style="display: none"
+          >
             <div class="action-icon">📋</div>
             <div class="action-title">Historial de ventas del día</div>
             <div class="action-desc">Ver todas las ventas del día</div>
@@ -376,6 +395,10 @@
         document.getElementById(
           "localInfo"
         ).textContent = `📍 ${currentProfile.profile.store.name}`;
+        egresoCard.style.display =
+          currentProfile.netflow_id != null ? "block" : "none";
+        ingresoCard.style.display =
+          currentProfile.netflow_id != null ? "block" : "none";
 
         await displayAllStats();
         startClock();
@@ -440,8 +463,11 @@
         setInterval(updateClock, 60000);
       }
 
-      function goToVenta() {
-        window.navApi.navigateTo("/cajero/cajero/venta.html");
+      function goToIngreso() {
+        window.navApi.navigateTo("/cajero/cajero/ingreso.html");
+      }
+      function goToEgreso() {
+        window.navApi.navigateTo("/cajero/cajero/gasto.html");
       }
 
       function goToCaja() {
